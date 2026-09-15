@@ -1,0 +1,21 @@
+---
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    restart: unless-stopped
+    container_name: freqtrade
+    volumes:
+      - "./user_data:/freqtrade/user_data"
+    # The API/web UI is off by default (see user_data/config.json).
+    # If you turn it on later, this exposes it on localhost only.
+    ports:
+      - "127.0.0.1:8080:8080"
+    # Default command for `docker compose up -d` (live/dry-run trading).
+    # Backtesting and data downloads use the scripts/ folder instead,
+    # which override this command for one-off runs.
+    command: >
+      trade
+      --logfile /freqtrade/user_data/logs/freqtrade.log
+      --db-url sqlite:////freqtrade/user_data/tradesv3.sqlite
+      --config /freqtrade/user_data/config.json
+      --strategy MomentumTrailing

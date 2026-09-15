@@ -1,0 +1,61 @@
+{
+    "max_open_trades": 1,
+    "stake_currency": "FDUSD",
+    "stake_amount": 100,
+    "tradable_balance_ratio": 1,
+    "dry_run": true,
+    "dry_run_wallet": 100,
+    "timeframe": "1m",
+    "trading_mode": "spot",
+    "cancel_open_orders_on_exit": false,
+    "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "entry_pricing": {
+        "price_side": "same",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+    "exit_pricing": {
+        "price_side": "same",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+    "exchange": {
+        "name": "binance",
+        "key": "",
+        "secret": "",
+        "ccxt_config": {},
+        "ccxt_async_config": {},
+        "pair_whitelist": [
+            "ETH/FDUSD"
+        ],
+        "pair_blacklist": []
+    },
+    "pairlists": [
+        { "method": "StaticPairList" }
+    ],
+    "telegram": {
+        "enabled": false,
+        "token": "",
+        "chat_id": ""
+    },
+
+    "api_server": {
+    "enabled": false,
+    "listen_ip_address": "127.0.0.1",
+    "listen_port": 9001,
+    "username": "freqtrade",
+    "password": "12194812",
+    "jwt_secret_key": "914db28749fe1be02b7cff8b95bf709d15d7f59f9a55d4aee6c535a4bf6f3125"
+   },
+
+    "bot_name": "backtest-lab",
+    "initial_state": "running",
+    "internals": {
+        "process_throttle_secs": 5
+    }
+}

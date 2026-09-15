@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Freqtrade generated data
+user_data/data/
+user_data/logs/
+user_data/backtest_results/
+user_data/*.sqlite
+user_data/*.sqlite-shm
+user_data/*.sqlite-wal
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.swp
