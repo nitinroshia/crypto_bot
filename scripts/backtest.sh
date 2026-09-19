@@ -3,8 +3,11 @@ set -e
 
 # ---- Edit these as you test parameters ----
 STRATEGY="MomentumTrailing"
-TIMERANGE="20260319-20260901"
-
+TIMERANGE="20250301-20260901"
+PARAMS_FILE="user_data/test_params.json"    # <- timeframe, entry threshold,
+                                            #    stoploss, and trailing-stop
+                                            #    values all live here now,
+                                            #    not in the strategy file.
 
 # All-in round-trip trading cost per trade, as a ratio (0.001 = 0.10%).
 # freqtrade applies this once on entry and once on exit.
@@ -23,6 +26,8 @@ FEE=0.001
 
 docker compose run --rm freqtrade backtesting \
   --config user_data/config.json \
+  --config "$PARAMS_FILE" \
   --strategy "$STRATEGY" \
   --timerange "$TIMERANGE" \
-  --fee "$FEE"
+  --fee "$FEE" \
+  --cache none

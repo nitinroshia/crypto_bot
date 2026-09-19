@@ -45,13 +45,13 @@
     },
 
     "api_server": {
-    "enabled": false,
-    "listen_ip_address": "127.0.0.1",
-    "listen_port": 9001,
-    "username": "freqtrade",
-    "password": "12194812",
-    "jwt_secret_key": "914db28749fe1be02b7cff8b95bf709d15d7f59f9a55d4aee6c535a4bf6f3125"
-   },
+        "enabled": false,
+        "listen_ip_address": "127.0.0.1",
+        "listen_port": 9001,
+        "username": "freqtrade",
+        "password": "",
+        "jwt_secret_key": ""
+    },
 
     "bot_name": "backtest-lab",
     "initial_state": "running",

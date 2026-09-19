@@ -4,6 +4,8 @@ services:
     image: freqtradeorg/freqtrade:stable
     restart: unless-stopped
     container_name: freqtrade
+    env_file:
+      - .env
     volumes:
       - "./user_data:/freqtrade/user_data"
     # The API/web UI is off by default (see user_data/config.json).

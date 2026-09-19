@@ -1,0 +1,9 @@
+# Dependencies for user_data/analysis/*.py only.
+# This is intentionally separate from freqtrade's own requirements -- the
+# analysis scripts run as plain Python on your host machine, not inside the
+# freqtrade Docker container, so they need their own environment.
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+statsmodels>=0.14
+pyarrow>=14.0

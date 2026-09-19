@@ -3,14 +3,28 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+.venv/
+venv/
+env/
+ENV/
 
 # Freqtrade generated data
 user_data/data/
 user_data/logs/
 user_data/backtest_results/
+user_data/hyperopt_results/
+user_data/hyperopts/
+user_data/plot/
+user_data/freqaimodels/
+user_data/notebooks/
+
+# Freqtrade databases
 user_data/*.sqlite
 user_data/*.sqlite-shm
 user_data/*.sqlite-wal
+
+# Analysis generated results
+user_data/analysis/results/
 
 # Local secrets
 .env
@@ -25,3 +39,11 @@ user_data/*.sqlite-wal
 # Temporary files
 *.tmp
 *.swp
+*.swo
+*~
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+*.egg
