@@ -1,0 +1,31 @@
+Fetching exchange filters ...
+  ETHFDUSD: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHUSDT: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  FDUSDUSDT: tickSize=0.0001 stepSize=1.0 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+[1/6] ETHFDUSD 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 32170
+[2/6] ETHUSDT 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[3/6] ETHUSDT 5m
+  -> UP_TO_DATE: 329088 rows, 2023-08-04 08:00:00+00:00 .. 2026-09-19 23:55:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[4/6] ETHUSDT 1h
+  fetching ETHUSDT 1h: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    ETHUSDT 1h: 50 pages, up to 2023-05-06 19:00:00+00:00
+  -> OK: 79572 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-19 23:00:00+00:00, missing bars vs regular grid: 128, zero-trade bars: 6
+[5/6] ETHUSDT 1d
+  fetching ETHUSDT 1d: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+  -> OK: 3321 rows, 2017-08-17 00:00:00+00:00 .. 2026-09-19 00:00:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[6/6] FDUSDUSDT 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 15010
+
+Wrote user_data/data/binance_raw/fetch_manifest.json and symbol_filters.json
+
+Exported to freqtrade data dir:
+{
+  "file": "user_data/data/binance/ETH_FDUSD-1m.feather",
+  "backup": "user_data/data/binance/ETH_FDUSD-1m.backup-20260920T005419Z.feather.bak",
+  "rows_before": 335520,
+  "rows_after": 335520,
+  "first": "2026-01-30 00:00:00+00:00",
+  "last": "2026-09-19 23:59:00+00:00"
+}

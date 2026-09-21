@@ -212,6 +212,7 @@ def hac_lagged_regression(
                 "lag": lag,
                 "n": int(len(aligned)),
                 "beta": float(model.params["a_lagged"]),
+                "correlation": float(aligned["a_lagged"].corr(aligned["b"])),
                 "t_stat_hac": float(model.tvalues["a_lagged"]),
                 "p_value_hac": float(model.pvalues["a_lagged"]),
                 "significant_at_5pct": bool(model.pvalues["a_lagged"] < 0.05),
@@ -220,11 +221,44 @@ def hac_lagged_regression(
     return pd.DataFrame(rows)
 
 
+def _modal_step(index: pd.DatetimeIndex) -> pd.Timedelta:
+    """The most common spacing between consecutive timestamps -- the series'
+    nominal bar width, robust to a few literal gaps (unlike index[1]-index[0],
+    which is wrong whenever the first two rows straddle a gap)."""
+    diffs = pd.Series(index[1:] - index[:-1])
+    return diffs.mode().iloc[0]
+
+
+def grid_returns(close: pd.Series, step: pd.Timedelta | None = None) -> pd.Series:
+    """
+    Gap-aware bar returns: close_t / close_{t-step} - 1, but ONLY where the
+    previous bar is exactly `step` earlier; NaN otherwise.
+
+    Why: `Series.pct_change()` is positional. If the file is missing rows
+    (literal gaps -- see diagnose_gaps.py), the row after a gap gets a
+    return computed across the whole gap but labeled as one bar. That
+    return spans time before the bar's own window, so it can share raw
+    price moves with a coarse bar that closed inside the gap -- the same
+    "same data on both sides" failure as mistake #5, arriving via missing
+    rows instead of resampling. Callers feeding event_anchored_lead_lag
+    should build their returns with this function, not pct_change().
+    """
+    close = close.sort_index()
+    if step is None:
+        step = _modal_step(close.index)
+    prev_close = close.shift(1)
+    contiguous = pd.Series((close.index[1:] - close.index[:-1]) == step, index=close.index[1:])
+    contiguous = contiguous.reindex(close.index, fill_value=False)
+    ret = close / prev_close - 1
+    return ret.where(contiguous).dropna()
+
+
 def event_anchored_lead_lag(
     coarse_returns: pd.Series,
     fine_returns: pd.Series,
     max_lag: int,
     hac_maxlags: int | None = None,
+    legacy_alignment: bool = False,
 ) -> pd.DataFrame:
     """
     Mistake #5 fix (see project_context.md's mistake log). The row-sliding
@@ -279,10 +313,43 @@ def event_anchored_lead_lag(
         whether a real effect decays smoothly or was only ever the
         artifact described above).
 
-    Returns a DataFrame with one row per lag_minutes_after_close from 1 to
-    max_lag (lag 0 / negative lags aren't meaningful here -- there is no
-    "before this bar's own close" question left to ask once we're
-    already anchored at the close).
+    Returns a DataFrame with one row per `lag_bars` from 1 to max_lag (lag 0 /
+    negative lags aren't meaningful here -- there is no "before this bar's
+    own close" question left to ask once we're already anchored at the close).
+
+    UNITS (renamed per work order 1.1; the old column `lag_minutes_after_close`
+    counted FINE BARS, which are minutes only when the fine series is 1m):
+      lag_bars    j = the j-th fine bar after the coarse close. That bar's return
+                  is realized during [close + (j-1)*step, close + j*step).
+      lag_minutes j * (fine bar length in minutes) = the END of that window, so for a
+                  5m fine series lag_bars 25 is lag_minutes 125 (window 120-125 min after close).
+    `correlation` is the Pearson correlation of the same two series the
+    regression uses, reported next to beta because effect-size bands are stated in
+    correlation units.
+
+    STRICT TIME ALIGNMENT (added after the first real-data re-run design
+    review). The original version located "the fine row j-1 steps after the
+    close" by POSITION in the fine series. That is only correct when the
+    fine series covers every coarse close and has no missing rows. Two ways
+    it was silently wrong:
+      1. Coarse history longer than fine history (real case here: 5m files
+         reach back ~3 years, the 1m file ~6 months). Every coarse bar
+         closing BEFORE the first fine timestamp was searchsorted to row 0
+         and paired with the first few fine returns of the file -- the same
+         handful of fine values repeated against years of unrelated coarse
+         returns. Reported n was inflated and beta attenuated toward zero
+         (reproduced on synthetic data: n 3x too large, injected beta 0.05
+         reported as 0.019, p-value overstated).
+      2. A missing fine row shifts every later position, so "lag j" could
+         really be lag j + (missing rows) -- lag labels no longer minutes.
+    The fix: a pair (coarse bar, lag j) is used ONLY IF the fine row found
+    at that position carries exactly the timestamp close_time +
+    (j-1) * fine_step. Anything else is dropped, not shifted. On gap-free,
+    same-span data this changes nothing (all pre-existing self-tests still
+    pass, unmodified). `legacy_alignment=True` reproduces the old positional
+    behavior, only so the difference can be measured -- never for results.
+    Pair this with `grid_returns` for the inputs (a return computed across
+    a missing row spans more than one bar).
     """
     if hac_maxlags is None:
         hac_maxlags = max(max_lag, 1)
@@ -295,27 +362,56 @@ def event_anchored_lead_lag(
     # see align_to_common_grid's docstring -- so it only becomes knowable at
     # T+width, the START of the NEXT coarse bar. Regularly-spaced coarse
     # data means that's just T plus the coarse series' own spacing.
-    coarse_width = coarse_returns.index[1] - coarse_returns.index[0]
+    fine_step = _modal_step(fine_index)
+    if legacy_alignment:
+        coarse_width = coarse_returns.index[1] - coarse_returns.index[0]
+    else:
+        coarse_width = _modal_step(coarse_returns.index)
     close_times = coarse_returns.index + coarse_width
     anchor_pos = fine_index.searchsorted(close_times, side="left")
 
+    if not legacy_alignment:
+        first_ok = np.asarray(
+            (anchor_pos < len(fine_index))
+            & (fine_index[np.minimum(anchor_pos, len(fine_index) - 1)] == close_times)
+        )
+        n_dropped = int(len(close_times) - first_ok.sum())
+        # The very last coarse bar always closes exactly where the fine data
+        # ends (no fine row yet), so one dropped bar is normal and not worth
+        # a NOTE; more than that means real out-of-range or gap exclusions.
+        if n_dropped > 1:
+            print(
+                f"NOTE: event_anchored_lead_lag: {n_dropped}/{len(close_times)} coarse bars have no fine "
+                f"row exactly at their close (outside the fine data's date range, or inside a gap) -- "
+                f"excluded, not mis-paired."
+            )
+
+    fine_minutes = float(fine_step / pd.Timedelta(minutes=1))  # minutes per fine bar
     rows = []
     for j in range(1, max_lag + 1):
         target_pos = anchor_pos + (j - 1)
         valid = target_pos < len(fine_index)
+        if not legacy_alignment:
+            on_time = np.zeros(len(target_pos), dtype=bool)
+            on_time[valid] = np.asarray(
+                fine_index[target_pos[valid]] == (close_times[valid] + (j - 1) * fine_step)
+            )
+            valid = on_time
         y = coarse_returns.values[valid]
         x = fine_returns.values[target_pos[valid]]
         df = pd.DataFrame({"coarse_return": y, "fine_at_j": x}).dropna()
         if len(df) < 30:
-            rows.append({"lag_minutes_after_close": j, "n": len(df), "status": "INSUFFICIENT_DATA"})
+            rows.append({"lag_bars": j, "lag_minutes": j * fine_minutes, "n": len(df), "status": "INSUFFICIENT_DATA"})
             continue
         X = sm.add_constant(df["coarse_return"])
         model = sm.OLS(df["fine_at_j"], X).fit(cov_type="HAC", cov_kwds={"maxlags": hac_maxlags})
         rows.append(
             {
-                "lag_minutes_after_close": j,
+                "lag_bars": j,
+                "lag_minutes": j * fine_minutes,
                 "n": int(len(df)),
                 "beta": float(model.params["coarse_return"]),
+                "correlation": float(df["coarse_return"].corr(df["fine_at_j"])),
                 "t_stat_hac": float(model.tvalues["coarse_return"]),
                 "p_value_hac": float(model.pvalues["coarse_return"]),
                 "significant_at_5pct": bool(model.pvalues["coarse_return"] < 0.05),
@@ -500,10 +596,101 @@ if __name__ == "__main__":
 
     injected_result = event_anchored_lead_lag(coarse_noise, fine_injected, max_lag=10)
     sig = injected_result[injected_result["significant_at_5pct"] == True]  # noqa: E712
-    recovered_j = sig.loc[sig["beta"].abs().idxmax(), "lag_minutes_after_close"] if len(sig) else None
+    recovered_j = sig.loc[sig["beta"].abs().idxmax(), "lag_bars"] if len(sig) else None
     print(f"Event-anchored recovery check: injected true_j={true_j} beta={true_beta} -> "
-          f"recovered lag={recovered_j}, significant lags={sig['lag_minutes_after_close'].tolist()}")
+          f"recovered lag={recovered_j}, significant lags={sig['lag_bars'].tolist()}")
     assert recovered_j == true_j, f"expected to recover lag={true_j}, got {recovered_j}"
     assert len(sig) == 1, f"expected exactly one significant lag, got {len(sig)}"
     print("Self-test passed: event_anchored_lead_lag is blind to the mechanical-overlap artifact and "
           "recovers a real, realistically-sized injected effect cleanly.")
+    # Fifth self-test -- strict time alignment (see event_anchored_lead_lag's
+    # docstring, "STRICT TIME ALIGNMENT"). Three parts:
+    #   (a) coarse history LONGER than fine history (the real ETH/FDUSD
+    #       situation: 5m reaches back years, 1m only months). Pure
+    #       positional matching pairs every pre-fine coarse bar with the
+    #       first fine rows of the file. Strict alignment must use exactly
+    #       the coarse bars that close inside the fine range, and recover
+    #       the injected beta without attenuation.
+    #   (b) a literal gap (missing rows) in the fine series: n at each lag
+    #       must equal an independently counted number of on-time pairs.
+    #   (c) grid_returns must blank the return that spans a missing row.
+    rng5 = np.random.default_rng(31)
+    U5 = 5
+    n_long5 = 45 * 1440
+    idx_long5 = pd.date_range("2026-03-01", periods=n_long5, freq="1min", tz="UTC")
+    r_long5 = pd.Series(rng5.normal(0, 0.001, n_long5), index=idx_long5)
+    coarse5 = _left_labeled_coarse(r_long5, U5)  # 45 days of coarse returns
+    fine_start5 = idx_long5[30 * 1440]
+    fine_short5 = r_long5.loc[fine_start5:].copy()  # only the last 15 days
+    close_times5 = coarse5.index + pd.Timedelta(minutes=U5)
+    pos5 = fine_short5.index.searchsorted(close_times5, side="left")
+    inside5 = np.asarray(close_times5 >= fine_short5.index[0]) & (pos5 + 2 < len(fine_short5))
+    fine_short5.iloc[pos5[inside5] + 2] += 0.05 * coarse5.values[inside5]  # true_j = 3
+
+    strict = event_anchored_lead_lag(coarse5, fine_short5, max_lag=6)
+    legacy = event_anchored_lead_lag(coarse5, fine_short5, max_lag=6, legacy_alignment=True)
+    expected_n_a = int(inside5.sum())
+    beta_strict = float(strict.loc[strict["lag_bars"] == 3, "beta"].iloc[0])
+    beta_legacy = float(legacy.loc[legacy["lag_bars"] == 3, "beta"].iloc[0])
+    print(f"\nStrict-alignment check (a): coarse bars closing inside fine range = {expected_n_a}; "
+          f"strict n(lag1)={int(strict['n'].iloc[0])}, legacy n(lag1)={int(legacy['n'].iloc[0])}; "
+          f"injected beta 0.05 -> strict {beta_strict:.3f}, legacy {beta_legacy:.3f}")
+    assert int(strict["n"].iloc[0]) == expected_n_a, "strict alignment must use only in-range coarse bars"
+    assert int(legacy["n"].iloc[0]) > 2 * expected_n_a, "legacy alignment should show the inflated n (bug demo)"
+    assert abs(beta_strict - 0.05) < 0.015, f"strict beta should recover ~0.05, got {beta_strict}"
+    assert beta_legacy < 0.035, "legacy beta should be visibly attenuated (bug demo)"
+
+    # (b) literal gap
+    fine_full5 = r_long5.loc[fine_start5:].copy()
+    ct_full = coarse5.index + pd.Timedelta(minutes=U5)
+    pos_full = fine_full5.index.searchsorted(ct_full, side="left")
+    ok_full = np.asarray(ct_full >= fine_full5.index[0]) & (pos_full + 2 < len(fine_full5))
+    fine_full5.iloc[pos_full[ok_full] + 2] += 0.05 * coarse5.values[ok_full]
+    gap_start = fine_full5.index[7 * 1440]
+    gap_idx = pd.date_range(gap_start, periods=180, freq="1min", tz="UTC")  # 3-hour hole
+    fine_gappy = fine_full5.drop(gap_idx)
+    gap_res = event_anchored_lead_lag(coarse5, fine_gappy, max_lag=6)
+    for _, row in gap_res.iterrows():
+        j = int(row["lag_bars"])
+        want_close = pd.Index(ct_full).isin(fine_gappy.index)
+        want_target = pd.Index(ct_full + pd.Timedelta(minutes=j - 1)).isin(fine_gappy.index)
+        expected_n = int((want_close & want_target).sum())
+        assert int(row["n"]) == expected_n, f"gap case, lag {j}: n={row['n']} expected {expected_n}"
+    gap_best = summarize_best_lag(gap_res, corr_col="beta")
+    assert gap_best["best_lag"]["lag_bars"] == 3, "effect must still be recovered around a gap"
+    print("Strict-alignment check (b): n matches an independent on-time-pair count at every lag around a "
+          "3-hour gap, and the injected lag is still recovered.")
+
+    # (c) grid_returns
+    px = pd.Series(
+        [100.0, 101.0, 102.0, 104.0, 105.0],
+        index=pd.to_datetime(["2026-01-01 00:00", "2026-01-01 00:01", "2026-01-01 00:02",
+                              "2026-01-01 00:05", "2026-01-01 00:06"], utc=True),
+    )
+    gr = grid_returns(px)  # rows at 00:05 spans the 00:03-00:04 hole -> must be dropped
+    assert list(gr.index.strftime("%H:%M")) == ["00:01", "00:02", "00:06"], list(gr.index.strftime("%H:%M"))
+    print("Strict-alignment check (c): grid_returns drops the return that spans a missing row.")
+
+    # (d) mixed datetime resolutions (ms vs ns) must not break the alignment
+    coarse_ms = coarse5.copy()
+    coarse_ms.index = coarse_ms.index.as_unit("ms")
+    strict_ms = event_anchored_lead_lag(coarse_ms, fine_short5, max_lag=6)
+    assert strict_ms["n"].tolist() == strict["n"].tolist(), "index resolution must not change the result"
+    print("Self-test passed: strict time alignment excludes out-of-range / gap-straddling pairs instead of mis-pairing them.")
+
+    # Sixth self-test -- units and correlation (work order 1.1).
+    #   lag_bars counts fine bars; lag_minutes = bars * fine bar length; correlation sits next to beta.
+    r_units = event_anchored_lead_lag(coarse5, fine_short5, max_lag=6)          # fine series is 1m
+    assert (r_units["lag_minutes"] == r_units["lag_bars"] * 1.0).all()
+    assert {"lag_bars", "lag_minutes", "beta", "correlation"} <= set(r_units.columns)
+    assert "lag_minutes_after_close" not in r_units.columns
+    row3 = r_units[r_units["lag_bars"] == 3].iloc[0]
+    assert row3["correlation"] > 0.03 and np.sign(row3["correlation"]) == np.sign(row3["beta"])
+    # 5m fine series: rebuild returns on a 5m grid and check the minute conversion
+    fine5 = (1 + fine_short5).resample("5min", label="left", closed="left").prod() - 1
+    coarse15 = (1 + fine_short5).resample("15min", label="left", closed="left").prod() - 1
+    r5 = event_anchored_lead_lag(coarse15, fine5, max_lag=4)
+    assert (r5["lag_minutes"] == r5["lag_bars"] * 5.0).all(), "5m fine bars must convert to 5 minutes each"
+    hac_tbl = hac_lagged_regression(fine_short5.iloc[:3000], fine_short5.iloc[:3000], max_lag=3, upsample_factor=1)
+    assert "correlation" in hac_tbl.columns and hac_tbl["correlation"].abs().max() <= 1.0
+    print("Self-test passed: lag_bars / lag_minutes units are explicit (5m fine bars = 5 minutes) and correlation is reported next to beta.")

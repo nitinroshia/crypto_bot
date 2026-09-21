@@ -16,7 +16,14 @@ version at all.
 - `user_data/strategies/MomentumTrailing.py` - strategy #1: enter on a rise
   in the last candle, exit on a pullback from the peak (trailing stop)
 - `scripts/download_data.sh` - pulls free historical candles from Binance
+  (freqtrade's downloader; see "Getting your first backtest result" for its
+  limits - it does not backfill earlier history into an existing file)
 - `scripts/backtest.sh` - runs a backtest
+- `user_data/data/binance/` - freqtrade's candle files (ETH/FDUSD, OHLCV only)
+- `user_data/data/binance_raw/` - a separate raw-kline store (ETH/FDUSD,
+  ETH/USDT, FDUSD/USDT; adds trade counts and taker-buy volume) plus the
+  exchange's tick/lot filters. Kept apart on purpose: freqtrade breaks if it
+  finds a feather file with extra columns
 - `user_data/analysis/` - a separate math/statistics toolkit that studies
   the downloaded price data itself (see "Workflow" and "The analysis
   toolkit" below) - this does not touch the strategy or the backtest; it's
@@ -38,10 +45,18 @@ a real out-of-sample check. No freqtrade, no Docker, no simulated trades.
   change.
 - Test it: `python3 research_cli.py --formula name --param pair=5m:15m --max-lag 20` (params are formula-specific -- see "Formula contract" in `project_context.md`)
 - Validate it before trusting it:
-  `... --walkforward --fit-days 270 --validate-days 90`. A result that
-  doesn't replicate across walk-forward splits is noise, not a rule to
-  build a strategy on - see `research_cli.py`'s own module docstring for
-  how the replication check works.
+  `... --walkforward --fit-days 90 --validate-days 30` (this is the
+  ETH/FDUSD reference sample: post-break, 233 days, where 90/30 gives 4 splits
+  and 270/90 gives none). For the ETH/USDT research pair use fit 365 /
+  validate 90, discovery data up to the 2025-08-31 cutoff, and a locked
+  holdout after it (see `project_context.md`). The lag is
+  chosen in each fit window and only that lag is tested in the validate
+  window. Walk-forward is a stability check, not independent evidence; the
+  full promotion pipeline (discovery, walk-forward, freeze, one forward test)
+  is in `project_context.md` under "What counts as a finding worth
+  promoting". A result that doesn't replicate is noise, not a rule to build a
+  strategy on - see `research_cli.py`'s own module docstring for the
+  mechanics.
 - Every run (guided or flagged) writes a manifest to
   `analysis/results/runs/` - that folder is the record of what's already
   been tried and what survived, so it doesn't need to be re-derived from
@@ -85,12 +100,18 @@ scratch.
 
 ## Getting your first backtest result
 
-1. Download historical 1-minute data for ETH/FDUSD (free, pulled straight
-   from Binance's public API - no account or payment needed):
+1. Download historical data for ETH/FDUSD (free, pulled straight from
+   Binance's public API - no account or payment needed):
    ```
    ./scripts/download_data.sh
    ```
-   This saves the candles under `user_data/data/binance/`.
+   This saves the candles under `user_data/data/binance/`. Two limits to
+   know: freqtrade's downloader appends new candles but does **not** backfill
+   earlier history into a file that already exists, and as shipped the script
+   requests 1,825 days on every timeframe, including 1m (a full 1m history
+   back to 2023 is far more than the research sample needs). To extend 1m
+   history back to a chosen date, or to build the raw-kline store, use
+   `fetch_klines.py` (see "The analysis toolkit").
 
 2. Run the backtest:
    ```
@@ -117,22 +138,39 @@ scratch.
 
 ## About the fee/spread/slippage number
 
-You asked where to update this. It's the `FEE` variable at the top of
-`scripts/backtest.sh`. freqtrade applies it once on entry and once on
-exit. It's currently set to `0.001` (0.10%), which is Binance's regular
-(VIP 0) spot rate as of September 2026 - check your own account's fee
-page for your actual rate, since VIP tier, the BNB fee discount, and
-FDUSD promotions can all change it.
+The fee `scripts/backtest.sh` passes to freqtrade is no longer typed in by
+hand. It comes from `user_data/analysis/costs.py`, which owns the project's
+cost model. There are two cost cases, both assuming taker execution at the
+next bar's open: **base** (fee 0.10% + slippage 0.02% per side, `0.0012` per
+side, 0.24% round trip) and **stress** (fee 0.12% + slippage 0.03% per side,
+`0.0015` per side, 0.30% round trip). Pick one with the `COST_CASE`
+environment variable (default `base`), and use `PRINT_ONLY=1` to see the
+resolved command without running Docker:
+```
+./scripts/backtest.sh                          # base case
+COST_CASE=stress ./scripts/backtest.sh         # stress case
+COST_CASE=stress PRINT_ONLY=1 ./scripts/backtest.sh
+python3 user_data/analysis/costs.py --per-side base    # prints 0.0012
+```
+freqtrade applies the fee once on entry and once on exit but has no slippage
+setting, so the per-side fee plus slippage is passed to it as the fee; that
+agrees with `costs.py`'s `net_return` within 1e-8. The 0.10% is the project's
+planning fee for makers and takers. The account's current maker fee of 0% is a
+promotion and is ignored; promotions are never modeled.
+
+`TIMERANGE` in `scripts/backtest.sh` ends 20250831, the discovery cutoff. Data
+after 2025-08-31 is a locked holdout, read only by the forward-test command,
+once per candidate; the lock covers strategy backtests too, so do not extend
+the range.
 
 One honest limitation: freqtrade's basic backtester works from OHLCV
 candles, so it doesn't separately model bid/ask spread or slippage the
 way a real order book would - it assumes your order fills at the price
 you asked for, as long as that price was within the candle's high/low
-range. The practical workaround for now is to nudge `FEE` up slightly
-above your raw exchange fee (e.g. to 0.0012-0.0015) as a rough stand-in
-for spread and slippage combined. If a strategy still looks good after
-that haircut, it's worth the extra effort later of modeling this more
-precisely with finer-grained data - we can do that when we get there.
+range. Slippage is covered by the cost cases above, not by any freqtrade
+setting. If a strategy still looks good under the stress case, it's worth the
+extra effort later of modeling this more precisely with finer-grained data - we
+can do that when we get there.
 
 ## Dry-run: the "live sandbox" you asked about
 
@@ -170,30 +208,57 @@ connects to the strategy layer.
 (not inside the freqtrade Docker container), so they need their own small
 environment:
 ```
-pyenv install 3.11.9        # if you don't already have a recent Python via pyenv
-pyenv local 3.11.9
+pyenv install 3.12         # if you don't already have Python 3.12 via pyenv
+pyenv local 3.12
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r user_data/analysis/requirements.txt
 ```
 
-**First, pull the extra timeframes** the analysis needs (1m, 5m, 15m, 30m,
-1h, 1d, 1w - the regular `download_data.sh` above only pulls 1m):
+**Data the analysis needs** (all ETH/FDUSD, timeframes 1m, 5m, 15m, 30m,
+1h, 1d, 1w in `user_data/data/binance/`, plus the raw-kline store):
 ```
-./scripts/download_data.sh
+python3 user_data/analysis/fetch_klines.py --dry-run          # shows the plan, downloads nothing
+python3 user_data/analysis/fetch_klines.py                    # ETH/FDUSD + ETH/USDT + FDUSD/USDT raw klines, resumable
+python3 user_data/analysis/fetch_klines.py --start 2026-01-30 --export-freqtrade   # extend 1m back to a date
+python3 user_data/analysis/task0_report.py                    # what data do we actually have?
 ```
+`fetch_klines.py --export-freqtrade` rewrites the freqtrade 1m file from the
+raw store, keeps a `.bak` backup of the old file, and refuses to write if any
+existing bar is missing or differs. Capture long runs with `| tee name.log`.
+The ETH/FDUSD sample is post-break, starting 2026-01-30; ETH/USDT is the
+research pair from work order 1.2 (see `project_context.md`).
+
+**Self-tests** (offline, synthetic data, a few minutes):
+```
+cd user_data/analysis && bash selftest_all.sh
+```
+Expect `ALL SELF-TESTS PASSED`. Run it after copying in any new version of a
+file. `user_data/analysis/retired/` holds archived work from work order 1.2
+(see its README); nothing in it is imported by live code.
 
 **Running the full, fixed battery of checks:**
 ```
-python3 user_data/analysis/run_fingerprint.py
+python3 user_data/analysis/run_fingerprint.py --start-date 2026-01-30   # ETH/FDUSD post-break sample
+python3 user_data/analysis/run_fingerprint.py                           # full history (comparison only)
 ```
+With `--start-date`, every timeframe is trimmed to bars on or after that date
+and results go to `results/from_2026-01-30/`, so full-history results are
+never overwritten.
 This produces `user_data/analysis/results/`, containing:
 - `fingerprints.json` - statistics for each timeframe (is it stable over
   time, is it randomly distributed, is bigger volume tied to bigger price
   moves, how many candles have zero trading activity, etc.)
 - `leadlag_summary.json` and several `leadlag_*.csv` files - tests of
   whether one timeframe's price moves predict another's, against the
-  three standard pairs (`1m:5m`, `5m:15m`, `5m:1h`)
+  three standard pairs (`1m:5m`, `5m:15m`, `5m:1h`). Read
+  `event_anchored_best` (it carries the family size and Bonferroni/Holm
+  adjusted p, per pair and across all 66 lags); `hac_best` and
+  `nonoverlapping_best` are known-contaminated and kept for comparison. In
+  the event-anchored tables, `lag_bars` counts fine bars and `lag_minutes` is
+  the same lag in minutes
+- `data_ranges.json` - first bar, last bar and row count of every timeframe
+  actually used
 - `resample_checks.json` - a data-quality check comparing two independently
   computed versions of the same data, to catch bugs before trusting anything
   built on top of them
@@ -211,7 +276,7 @@ checking whether a finding actually holds out-of-sample - use
 python3 user_data/analysis/research_cli.py                     # guided mode -- answers prompts, no file editing
 python3 user_data/analysis/research_cli.py --list-formulas
 python3 user_data/analysis/research_cli.py --formula event_anchored --param pair=5m:15m \
-    --max-lag 20 --walkforward --fit-days 270 --validate-days 90
+    --max-lag 20 --walkforward --fit-days 90 --validate-days 30
 ```
 A formula isn't limited to comparing two timeframes -- `--param` is
 repeatable and formula-specific (`volume_leads_volatility`, for instance,
@@ -222,6 +287,12 @@ idea in plain language or writing the Python for it, and
 `research_cli.py`'s own module docstring for the mechanical detail. See
 the "Workflow" section above for how a formula proven here is meant to
 reach the strategy layer.
+
+Two more entry points worth knowing:
+```
+python3 user_data/analysis/resample_rule_test.py       # do rebuilt coarse bars match the native files?
+python3 user_data/analysis/passive_fill_baseline.py    # HISTORY: what does a signal-free resting order earn? (needs symbol_filters.json for the tick size)
+```
 
 See `project_context.md` for a full explanation of what's been found so
 far, what each piece of the toolkit does, and what mistakes were already

@@ -1,0 +1,11 @@
+README.md:141:makers and takers. The account's current maker fee of 0% is a promotion and
+project_context.md:99:  tick 0.01, step 0.0001, min notional 5, `LIMIT_MAKER` supported (also for
+project_context.md:101:- **Costs: planning fee 0.10% for makers and takers.** The account's current
+project_context.md:102:  maker fee of 0% is a promotion and is ignored; promotions are never
+project_context.md:197:  execution at the next bar's open). The earlier Scenario A/B cost model is
+project_context.md:211:  docstring. Its follow-ups and the whole maker-fill line of work were
+project_context.md:215:- **`retired/`** — Archive of retired work (work order 1.2): the Scenario A/B
+project_context.md:221:*(Work order 1.2 replaced the earlier Scenario A/B model.)* Two cases
+project_context.md:225:makers and takers; the account's current maker 0% is a promotion and is
+project_context.md:411:  -0.034% before fees, with fill rates of about 72%, 57% and 33% at d = 0.05%,
+project_context.md:536:retired the maker/resting-order line (Task 1, Task 5, the re-costing tool and

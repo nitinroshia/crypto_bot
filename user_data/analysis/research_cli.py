@@ -8,10 +8,15 @@ project_context.md's "Formula contract" section for non-Python readers):
         ...
         return result_df, best_summary
 
-  - `data` is every downloaded timeframe you asked to load, keyed by string
-    ("1m", "5m", "15m", ...), each a raw OHLCV dataframe (columns: open,
-    high, low, close, volume; datetime index). Pull whatever timeframes
-    and columns your idea needs out of this -- one, two, or all of them.
+  - `data` is every dataset you asked to load, keyed by string, each a raw
+    OHLCV dataframe (columns: open, high, low, close, volume; datetime
+    index). Keys are "PAIR:timeframe" (e.g. "ETH_USDT:1m"), and a bare
+    timeframe ("1m", "5m", ...) means the same timeframe on the default
+    pair, so every formula written against bare keys keeps working. Append
+    ":raw" (e.g. "ETH_FDUSD:1m:raw") to read the raw-kline store, whose
+    files also carry n_trades / taker_buy_* columns. See databundle.py.
+    Pull whatever series and columns your idea needs out of this -- one,
+    two, or all of them.
     Nothing about the CLI or the registry assumes you're comparing exactly
     two timeframes; that's just what the three built-in formulas happen to
     do.
@@ -68,14 +73,17 @@ import pandas as pd
 import statsmodels.api as sm
 
 from config_schema import SUPPORTED_TIMEFRAMES
+from databundle import DataBundle, load_bundle
 from leadlag import (
     align_to_common_grid,
     event_anchored_lead_lag,
+    grid_returns,
     hac_lagged_regression,
     nonoverlapping_lagged_correlation,
     summarize_best_lag,
 )
-from run_fingerprint import TIMEFRAME_MINUTES, load_native_feather
+from multitest import annotate_family, family_stats_for_best
+from run_fingerprint import TIMEFRAME_MINUTES
 from walkforward import generate_walk_forward_splits
 
 # --------------------------------------------------------------------------
@@ -108,6 +116,11 @@ def _prepare_pair(data: dict, pair: str) -> dict:
     returns_a = data[tf_a]["close"].pct_change().dropna()
     returns_b = data[tf_b]["close"].pct_change().dropna()
     minutes_a, minutes_b = TIMEFRAME_MINUTES[tf_a], TIMEFRAME_MINUTES[tf_b]
+    # Gap-aware returns for the event-anchored path only (a pct_change() across
+    # a missing row spans more than one bar -- see leadlag.grid_returns). The
+    # row-sliding hac/nonoverlap paths below keep their original inputs.
+    grid_a = grid_returns(data[tf_a]["close"], step=pd.Timedelta(minutes=minutes_a))
+    grid_b = grid_returns(data[tf_b]["close"], step=pd.Timedelta(minutes=minutes_b))
     coarse_native, fine_native = None, None
     if minutes_a == minutes_b:
         fine_a, fine_b = returns_a, returns_b
@@ -116,12 +129,12 @@ def _prepare_pair(data: dict, pair: str) -> dict:
         fine_a = returns_a
         fine_b = align_to_common_grid(returns_b, returns_a, shift_periods=1)
         upsample_factor = minutes_b // minutes_a
-        coarse_native, fine_native = returns_b, returns_a
+        coarse_native, fine_native = grid_b, grid_a
     else:
         fine_a = align_to_common_grid(returns_a, returns_b, shift_periods=1)
         fine_b = returns_b
         upsample_factor = minutes_a // minutes_b
-        coarse_native, fine_native = returns_a, returns_b
+        coarse_native, fine_native = grid_a, grid_b
     return dict(
         fine_a=fine_a, fine_b=fine_b, upsample_factor=upsample_factor,
         coarse_native=coarse_native, fine_native=fine_native,
@@ -216,18 +229,16 @@ def _run_volume_leads_volatility(*, data, max_lag, timeframe=None, window=20, **
 # Data loading -- loads every timeframe a run might need into one bundle.
 # A formula reaches into `data[tf]` for whichever it actually uses.
 # --------------------------------------------------------------------------
-def load_all_dataframes(data_dir: Path, asset_pair: str, timeframes: list[str]) -> dict[str, pd.DataFrame]:
-    data = {}
-    missing = []
-    for tf in timeframes:
-        df = load_native_feather(data_dir, asset_pair, tf)
-        if df is None:
-            missing.append(tf)
-        else:
-            data[tf] = df
-    if missing:
-        raise FileNotFoundError(f"No native feather for {asset_pair}-{{{','.join(missing)}}} in {data_dir}")
-    return data
+def load_all_dataframes(
+    data_dir: Path, asset_pair: str, timeframes: list[str], raw_dir: Path | None = None
+) -> DataBundle:
+    """Every key in `timeframes` may be a bare timeframe (default pair), a
+    PAIR:timeframe, or PAIR:timeframe:raw -- see databundle.py."""
+    return load_bundle(data_dir, asset_pair, timeframes, raw_dir=raw_dir)
+
+
+def _data_ranges(data: dict) -> dict:
+    return {k: [str(df.index.min()), str(df.index.max()), int(len(df))] for k, df in data.items()}
 
 
 def _infer_timeframes(explicit: list[str] | None, params: dict) -> list[str]:
@@ -270,10 +281,17 @@ def write_manifest(output_dir: Path, run_id: str, record: dict) -> Path:
 # --------------------------------------------------------------------------
 # Single run
 # --------------------------------------------------------------------------
-def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, timeframes=None, tag=None):
+def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, timeframes=None, tag=None, raw_dir=None):
     tfs = _infer_timeframes(timeframes, params)
-    data = load_all_dataframes(data_dir, asset_pair, tfs)
+    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir)
     result_df, best = FORMULAS[formula_name]["fn"](data=data, max_lag=max_lag, **params)
+    # Work order #1: every result states its family size and adjusted p. The
+    # family here is the lags this table tested; both Bonferroni and Holm are
+    # recorded (see multitest.py) and neither is silently preferred.
+    family = {}
+    if result_df is not None and len(result_df):
+        result_df = annotate_family(result_df)
+        family = family_stats_for_best(result_df, best)
 
     tag_bits = "_".join(str(v) for v in params.values()).replace(":", "-") or "run"
     run_id = f"{_timestamp()}_{formula_name}_{tag_bits}" + (f"_{tag}" if tag else "")
@@ -292,7 +310,9 @@ def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, ti
             str(min(df.index.min() for df in data.values())),
             str(max(df.index.max() for df in data.values())),
         ],
+        "data_ranges": _data_ranges(data),
         "result": best,
+        "family": family,
     }
     if result_df is not None and len(result_df):
         csv_path = output_dir / "runs" / f"{run_id}.csv"
@@ -306,25 +326,73 @@ def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, ti
 # --------------------------------------------------------------------------
 # Walk-forward validation
 # --------------------------------------------------------------------------
-def _check_replication(fit_best: dict, val_best: dict) -> bool:
+def _first_col(row_or_df_cols, prefix=None, names=None):
+    cols = list(row_or_df_cols)
+    if names:
+        return next((n for n in names if n in cols), None)
+    return next((c for c in cols if c.startswith(prefix)), None)
+
+
+def evaluate_fixed_lag(fit_best: dict, fit_df, val_df) -> dict:
+    """
+    Walk-forward verdict for ONE split, per work order #1: the lag is chosen
+    in the FIT window only, and the VALIDATE window is asked one
+    pre-specified question -- at that same lag, is the effect the same sign
+    and significant at 5%? (One lag, one test: no family, no adjustment.)
+
+    The previous version re-ran the whole lag scan in validate and compared
+    "best lag within 1 step", which lets validate pick its own winner among
+    many lags -- a multiple-testing leak that flatters replication.
+    """
     fit_row = fit_best.get("best_lag") if isinstance(fit_best, dict) else None
-    val_row = val_best.get("best_lag") if isinstance(val_best, dict) else None
-    if not fit_row or not val_row:
-        return False
-    lag_key = next((k for k in fit_row if k.startswith("lag")), None)
-    corr_key = "beta" if "beta" in fit_row else "correlation" if "correlation" in fit_row else None
-    if not lag_key or not corr_key or lag_key not in val_row or corr_key not in val_row:
-        return False
-    close_lag = abs(fit_row[lag_key] - val_row[lag_key]) <= 1
-    same_sign = (fit_row[corr_key] > 0) == (val_row[corr_key] > 0)
-    return close_lag and same_sign
+    if not fit_row:
+        return {"replicated": False, "reason": "NO_SIGNIFICANT_LAG_IN_FIT"}
+    lag_col = _first_col(fit_row.keys(), prefix="lag")
+    eff_col = _first_col(fit_row.keys(), names=("beta", "correlation"))
+    p_col = _first_col(fit_row.keys(), names=("p_value_hac", "p_value"))
+    fit_lag = fit_row[lag_col]
+    out = {
+        "fit_lag": fit_lag,
+        "fit_effect": float(fit_row[eff_col]),
+        "fit_p": float(fit_row[p_col]) if p_col else None,
+        "fit_n": int(fit_row["n"]) if "n" in fit_row else None,
+    }
+    if "lag_minutes" in fit_row:
+        out["fit_lag_minutes"] = float(fit_row["lag_minutes"])
+    if "correlation" in fit_row and eff_col != "correlation":
+        out["fit_correlation"] = float(fit_row["correlation"])
+    if fit_df is not None and len(fit_df):
+        out["fit_family"] = family_stats_for_best(annotate_family(fit_df), fit_best)
+    if val_df is None or not len(val_df) or lag_col not in val_df.columns or eff_col not in val_df.columns:
+        return {**out, "replicated": False, "reason": "VALIDATE_TABLE_UNAVAILABLE"}
+    match = val_df[val_df[lag_col] == fit_lag]
+    if match.empty or pd.isna(match.iloc[0][eff_col]):
+        return {**out, "replicated": False, "reason": "VALIDATE_INSUFFICIENT_DATA_AT_FIT_LAG"}
+    v = match.iloc[0]
+    same_sign = bool((v[eff_col] > 0) == (fit_row[eff_col] > 0))
+    val_sig = bool(v["significant_at_5pct"])
+    out.update(
+        {
+            "validate_effect_at_fit_lag": float(v[eff_col]),
+            "validate_correlation_at_fit_lag": float(v["correlation"]) if "correlation" in v.index and not pd.isna(v["correlation"]) else None,
+            "validate_p_at_fit_lag": float(v[p_col]) if p_col and p_col in v else None,
+            "validate_n": int(v["n"]),
+            "same_sign": same_sign,
+            "validate_significant": val_sig,
+            "replicated": same_sign and val_sig,
+            "reason": "OK" if (same_sign and val_sig)
+            else ("SIGN_FLIPPED" if not same_sign else "NOT_SIGNIFICANT_IN_VALIDATE"),
+        }
+    )
+    return out
 
 
 def run_walkforward(
-    formula_name, data_dir, asset_pair, params, max_lag, fit_days, validate_days, step_days, output_dir, timeframes=None
+    formula_name, data_dir, asset_pair, params, max_lag, fit_days, validate_days, step_days, output_dir,
+    timeframes=None, raw_dir=None,
 ):
     tfs = _infer_timeframes(timeframes, params)
-    data = load_all_dataframes(data_dir, asset_pair, tfs)
+    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir)
     start = max(df.index.min() for df in data.values())
     end = min(df.index.max() for df in data.values())
 
@@ -342,28 +410,39 @@ def run_walkforward(
         )
         return None
 
+    fn = FORMULAS[formula_name]["fn"]
     split_results = []
     for i, s in enumerate(splits):
-        fit_data = {tf: df.loc[s.fit_start : s.fit_end] for tf, df in data.items()}
-        val_data = {tf: df.loc[s.validate_start : s.validate_end] for tf, df in data.items()}
-        fit_df, fit_best = FORMULAS[formula_name]["fn"](data=fit_data, max_lag=max_lag, **params)
-        val_df, val_best = FORMULAS[formula_name]["fn"](data=val_data, max_lag=max_lag, **params)
-        replicated = _check_replication(fit_best, val_best)
+        # Half-open windows [start, end): the bar labeled fit_end opens after
+        # the fit window and belongs to validate, never to both.
+        fit_data = data.sliced(s.fit_start, s.fit_end)
+        val_data = data.sliced(s.validate_start, s.validate_end)
+        fit_df, fit_best = fn(data=fit_data, max_lag=max_lag, **params)
+        val_df, _val_rescan_best = fn(data=val_data, max_lag=max_lag, **params)  # only the fit-selected lag's row is read
+        ev = evaluate_fixed_lag(fit_best, fit_df, val_df)
         split_results.append(
             {
                 "split": i,
                 "fit_range": [str(s.fit_start.date()), str(s.fit_end.date())],
                 "validate_range": [str(s.validate_start.date()), str(s.validate_end.date())],
                 "fit_best": fit_best,
-                "validate_best": val_best,
-                "replicated": replicated,
+                **ev,
             }
         )
-        print(
-            f"Split {i}: fit best={fit_best.get('best_lag', fit_best.get('status'))} "
-            f"-> validate best={val_best.get('best_lag', val_best.get('status'))} "
-            f"-- {'REPLICATED' if replicated else 'did not replicate'}"
-        )
+        if "fit_lag" in ev:
+            fam = ev.get("fit_family", {})
+            fam_txt = f" (fit family {fam['family_size']}, Holm p={fam['p_holm']:.3g})" if fam else ""
+            val_txt = (
+                f"validate @ lag {ev['fit_lag']}: effect={ev['validate_effect_at_fit_lag']:+.4g} "
+                f"p={ev['validate_p_at_fit_lag']:.3g} n={ev['validate_n']}"
+                if "validate_effect_at_fit_lag" in ev else f"validate: {ev['reason']}"
+            )
+            print(
+                f"Split {i}: fit lag={ev['fit_lag']} effect={ev['fit_effect']:+.4g} p={ev['fit_p']:.3g}{fam_txt} "
+                f"-> {val_txt} -- {'REPLICATED' if ev['replicated'] else 'did not replicate (' + ev['reason'] + ')'}"
+            )
+        else:
+            print(f"Split {i}: {ev['reason']} -- did not replicate")
 
     n_replicated = sum(1 for r in split_results if r["replicated"])
     if len(splits) < 2:
@@ -383,10 +462,13 @@ def run_walkforward(
         "git_commit": git_commit_hash(),
         "formula": formula_name,
         "mode": "walkforward",
+        "validation_rule": "lag chosen in fit only; validate tests that single lag (same sign AND p<0.05); "
+                           "windows are half-open [start, end)",
         "asset_pair": asset_pair,
         "params": params,
         "max_lag": max_lag,
         "timeframes_loaded": tfs,
+        "data_ranges": _data_ranges(data),
         "fit_days": fit_days,
         "validate_days": validate_days,
         "step_days": step_days or validate_days,
@@ -488,6 +570,9 @@ class _ParamAction(argparse.Action):
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--data-dir", type=Path, default=Path("user_data/data/binance"))
+    p.add_argument("--raw-dir", type=Path, default=None,
+                    help="raw-kline store (default: <data-dir>/../binance_raw); used for PAIR:tf keys "
+                         "not found in --data-dir and for any key ending in :raw")
     p.add_argument("--pair", type=str, default="ETH_FDUSD", help="asset pair, e.g. ETH_FDUSD")
     p.add_argument("--output-dir", type=Path, default=Path("user_data/analysis/results"))
     p.add_argument("--formula", choices=list(FORMULAS), help="which registered formula to run")
@@ -527,10 +612,11 @@ def main() -> None:
     if args.walkforward:
         run_walkforward(
             args.formula, args.data_dir, args.pair, params, args.max_lag,
-            args.fit_days, args.validate_days, args.step_days, args.output_dir, timeframes=args.timeframes,
+            args.fit_days, args.validate_days, args.step_days, args.output_dir,
+            timeframes=args.timeframes, raw_dir=args.raw_dir,
         )
     else:
-        manifest, path = run_once(args.formula, args.data_dir, args.pair, params, args.max_lag, args.output_dir, timeframes=args.timeframes)
+        manifest, path = run_once(args.formula, args.data_dir, args.pair, params, args.max_lag, args.output_dir, timeframes=args.timeframes, raw_dir=args.raw_dir)
         print(json.dumps(manifest, indent=2, default=str))
         print(f"\nManifest: {path}")
 

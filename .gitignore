@@ -47,3 +47,6 @@ user_data/analysis/results/
 dist/
 build/
 *.egg
+
+# Temporary files
+temp/
