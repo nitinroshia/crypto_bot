@@ -1,0 +1,123 @@
+{
+  "run_id": "20260919T125727Z_passive_fill_baseline",
+  "git_commit": "a663637",
+  "task": "work order #1, Task 2",
+  "pair": "ETH_FDUSD",
+  "tick_size": 0.01,
+  "tick_source": "user_data/data/binance_raw/symbol_filters.json (ETHFDUSD PRICE_FILTER.tickSize)",
+  "d_values": [
+    0.0005,
+    0.001,
+    0.002
+  ],
+  "horizons_min": [
+    15,
+    30,
+    60
+  ],
+  "variants_last_eligible_bar_offset": {
+    "A_14bars": 14,
+    "B_15bars": 15
+  },
+  "origin_every_min": 60,
+  "origins_from": "2026-01-30 00:00:00+00:00",
+  "data_range": [
+    "2026-03-19 00:00:00+00:00",
+    "2026-09-19 04:34:00+00:00"
+  ],
+  "counts": {
+    "A_14bars/buy/d=0.0005": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "A_14bars/buy/d=0.001": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "A_14bars/buy/d=0.002": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "A_14bars/sell/d=0.0005": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "A_14bars/sell/d=0.001": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "A_14bars/sell/d=0.002": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/buy/d=0.0005": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/buy/d=0.001": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/buy/d=0.002": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/sell/d=0.0005": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/sell/d=0.001": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    },
+    "B_15bars/sell/d=0.002": {
+      "origins_on_grid": 4421,
+      "origins_before_start_excluded": 0,
+      "origins_without_full_window_or_prev_bar": 1,
+      "origins_skipped_missing_reference_bar": 0,
+      "origins_simulated": 4420
+    }
+  },
+  "fees_for_context": {
+    "maker": 0.0,
+    "taker": 0.001,
+    "source": "Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19"
+  },
+  "family_size_per_variant": 18,
+  "adjustments": "Bonferroni and Holm both reported",
+  "result_csv": "user_data/analysis/results/runs/20260919T125727Z_passive_fill_baseline.csv",
+  "definitions": "see the module docstring of passive_fill_baseline.py"
+}

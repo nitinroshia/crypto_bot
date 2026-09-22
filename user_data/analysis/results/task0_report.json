@@ -1,0 +1,627 @@
+{
+  "pair": "ETH_FDUSD",
+  "break_day": "2026-01-29",
+  "fees": {
+    "maker": 0.0,
+    "taker": 0.001,
+    "source": "Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19"
+  },
+  "freqtrade_files": {
+    "1m": {
+      "rows": 335520,
+      "first": "2026-01-30 00:00:00+00:00",
+      "last": "2026-09-19 23:59:00+00:00",
+      "days_spanned": 233.0,
+      "expected_rows_regular_grid": 335520,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 32170,
+      "flat_fraction": 0.09588,
+      "rows_before_break_day": 0,
+      "rows_on_break_day": 0,
+      "rows_after_break_day": 335520,
+      "entirely_after_break": true,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "5m": {
+      "rows": 329088,
+      "first": "2023-08-04 08:00:00+00:00",
+      "last": "2026-09-19 23:55:00+00:00",
+      "days_spanned": 1142.66,
+      "expected_rows_regular_grid": 329088,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 10955,
+      "flat_fraction": 0.03329,
+      "rows_before_break_day": 261696,
+      "rows_on_break_day": 288,
+      "rows_after_break_day": 67104,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 35,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "15m": {
+      "rows": 109696,
+      "first": "2023-08-04 08:00:00+00:00",
+      "last": "2026-09-19 23:45:00+00:00",
+      "days_spanned": 1142.66,
+      "expected_rows_regular_grid": 109696,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 1611,
+      "flat_fraction": 0.01469,
+      "rows_before_break_day": 87232,
+      "rows_on_break_day": 96,
+      "rows_after_break_day": 22368,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 35,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "30m": {
+      "rows": 54848,
+      "first": "2023-08-04 08:00:00+00:00",
+      "last": "2026-09-19 23:30:00+00:00",
+      "days_spanned": 1142.65,
+      "expected_rows_regular_grid": 54848,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 399,
+      "flat_fraction": 0.00727,
+      "rows_before_break_day": 43616,
+      "rows_on_break_day": 48,
+      "rows_after_break_day": 11184,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 35,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "1h": {
+      "rows": 27424,
+      "first": "2023-08-04 08:00:00+00:00",
+      "last": "2026-09-19 23:00:00+00:00",
+      "days_spanned": 1142.62,
+      "expected_rows_regular_grid": 27424,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 68,
+      "flat_fraction": 0.00248,
+      "rows_before_break_day": 21808,
+      "rows_on_break_day": 24,
+      "rows_after_break_day": 5592,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 35,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "1d": {
+      "rows": 1143,
+      "first": "2023-08-04 00:00:00+00:00",
+      "last": "2026-09-19 00:00:00+00:00",
+      "days_spanned": 1142.0,
+      "expected_rows_regular_grid": 1143,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 0,
+      "flat_fraction": 0.0,
+      "rows_before_break_day": 909,
+      "rows_on_break_day": 1,
+      "rows_after_break_day": 233,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "all_bars_open_at_00_00_utc": true,
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 35,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    },
+    "1w": {
+      "rows": 163,
+      "first": "2023-07-31 00:00:00+00:00",
+      "last": "2026-09-07 00:00:00+00:00",
+      "days_spanned": 1134.0,
+      "expected_rows_regular_grid": 163,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 0,
+      "flat_fraction": 0.0,
+      "rows_before_break_day": 131,
+      "rows_on_break_day": 0,
+      "rows_after_break_day": 32,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "all_bars_open_at_00_00_utc": true,
+      "all_weekly_bars_open_on_monday": true,
+      "walkforward_splits_full_history": {
+        "fit90_validate30": 34,
+        "fit270_validate90": 9
+      },
+      "walkforward_splits_after_break": {
+        "fit90_validate30": 4,
+        "fit270_validate90": 0
+      }
+    }
+  },
+  "raw_store_files": {
+    "ETH_FDUSD-1m": {
+      "rows": 335520,
+      "first": "2026-01-30 00:00:00+00:00",
+      "last": "2026-09-19 23:59:00+00:00",
+      "days_spanned": 233.0,
+      "expected_rows_regular_grid": 335520,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 32170,
+      "flat_fraction": 0.09588,
+      "rows_before_break_day": 0,
+      "rows_on_break_day": 0,
+      "rows_after_break_day": 335520,
+      "entirely_after_break": true,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "bars_with_zero_trades": 32170
+    },
+    "ETH_USDT-1d": {
+      "rows": 3321,
+      "first": "2017-08-17 00:00:00+00:00",
+      "last": "2026-09-19 00:00:00+00:00",
+      "days_spanned": 3320.0,
+      "expected_rows_regular_grid": 3321,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 0,
+      "flat_fraction": 0.0,
+      "rows_before_break_day": 3087,
+      "rows_on_break_day": 1,
+      "rows_after_break_day": 233,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "all_bars_open_at_00_00_utc": true,
+      "bars_with_zero_trades": 0
+    },
+    "ETH_USDT-1h": {
+      "rows": 79572,
+      "first": "2017-08-17 04:00:00+00:00",
+      "last": "2026-09-19 23:00:00+00:00",
+      "days_spanned": 3320.79,
+      "expected_rows_regular_grid": 79700,
+      "missing_bars_literal_gaps": 128,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 6,
+      "flat_fraction": 8e-05,
+      "rows_before_break_day": 73956,
+      "rows_on_break_day": 24,
+      "rows_after_break_day": 5592,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "bars_with_zero_trades": 6
+    },
+    "ETH_USDT-1m": {
+      "rows": 335520,
+      "first": "2026-01-30 00:00:00+00:00",
+      "last": "2026-09-19 23:59:00+00:00",
+      "days_spanned": 233.0,
+      "expected_rows_regular_grid": 335520,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 0,
+      "flat_fraction": 0.0,
+      "rows_before_break_day": 0,
+      "rows_on_break_day": 0,
+      "rows_after_break_day": 335520,
+      "entirely_after_break": true,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "bars_with_zero_trades": 0
+    },
+    "ETH_USDT-5m": {
+      "rows": 329088,
+      "first": "2023-08-04 08:00:00+00:00",
+      "last": "2026-09-19 23:55:00+00:00",
+      "days_spanned": 1142.66,
+      "expected_rows_regular_grid": 329088,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 0,
+      "flat_fraction": 0.0,
+      "rows_before_break_day": 261696,
+      "rows_on_break_day": 288,
+      "rows_after_break_day": 67104,
+      "entirely_after_break": false,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "bars_with_zero_trades": 0
+    },
+    "FDUSD_USDT-1m": {
+      "rows": 335520,
+      "first": "2026-01-30 00:00:00+00:00",
+      "last": "2026-09-19 23:59:00+00:00",
+      "days_spanned": 233.0,
+      "expected_rows_regular_grid": 335520,
+      "missing_bars_literal_gaps": 0,
+      "duplicate_timestamps": 0,
+      "sorted": true,
+      "flat_zero_volume_rows": 15010,
+      "flat_fraction": 0.04474,
+      "rows_before_break_day": 0,
+      "rows_on_break_day": 0,
+      "rows_after_break_day": 335520,
+      "entirely_after_break": true,
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "n_trades",
+        "taker_buy_base",
+        "taker_buy_quote"
+      ],
+      "bars_with_zero_trades": 15010
+    }
+  },
+  "warnings": [
+    "5m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 5m with 1m is only as long as the 1m file.",
+    "15m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 15m with 1m is only as long as the 1m file.",
+    "30m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 30m with 1m is only as long as the 1m file.",
+    "1h history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1h with 1m is only as long as the 1m file.",
+    "1d history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1d with 1m is only as long as the 1m file.",
+    "1w history starts 2023-07-31 but 1m starts 2026-01-30: every result pairing 1w with 1m is only as long as the 1m file.",
+    "5m: 261696 rows before 2026-01-29, 288 on the break day, 67104 after -- NOT entirely post-break.",
+    "15m: 87232 rows before 2026-01-29, 96 on the break day, 22368 after -- NOT entirely post-break.",
+    "30m: 43616 rows before 2026-01-29, 48 on the break day, 11184 after -- NOT entirely post-break.",
+    "1h: 21808 rows before 2026-01-29, 24 on the break day, 5592 after -- NOT entirely post-break.",
+    "1d: 909 rows before 2026-01-29, 1 on the break day, 233 after -- NOT entirely post-break.",
+    "1w: 131 rows before 2026-01-29, 0 on the break day, 32 after -- NOT entirely post-break."
+  ],
+  "exchange_filters": {
+    "ETHFDUSD": {
+      "tickSize": 0.01,
+      "stepSize": 0.0001,
+      "minNotional": 5.0,
+      "limit_maker_supported": true,
+      "status": "TRADING"
+    },
+    "ETHUSDT": {
+      "tickSize": 0.01,
+      "stepSize": 0.0001,
+      "minNotional": 5.0,
+      "limit_maker_supported": true,
+      "status": "TRADING"
+    },
+    "FDUSDUSDT": {
+      "tickSize": 0.0001,
+      "stepSize": 1.0,
+      "minNotional": 5.0,
+      "limit_maker_supported": true,
+      "status": "TRADING"
+    }
+  },
+  "raw_vs_freqtrade_1m": {
+    "compared_range": [
+      "2026-01-30 00:00:00+00:00",
+      "2026-09-19 23:59:00+00:00"
+    ],
+    "common_rows": 335520,
+    "rows_only_in_freqtrade_file": 0,
+    "of_which_flat_zero_volume": 0,
+    "rows_only_in_raw_store": 0,
+    "ohlcv_mismatches_on_common_rows": {},
+    "identical_on_common_rows": true,
+    "raw_bars_with_zero_trades_on_common_rows": 32170
+  },
+  "daily_from_1m_vs_native_1d": {
+    "status": "MATCH",
+    "complete_days_checked": 233,
+    "complete_days_in_1m_range": 233,
+    "days_missing_from_native_1d": 0,
+    "days_missing_from_resampled_1d": 0,
+    "mismatched_days": 0,
+    "mismatched_days_with_missing_1m_minutes_or_flat_edge_row": 0,
+    "mismatched_days_UNEXPLAINED": 0,
+    "examples_explained": [],
+    "examples_unexplained": []
+  },
+  "monthly_flat_fraction": {
+    "ETH_FDUSD_1m": {
+      "2026-01": {
+        "rows": 2880,
+        "flat": 0,
+        "flat_fraction": 0.0
+      },
+      "2026-02": {
+        "rows": 40320,
+        "flat": 170,
+        "flat_fraction": 0.00422
+      },
+      "2026-03": {
+        "rows": 44640,
+        "flat": 1360,
+        "flat_fraction": 0.03047
+      },
+      "2026-04": {
+        "rows": 43200,
+        "flat": 3515,
+        "flat_fraction": 0.08137
+      },
+      "2026-05": {
+        "rows": 44640,
+        "flat": 6188,
+        "flat_fraction": 0.13862
+      },
+      "2026-06": {
+        "rows": 43200,
+        "flat": 2835,
+        "flat_fraction": 0.06563
+      },
+      "2026-07": {
+        "rows": 44640,
+        "flat": 6286,
+        "flat_fraction": 0.14082
+      },
+      "2026-08": {
+        "rows": 44640,
+        "flat": 9510,
+        "flat_fraction": 0.21304
+      },
+      "2026-09": {
+        "rows": 27360,
+        "flat": 2306,
+        "flat_fraction": 0.08428
+      }
+    },
+    "FDUSD_USDT_1m": {
+      "2026-01": {
+        "rows": 2880,
+        "flat": 2,
+        "flat_fraction": 0.00069
+      },
+      "2026-02": {
+        "rows": 40320,
+        "flat": 207,
+        "flat_fraction": 0.00513
+      },
+      "2026-03": {
+        "rows": 44640,
+        "flat": 1347,
+        "flat_fraction": 0.03017
+      },
+      "2026-04": {
+        "rows": 43200,
+        "flat": 2195,
+        "flat_fraction": 0.05081
+      },
+      "2026-05": {
+        "rows": 44640,
+        "flat": 1940,
+        "flat_fraction": 0.04346
+      },
+      "2026-06": {
+        "rows": 43200,
+        "flat": 1604,
+        "flat_fraction": 0.03713
+      },
+      "2026-07": {
+        "rows": 44640,
+        "flat": 3178,
+        "flat_fraction": 0.07119
+      },
+      "2026-08": {
+        "rows": 44640,
+        "flat": 3084,
+        "flat_fraction": 0.06909
+      },
+      "2026-09": {
+        "rows": 27360,
+        "flat": 1453,
+        "flat_fraction": 0.05311
+      }
+    }
+  },
+  "seam_check": {
+    "freqtrade_ETH_FDUSD_1m": {
+      "seam": "2026-03-19 00:00:00+00:00",
+      "bar_before_seam_present": true,
+      "bar_at_seam_present": true,
+      "consecutive_across_seam": true,
+      "duplicates_in_window": 0,
+      "missing_bars_in_window": 0,
+      "window": [
+        "2026-03-18 00:00:00+00:00",
+        "2026-03-20 00:00:00+00:00"
+      ],
+      "rows_before_seam": 69120,
+      "rows_from_seam": 266400
+    },
+    "raw_ETH_FDUSD-1m": {
+      "seam": "2026-03-19 00:00:00+00:00",
+      "bar_before_seam_present": true,
+      "bar_at_seam_present": true,
+      "consecutive_across_seam": true,
+      "duplicates_in_window": 0,
+      "missing_bars_in_window": 0,
+      "window": [
+        "2026-03-18 00:00:00+00:00",
+        "2026-03-20 00:00:00+00:00"
+      ],
+      "rows_before_seam": 69120,
+      "rows_from_seam": 266400
+    },
+    "raw_ETH_USDT-1m": {
+      "seam": "2026-03-19 00:00:00+00:00",
+      "bar_before_seam_present": true,
+      "bar_at_seam_present": true,
+      "consecutive_across_seam": true,
+      "duplicates_in_window": 0,
+      "missing_bars_in_window": 0,
+      "window": [
+        "2026-03-18 00:00:00+00:00",
+        "2026-03-20 00:00:00+00:00"
+      ],
+      "rows_before_seam": 69120,
+      "rows_from_seam": 266400
+    },
+    "raw_FDUSD_USDT-1m": {
+      "seam": "2026-03-19 00:00:00+00:00",
+      "bar_before_seam_present": true,
+      "bar_at_seam_present": true,
+      "consecutive_across_seam": true,
+      "duplicates_in_window": 0,
+      "missing_bars_in_window": 0,
+      "window": [
+        "2026-03-18 00:00:00+00:00",
+        "2026-03-20 00:00:00+00:00"
+      ],
+      "rows_before_seam": 69120,
+      "rows_from_seam": 266400
+    }
+  },
+  "extension_vs_previous_file": {
+    "previous_file": "user_data/data/binance/ETH_FDUSD-1m.backup-20260920T002449Z.feather.bak",
+    "previous_rows": 266400,
+    "current_rows": 335520,
+    "previous_rows_missing_from_current": 0,
+    "ohlcv_mismatches_on_overlap": {},
+    "new_rows_before_previous_start": 69120,
+    "identical_on_overlap": true
+  }
+}

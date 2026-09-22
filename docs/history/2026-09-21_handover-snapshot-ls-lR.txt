@@ -1,0 +1,83 @@
+total 120
+-rw-r--r--@ 1 apple  staff  16620 Sep 21 11:35 README.md
+-rw-r--r--@ 1 apple  staff      0 Sep 21 11:35 ls_lR.txt
+-rw-r--r--@ 1 apple  staff  37283 Sep 21 11:35 project_context.md
+drwxr-xr-x@ 4 apple  staff    128 Sep 21 11:35 scripts
+drwxr-xr-x@ 4 apple  staff    128 Sep 21 11:35 user_data
+
+./scripts:
+total 16
+-rw-r--r--@ 1 apple  staff  1979 Sep 21 11:35 backtest.sh
+-rwxr-xr-x@ 1 apple  staff  1343 Sep 21 11:35 download_data.sh
+
+./user_data:
+total 8
+drwxr-xr-x@ 23 apple  staff  736 Sep 20 21:24 analysis
+-rw-r--r--@  1 apple  staff  247 Sep 21 11:35 test_params.json
+
+./user_data/analysis:
+total 544
+-rw-------@ 1 apple  staff   3482 Sep 19 10:02 config_schema.py
+-rw-r--r--@ 1 apple  staff   6709 Sep 21 05:36 costs.py
+-rw-r--r--@ 1 apple  staff   7281 Sep 19 17:46 databundle.py
+-rw-r--r--@ 1 apple  staff   6017 Sep 19 10:03 diagnose_gaps.py
+-rw-r--r--@ 1 apple  staff  33638 Sep 20 06:13 fetch_klines.py
+-rw-r--r--@ 1 apple  staff  38029 Sep 20 06:13 leadlag.py
+-rw-r--r--@ 1 apple  staff   4326 Sep 19 17:46 multitest.py
+-rw-r--r--@ 1 apple  staff  26752 Sep 20 21:17 passive_fill_baseline.py
+-rw-r--r--@ 1 apple  staff    332 Sep 20 06:13 requirements.txt
+-rw-r--r--@ 1 apple  staff  13469 Sep 20 07:01 resample.py
+-rw-r--r--@ 1 apple  staff   9693 Sep 20 06:13 resample_rule_test.py
+-rw-r--r--@ 1 apple  staff  28206 Sep 20 06:13 research_cli.py
+drwxr-xr-x@ 7 apple  staff    224 Sep 20 06:31 results
+drwxr-xr-x@ 4 apple  staff    128 Sep 20 21:17 retired
+-rw-r--r--@ 1 apple  staff  12447 Sep 20 06:13 run_fingerprint.py
+-rw-r--r--@ 1 apple  staff    941 Sep 20 21:17 selftest_all.sh
+-rw-r--r--@ 1 apple  staff   7875 Sep 20 06:13 selftest_research_cli.py
+-rw-------@ 1 apple  staff  10850 Sep 19 10:03 stats_fingerprint.py
+-rw-r--r--@ 1 apple  staff  27390 Sep 20 21:17 task0_report.py
+-rw-------@ 1 apple  staff   3784 Sep 16 02:11 walkforward.py
+
+./user_data/analysis/results:
+total 48
+drwxr-xr-x@ 15 apple  staff    480 Sep 19 18:26 from_2026-01-30
+-rw-r--r--@  1 apple  staff   2359 Sep 20 06:31 resample_rule_test.json
+drwxr-xr-x@ 15 apple  staff    480 Sep 20 07:14 runs
+-rw-r--r--@  1 apple  staff  17551 Sep 20 07:11 task0_report.json
+
+./user_data/analysis/results/from_2026-01-30:
+total 168
+-rw-r--r--@ 1 apple  staff    636 Sep 20 07:11 data_ranges.json
+-rw-r--r--@ 1 apple  staff  29522 Sep 20 07:14 fingerprints.json
+-rw-r--r--@ 1 apple  staff   2085 Sep 20 07:14 leadlag_1m_5m_event_anchored.csv
+-rw-r--r--@ 1 apple  staff    908 Sep 20 07:14 leadlag_1m_5m_hac.csv
+-rw-r--r--@ 1 apple  staff    476 Sep 20 07:14 leadlag_1m_5m_nonoverlap.csv
+-rw-r--r--@ 1 apple  staff   2123 Sep 20 07:14 leadlag_5m_15m_event_anchored.csv
+-rw-r--r--@ 1 apple  staff    547 Sep 20 07:14 leadlag_5m_15m_hac.csv
+-rw-r--r--@ 1 apple  staff    281 Sep 20 07:14 leadlag_5m_15m_nonoverlap.csv
+-rw-r--r--@ 1 apple  staff   4703 Sep 20 07:14 leadlag_5m_1h_event_anchored.csv
+-rw-r--r--@ 1 apple  staff   2066 Sep 20 07:14 leadlag_5m_1h_hac.csv
+-rw-r--r--@ 1 apple  staff   1003 Sep 20 07:14 leadlag_5m_1h_nonoverlap.csv
+-rw-r--r--@ 1 apple  staff   4009 Sep 20 07:14 leadlag_summary.json
+-rw-r--r--@ 1 apple  staff    514 Sep 20 07:11 resample_checks.json
+
+./user_data/analysis/results/runs:
+total 216
+-rw-r--r--@ 1 apple  staff   8431 Sep 18 07:28 20260918T015806Z_event_anchored_5m_15m_walkforward.json
+-rw-r--r--@ 1 apple  staff   1597 Sep 18 07:28 20260918T015828Z_event_anchored_5m_15m.csv
+-rw-r--r--@ 1 apple  staff    983 Sep 18 07:28 20260918T015828Z_event_anchored_5m_15m.json
+-rw-r--r--@ 1 apple  staff   8204 Sep 18 07:28 20260918T015839Z_event_anchored_5m_15m_walkforward.json
+-rw-r--r--@ 1 apple  staff   1598 Sep 19 11:00 20260919T053023Z_event_anchored_5m-15m.csv
+-rw-r--r--@ 1 apple  staff   1055 Sep 19 11:00 20260919T053023Z_event_anchored_5m-15m.json
+-rw-r--r--@ 1 apple  staff   8492 Sep 19 11:10 20260919T054029Z_event_anchored_5m-15m_walkforward.json
+-rw-r--r--@ 1 apple  staff   8492 Sep 19 11:10 20260919T054058Z_event_anchored_5m-15m_walkforward.json
+-rw-r--r--@ 1 apple  staff   8492 Sep 19 13:10 20260919T074019Z_event_anchored_5m-15m_walkforward.json
+-rw-r--r--@ 1 apple  staff  11255 Sep 19 18:27 20260919T125727Z_passive_fill_baseline.csv
+-rw-r--r--@ 1 apple  staff   3989 Sep 19 18:27 20260919T125727Z_passive_fill_baseline.json
+-rw-r--r--@ 1 apple  staff  11307 Sep 20 07:14 20260920T014429Z_passive_fill_baseline.csv
+-rw-r--r--@ 1 apple  staff   3989 Sep 20 07:14 20260920T014429Z_passive_fill_baseline.json
+
+./user_data/analysis/retired:
+total 24
+-rw-r--r--@ 1 apple  staff  1864 Sep 20 21:17 README_retired.md
+-rw-r--r--@ 1 apple  staff  4587 Sep 20 21:17 costs_scenarios_AB.py

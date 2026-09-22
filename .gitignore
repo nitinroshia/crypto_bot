@@ -1,30 +1,46 @@
-# Python
+# Python / compiled / cache
 __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+
+# Python virtual environments
 .venv/
 venv/
 env/
 ENV/
 
-# Freqtrade generated data
+# Python packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Backup copies made during data-batch runs
+*.bak
+
+# Freqtrade generated data -- regeneratable or purely local
 user_data/data/
 user_data/logs/
 user_data/backtest_results/
 user_data/hyperopt_results/
 user_data/hyperopts/
-user_data/plot/
 user_data/freqaimodels/
 user_data/notebooks/
+user_data/plot/
 
-# Freqtrade databases
+# Freqtrade runtime databases
 user_data/*.sqlite
 user_data/*.sqlite-shm
 user_data/*.sqlite-wal
 
-# Analysis generated results
-user_data/analysis/results/
+# Order-level backtest artifacts -- git/LFS policy not yet decided
+# (owner, 2026-09-22: "keep these files for now").
+# Left on disk, untracked, until that call is made.
+user_data/analysis/results/runs/*_orders.csv
+
+# Analysis results
+# Other analysis results remain tracked intentionally for now.
 
 # Local secrets
 .env
@@ -36,17 +52,9 @@ user_data/analysis/results/
 .vscode/
 .idea/
 
-# Temporary files
+# Temporary / editor files
 *.tmp
 *.swp
 *.swo
 *~
-
-# Python packaging
-*.egg-info/
-dist/
-build/
-*.egg
-
-# Temporary files
 temp/

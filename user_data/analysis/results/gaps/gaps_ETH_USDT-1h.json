@@ -1,0 +1,169 @@
+{
+  "pair": "ETH_USDT",
+  "timeframe": "1h",
+  "descriptive_only": "no returns computed",
+  "rows": 79572,
+  "first": "2017-08-17 04:00:00+00:00",
+  "last": "2026-09-19 23:00:00+00:00",
+  "leading_partial_day": {
+    "first_row": "2017-08-17 04:00:00+00:00",
+    "first_day_start": "2017-08-17 00:00:00+00:00",
+    "leading_bars_before_first_row": 4
+  },
+  "expected_rows_from_first_to_last": 79700,
+  "interior_gap_blocks": 28,
+  "interior_bars_missing": 128,
+  "interior_bars_missing_up_to_cutoff": 128,
+  "gap_blocks_up_to_cutoff": 28,
+  "by_year": {
+    "2017": {
+      "blocks": 1,
+      "bars": 6
+    },
+    "2018": {
+      "blocks": 7,
+      "bars": 62
+    },
+    "2019": {
+      "blocks": 5,
+      "bars": 28
+    },
+    "2020": {
+      "blocks": 8,
+      "bars": 18
+    },
+    "2021": {
+      "blocks": 6,
+      "bars": 13
+    },
+    "2023": {
+      "blocks": 1,
+      "bars": 1
+    }
+  },
+  "longest_blocks": [
+    {
+      "start": "2018-02-08 01:00:00+00:00",
+      "end": "2018-02-09 09:00:00+00:00",
+      "n_missing": 33
+    },
+    {
+      "start": "2018-06-26 02:00:00+00:00",
+      "end": "2018-06-26 11:00:00+00:00",
+      "n_missing": 10
+    },
+    {
+      "start": "2019-05-15 03:00:00+00:00",
+      "end": "2019-05-15 12:00:00+00:00",
+      "n_missing": 10
+    },
+    {
+      "start": "2019-08-15 02:00:00+00:00",
+      "end": "2019-08-15 09:00:00+00:00",
+      "n_missing": 8
+    },
+    {
+      "start": "2018-07-04 01:00:00+00:00",
+      "end": "2018-07-04 07:00:00+00:00",
+      "n_missing": 7
+    },
+    {
+      "start": "2018-11-14 02:00:00+00:00",
+      "end": "2018-11-14 08:00:00+00:00",
+      "n_missing": 7
+    },
+    {
+      "start": "2017-09-06 17:00:00+00:00",
+      "end": "2017-09-06 22:00:00+00:00",
+      "n_missing": 6
+    },
+    {
+      "start": "2019-03-12 02:00:00+00:00",
+      "end": "2019-03-12 07:00:00+00:00",
+      "n_missing": 6
+    },
+    {
+      "start": "2020-02-19 12:00:00+00:00",
+      "end": "2020-02-19 16:00:00+00:00",
+      "n_missing": 5
+    },
+    {
+      "start": "2021-08-13 02:00:00+00:00",
+      "end": "2021-08-13 05:00:00+00:00",
+      "n_missing": 4
+    }
+  ],
+  "irregular_spacings": 0,
+  "duplicate_timestamps": 0,
+  "crosscheck": {
+    "fine_timeframe": "5m",
+    "coarse_gaps": 28,
+    "coarse_gap_windows_that_still_contain_fine_rows": 0,
+    "fine_rows_present_inside_coarse_gaps": 0,
+    "fine_bars_expected_inside_coarse_gaps": 1536,
+    "fine_bars_missing_total": 1715,
+    "fine_bars_missing_inside_coarse_gaps": 1536,
+    "fine_bars_missing_outside_coarse_gaps": 179,
+    "fine_gap_blocks_outside_coarse_gaps": 24,
+    "largest_outside_blocks": [
+      {
+        "start": "2018-02-08 00:30:00+00:00",
+        "end": "2018-02-09 09:55:00+00:00",
+        "n_missing": 402
+      },
+      {
+        "start": "2018-07-04 00:25:00+00:00",
+        "end": "2018-07-04 07:55:00+00:00",
+        "n_missing": 91
+      },
+      {
+        "start": "2017-09-06 16:05:00+00:00",
+        "end": "2017-09-06 22:55:00+00:00",
+        "n_missing": 83
+      },
+      {
+        "start": "2020-02-19 11:40:00+00:00",
+        "end": "2020-02-19 17:25:00+00:00",
+        "n_missing": 70
+      },
+      {
+        "start": "2021-04-25 04:05:00+00:00",
+        "end": "2021-04-25 08:40:00+00:00",
+        "n_missing": 56
+      },
+      {
+        "start": "2021-08-13 02:00:00+00:00",
+        "end": "2021-08-13 06:25:00+00:00",
+        "n_missing": 54
+      },
+      {
+        "start": "2020-12-21 13:50:00+00:00",
+        "end": "2020-12-21 17:55:00+00:00",
+        "n_missing": 50
+      },
+      {
+        "start": "2020-06-28 02:00:00+00:00",
+        "end": "2020-06-28 05:25:00+00:00",
+        "n_missing": 42
+      },
+      {
+        "start": "2018-10-19 06:00:00+00:00",
+        "end": "2018-10-19 09:25:00+00:00",
+        "n_missing": 42
+      },
+      {
+        "start": "2021-04-20 02:00:00+00:00",
+        "end": "2021-04-20 04:25:00+00:00",
+        "n_missing": 30
+      }
+    ]
+  },
+  "compare": {
+    "other_pair": "BTC_USDT",
+    "bars_missing_a": 128,
+    "bars_missing_b": 128,
+    "in_both": 128,
+    "only_a": 0,
+    "only_b": 0
+  }
+}

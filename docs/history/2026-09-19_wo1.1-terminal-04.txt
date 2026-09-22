@@ -1,0 +1,507 @@
+apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼  source /Users/apple/apps/crypto_bot/.venv/bin/activate
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd user_data/analysis && bash selftest_all.sh && cd ../..
+python3 user_data/analysis/task0_report.py --previous-1m user_data/data/binance/ETH_FDUSD-1m.backup-20260920T002449Z.feather.bak
+python3 user_data/analysis/run_fingerprint.py --start-date 2026-01-30
+python3 user_data/analysis/passive_fill_baseline.py
+=================== resample.py
+1m rows: 60  ->  5m rows: 12
+Self-test passed: resample_ohlcv + compare_resampled_vs_native both work.
+  5m: filled rule mismatches={'open': 255, 'high': 63, 'low': 41} -> traded rule: MATCH (1728 bins)
+  1h: filled rule mismatches={'open': 21, 'high': 4, 'low': 2} -> traded rule: MATCH (144 bins)
+  1d: filled rule mismatches={'open': 1} -> traded rule: MATCH (6 bins)
+Self-test passed: traded-minutes rule reproduces bars built from raw trades exactly; the filled rule does not.
+=================== resample_rule_test.py --self-test
+Open-price test, ETH_FDUSD 1m 2026-01-05 07:13 .. 2026-01-14 23:59
+
+tf      bins | filled rule: mismatched rows           | traded rule
+5m      2793 | {'open': 485, 'high': 104, 'low': 105} | MATCH 
+15m      931 | {'open': 160, 'high': 19, 'low': 11}   | MATCH 
+30m      465 | {'open': 86, 'high': 8, 'low': 4}      | MATCH 
+1h       232 | {'open': 39, 'high': 2, 'low': 2}      | MATCH 
+1d         9 | {'open': 1}                            | MATCH 
+1w   NATIVE_FILE_NOT_FOUND
+
+VERDICT: ZERO MISMATCHES with the traded rule on every tested timeframe (NOT TESTED, no native file: 1w) -> adopt it as the default resampling rule
+
+Self-test passed: the test excludes partial bins, shows the filled-rule mismatches, and the traded rule matches.
+=================== stats_fingerprint.py
+Self-test passed on synthetic random-walk data:
+  ADF p-value (lookback=1): 0.0000
+  Ljung-Box p-value (lookback=1): 0.4225
+  Volume participation p-value: 0.5942
+=================== walkforward.py
+Split 0: fit [2025-01-01 -> 2025-09-28] (271 rows), validate [2025-09-28 -> 2025-12-27] (91 rows)
+Split 1: fit [2025-04-01 -> 2025-12-27] (271 rows), validate [2025-12-27 -> 2026-03-27] (91 rows)
+Split 2: fit [2025-06-30 -> 2026-03-27] (271 rows), validate [2026-03-27 -> 2026-06-25] (91 rows)
+Self-test passed: 3 walk-forward split(s) generated with no fit/validate overlap.
+=================== config_schema.py
+      ]
+    },
+    "5m": {
+      "enabled": true,
+      "lookbacks": [
+        3
+      ]
+    },
+    "15m": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "30m": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1h": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1d": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1w": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    }
+  }
+}
+=================== leadlag.py
+Non-overlapping method best lag: 3
+HAC regression method best lag: 3
+Self-test passed: both methods point at lag=3, the lag we built into the data.
+
+Mixed-frequency self-test: true lag = 3 minutes, recovered lag = 3
+Self-test passed: align_to_common_grid correctly expresses lag in minutes, not coarse-timeframe steps.
+NOTE: max_lag=8 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+
+Overlap-artifact check: shift_periods=0 best lag = 0 (beta=0.90) -- expect lag=0 with beta near 0.9, confirming the artifact
+NOTE: max_lag=8 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+Fixed (shift_periods=1) best lag = 0 (beta=0.70) -- this is the genuine, non-overlapping relationship
+Self-test passed: shift_periods=1 isolates genuine lead-lag from within-window overlap contamination.
+
+Event-anchored null check: 0/12 lags flagged significant on pure noise (hac_lagged_regression on this same data reports one 'significant' at the boundary with beta near 0.8).
+Event-anchored recovery check: injected true_j=3 beta=0.05 -> recovered lag=3, significant lags=[3]
+Self-test passed: event_anchored_lead_lag is blind to the mechanical-overlap artifact and recovers a real, realistically-sized injected effect cleanly.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+
+Strict-alignment check (a): coarse bars closing inside fine range = 4320; strict n(lag1)=4320, legacy n(lag1)=12958; injected beta 0.05 -> strict 0.041, legacy 0.017
+NOTE: event_anchored_lead_lag: 8675/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Strict-alignment check (b): n matches an independent on-time-pair count at every lag around a 3-hour gap, and the injected lag is still recovered.
+Strict-alignment check (c): grid_returns drops the return that spans a missing row.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Self-test passed: strict time alignment excludes out-of-range / gap-straddling pairs instead of mis-pairing them.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Self-test passed: lag_bars / lag_minutes units are explicit (5m fine bars = 5 minutes) and correlation is reported next to beta.
+=================== costs.py
+Self-test passed: cost scenarios A/B reproduce freqtrade-style fee accounting.
+  Source: Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19
+  maker=0.0000%  taker=0.1000%  |  A profit-exit round trip=0.0000%, A stop/time=0.1000%, B=0.2000%
+=================== multitest.py
+Self-test passed: Bonferroni and Holm match statsmodels; family size excludes untested rows.
+=================== databundle.py
+Self-test passed: bare-tf aliasing, PAIR:tf keys, raw-store routing, half-open slicing.
+=================== selftest_research_cli.py
+  fixed-lag rule: validate tests only the fit-selected lag (a significant neighbour no longer rescues it)
+  bundle: bare keys and PAIR:tf keys both resolve
+  run_once(event_anchored): recovers injected lag 3; family=8, raw p=6.5e-52, Holm p=5.2e-51
+NOTE: max_lag=6 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+NOTE: max_lag=6 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+  hac / nonoverlap / volume_leads_volatility still run
+Split 0: fit lag=3 effect=+0.05296 p=3.78e-31 (fit family 6, Holm p=2.27e-30) -> validate @ lag 3: effect=+0.03774 p=4.18e-05 n=2878 -- REPLICATED
+Split 1: fit lag=3 effect=+0.05157 p=1.09e-26 (fit family 6, Holm p=6.56e-26) -> validate @ lag 3: effect=+0.04938 p=1.12e-08 n=2878 -- REPLICATED
+
+Verdict: 2/2 splits replicated -- treat as a real, walk-forward-supported finding
+  walk-forward (injected effect): 2/2 splits replicated at fit lag 3
+Split 0: NO_SIGNIFICANT_LAG_IN_FIT -- did not replicate
+Split 1: fit lag=3 effect=-0.009537 p=0.05 (fit family 6, Holm p=0.3) -> validate @ lag 3: effect=-0.001202 p=0.891 n=2878 -- did not replicate (NOT_SIGNIFICANT_IN_VALIDATE)
+
+Verdict: 0/2 splits replicated -- did not survive out-of-sample, treat as noise
+  walk-forward (pure noise): 0/2 splits replicated (must be < all)
+Self-test passed: research_cli work-order-#1 changes behave as specified.
+=================== fetch_klines.py --self-test
+  pagination: 4329 bars over 5 requests, no duplicates, gaps preserved, open bar dropped
+  microsecond timestamps are normalised to the same bars
+  fetching ETHUSDT 1m: 2026-03-01 00:00:00+00:00 -> 2026-03-02 01:00:00+00:00
+  fetching ETHUSDT 1m: 2026-03-02 01:01:00+00:00 -> 2026-03-04 00:16:59.999000+00:00
+  fetching ETHUSDT 1m: 2026-03-04 00:16:00+00:00 -> 2026-03-04 00:16:59.999000+00:00
+  resume/extend: two partial runs == one shot; third run is UP_TO_DATE; missing bars vs grid reported = 7
+  http client: 429 -> retry, 451 -> next base URL, 400 -> immediate error
+  exchange filters parsed; default jobs derive from the local ETH_FDUSD span
+  --start moves only the three 1m job starts; every end still comes from the local 1m file
+  export: extends the freqtrade file backwards, keeps a backup, refuses on any value mismatch or lost row
+Self-test passed: fetch_klines paginates, resumes, retries and plans jobs correctly (offline fake exchange).
+=================== task0_report.py --self-test
+=== Task 0 report: ETH_FDUSD ===
+
+Fees: maker 0.000%, taker 0.100%   (Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19)
+
+History (freqtrade files). Break day = 2026-01-29; splits shown for fit/validate = 90/30 and 270/90 days
+tf   first        last              rows    days  missing  flat%      pre  break     post  splits(full) splits(post-break)
+1m   2026-03-01   2026-04-14       64769    45.0       31   6.17        0      0    64769    0/0            0/0  
+5m   2025-12-31   2026-02-13       64800    45.0   -51840   6.17    41760   1440    21600    0/0            0/0  
+15m  2026-03-01   2026-04-14        4320    45.0        0   0.00        0      0     4320    0/0            0/0  
+30m  2026-03-01   2026-04-14        2160    45.0        0   0.00        0      0     2160    0/0            0/0  
+1h   2026-03-01   2026-04-14        1080    45.0        0   0.00        0      0     1080    0/0            0/0  
+1d   2026-03-01   2026-04-14          45    44.0        0   0.00        0      0       45    0/0            0/0  
+1w   2026-02-23   2026-04-13           8    49.0        0   0.00        0      0        8    0/0            0/0  
+
+Raw-kline store:
+  ETH_FDUSD-1m       2026-03-01 .. 2026-04-14  rows=    64765  missing=     35  zero-trade bars=0
+
+Raw vs freqtrade ETH_FDUSD 1m over 2026-03-01 00:00 .. 2026-04-14 23:59: common=64764, only-in-freqtrade=5 (of which flat placeholders: 5), only-in-raw=1, OHLCV identical on common rows: False
+
+1d built from 1m vs native 1d: MISMATCH -- 45 complete days checked, 2 mismatched (1 explained by missing 1m minutes or a flat first/last row, 1 unexplained)
+
+Flat (zero-trade) minute share by month, ETH_FDUSD_1m: 2026-03:6.2%  2026-04:6.1%
+
+Seam freqtrade_ETH_FDUSD_1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=25889/38880
+
+Seam raw_ETH_FDUSD-1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=25888/38877
+
+WARNINGS:
+  - 5m history starts 2025-12-31 but 1m starts 2026-03-01: every result pairing 5m with 1m is only as long as the 1m file.
+  - 1m file has 31 literal missing minutes (3999 flat rows are present as placeholders).
+  - 5m: 41760 rows before 2026-01-29, 1440 on the break day, 21600 after -- NOT entirely post-break.
+  - 1 day(s) mismatch between 1m-resampled and native 1d with NO missing 1m minute or flat edge row to explain it -- investigate before trusting daily bars.
+  - raw-kline store and freqtrade 1m file disagree on common rows -- see raw_vs_freqtrade_1m.
+  seam check: consecutive across the join, flags a missing bar or duplicate; extension-vs-previous detects change or loss
+
+Self-test passed: task0_report counts gaps/flats/break split, classifies 1d mismatches, and diffs raw vs freqtrade.
+=================== passive_fill_baseline.py --self-test
+  placement bar excluded; touching the limit is not a fill; one tick through is a fill
+  variant A covers bars T+1..T+14, variant B T+1..T+15, nothing later
+  forward return = close(fill bar + h) / limit - 1; missing forward bar drops only that horizon
+  sell side mirrors: fills on high >= limit + tick, pnl sign flipped
+  buy limit rounds down, sell limit rounds up
+  missing reference bar -> origin skipped and counted; --start excludes earlier origins
+  tick inference from the price grid
+  vectorised simulator matches an independent per-origin brute force (both sides, 3 d, both variants, 400 missing bars)
+  stats: HAC mean/t match the naive iid values on iid data; Holm >= raw, Bonferroni >= Holm; family = tests run (18 when every cell has >=30 fills)
+Self-test passed: passive_fill_baseline implements every stated timing convention.
+
+ALL SELF-TESTS PASSED
+=== Task 0 report: ETH_FDUSD ===
+
+Fees: maker 0.000%, taker 0.100%   (Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19)
+Filters ETHFDUSD: tick=0.01 step=0.0001 minNotional=5.0 LIMIT_MAKER=yes
+Filters ETHUSDT: tick=0.01 step=0.0001 minNotional=5.0 LIMIT_MAKER=yes
+Filters FDUSDUSDT: tick=0.0001 step=1.0 minNotional=5.0 LIMIT_MAKER=yes
+
+History (freqtrade files). Break day = 2026-01-29; splits shown for fit/validate = 90/30 and 270/90 days
+tf   first        last              rows    days  missing  flat%      pre  break     post  splits(full) splits(post-break)
+1m   2026-01-30   2026-09-19      335520   233.0        0   9.59        0      0   335520    4/0            4/0  
+5m   2023-08-04   2026-09-19      329088  1142.7        0   3.33   261696    288    67104   35/9            4/0  
+15m  2023-08-04   2026-09-19      109696  1142.7        0   1.47    87232     96    22368   35/9            4/0  
+30m  2023-08-04   2026-09-19       54848  1142.7        0   0.73    43616     48    11184   35/9            4/0  
+1h   2023-08-04   2026-09-19       27424  1142.6        0   0.25    21808     24     5592   35/9            4/0  
+1d   2023-08-04   2026-09-19        1143  1142.0        0   0.00      909      1      233   35/9            4/0  
+1w   2023-07-31   2026-09-07         163  1134.0        0   0.00      131      0       32   34/9            4/0  
+
+Raw-kline store:
+  ETH_FDUSD-1m       2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=32170
+  ETH_USDT-1d        2017-08-17 .. 2026-09-19  rows=     3321  missing=      0  zero-trade bars=0
+  ETH_USDT-1h        2017-08-17 .. 2026-09-19  rows=    79572  missing=    128  zero-trade bars=6
+  ETH_USDT-1m        2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=0
+  ETH_USDT-5m        2023-08-04 .. 2026-09-19  rows=   329088  missing=      0  zero-trade bars=0
+  FDUSD_USDT-1m      2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=15010
+
+Raw vs freqtrade ETH_FDUSD 1m over 2026-01-30 00:00 .. 2026-09-19 23:59: common=335520, only-in-freqtrade=0 (of which flat placeholders: 0), only-in-raw=0, OHLCV identical on common rows: True
+
+1d built from 1m vs native 1d: MATCH -- 233 complete days checked, 0 mismatched (0 explained by missing 1m minutes or a flat first/last row, 0 unexplained)
+
+Flat (zero-trade) minute share by month, ETH_FDUSD_1m: 2026-01:0.0%  2026-02:0.4%  2026-03:3.0%  2026-04:8.1%  2026-05:13.9%  2026-06:6.6%  2026-07:14.1%  2026-08:21.3%  2026-09:8.4%
+
+Flat (zero-trade) minute share by month, FDUSD_USDT_1m: 2026-01:0.1%  2026-02:0.5%  2026-03:3.0%  2026-04:5.1%  2026-05:4.3%  2026-06:3.7%  2026-07:7.1%  2026-08:6.9%  2026-09:5.3%
+
+Seam freqtrade_ETH_FDUSD_1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=69120/266400
+
+Seam raw_ETH_FDUSD-1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=69120/266400
+
+Seam raw_ETH_USDT-1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=69120/266400
+
+Seam raw_FDUSD_USDT-1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=69120/266400
+Extension vs previous file: identical on overlap=True, previous rows lost=0, new rows before old start=69120
+
+WARNINGS:
+  - 5m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 5m with 1m is only as long as the 1m file.
+  - 15m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 15m with 1m is only as long as the 1m file.
+  - 30m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 30m with 1m is only as long as the 1m file.
+  - 1h history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1h with 1m is only as long as the 1m file.
+  - 1d history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1d with 1m is only as long as the 1m file.
+  - 1w history starts 2023-07-31 but 1m starts 2026-01-30: every result pairing 1w with 1m is only as long as the 1m file.
+  - 5m: 261696 rows before 2026-01-29, 288 on the break day, 67104 after -- NOT entirely post-break.
+  - 15m: 87232 rows before 2026-01-29, 96 on the break day, 22368 after -- NOT entirely post-break.
+  - 30m: 43616 rows before 2026-01-29, 48 on the break day, 11184 after -- NOT entirely post-break.
+  - 1h: 21808 rows before 2026-01-29, 24 on the break day, 5592 after -- NOT entirely post-break.
+  - 1d: 909 rows before 2026-01-29, 1 on the break day, 233 after -- NOT entirely post-break.
+  - 1w: 131 rows before 2026-01-29, 0 on the break day, 32 after -- NOT entirely post-break.
+
+Written: user_data/analysis/results/task0_report.json
+--start-date given: using only bars >= 2026-01-30 00:00:00+00:00; writing to user_data/analysis/results/from_2026-01-30
+Resample self-checks:
+{
+  "5m": {
+    "overlap_rows": 67104,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "15m": {
+    "overlap_rows": 22368,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "30m": {
+    "overlap_rows": 11184,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1h": {
+    "overlap_rows": 5592,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1d": {
+    "overlap_rows": 233,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1w": {
+    "overlap_rows": 32,
+    "status": "MATCH",
+    "mismatches": {}
+  }
+}
+
+Fingerprinting 1m (335520 rows)...
+
+Fingerprinting 5m (67104 rows)...
+
+Fingerprinting 15m (22368 rows)...
+
+Fingerprinting 30m (11184 rows)...
+
+Fingerprinting 1h (5592 rows)...
+
+Fingerprinting 1d (233 rows)...
+
+Fingerprinting 1w (32 rows)...
+NOTE: max_lag=10 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+NOTE: max_lag=10 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+NOTE: max_lag=10 >= upsample_factor=3 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 2.
+NOTE: max_lag=10 >= upsample_factor=3 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 2.
+
+Lead-lag summary:
+{
+  "1m:5m": {
+    "lag_unit": "1m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 4,
+        "n": 30501,
+        "correlation": 0.32729916417813976,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 4,
+        "n": 335510,
+        "beta": 0.7348512232188892,
+        "correlation": 0.3342985892683579,
+        "t_stat_hac": 49.80096018941445,
+        "p_value_hac": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 6,
+        "lag_minutes": 6.0,
+        "n": 67101,
+        "beta": -0.008792916734862507,
+        "correlation": -0.01823922597909032,
+        "t_stat_hac": -2.320325003702232,
+        "p_value_hac": 0.020323302499388733,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 15,
+          "p_raw": 0.020323302499388733,
+          "p_bonferroni": 0.304849537490831,
+          "p_holm": 0.304849537490831
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 1.0,
+        "p_holm_all_pairs": 1.0
+      }
+    }
+  },
+  "5m:15m": {
+    "lag_unit": "5m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 2,
+        "n": 6100,
+        "correlation": 0.29729793810966865,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 2,
+        "n": 67098,
+        "beta": 0.6254952803549451,
+        "correlation": 0.364393113069743,
+        "t_stat_hac": 34.18108260465478,
+        "p_value_hac": 4.619386957622531e-256,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 5,
+        "lag_minutes": 25.0,
+        "n": 22365,
+        "beta": -0.015090033407594078,
+        "correlation": -0.02490277026676447,
+        "t_stat_hac": -2.2374158332259126,
+        "p_value_hac": 0.025259174660572703,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 15,
+          "p_raw": 0.025259174660572703,
+          "p_bonferroni": 0.37888761990859054,
+          "p_holm": 0.37888761990859054
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 1.0,
+        "p_holm_all_pairs": 1.0
+      }
+    }
+  },
+  "5m:1h": {
+    "lag_unit": "5m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 6,
+        "n": 5590,
+        "correlation": 0.3334900067448483,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 10,
+        "n": 67080,
+        "beta": 0.750646101933784,
+        "correlation": 0.22512967876772497,
+        "t_stat_hac": 22.619406122812485,
+        "p_value_hac": 2.7921285224942296e-113,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 25,
+        "lag_minutes": 125.0,
+        "n": 5588,
+        "beta": -0.021240955428341757,
+        "correlation": -0.06674005896407809,
+        "t_stat_hac": -3.1077314517812096,
+        "p_value_hac": 0.0018852929585245004,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 36,
+          "p_raw": 0.0018852929585245004,
+          "p_bonferroni": 0.06787054650688201,
+          "p_holm": 0.06787054650688201
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 0.12442933526261703,
+        "p_holm_all_pairs": 0.12442933526261703
+      }
+    }
+  }
+}
+
+All results written to user_data/analysis/results/from_2026-01-30/
+data: ETH_FDUSD 1m, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00 (335520 grid minutes, 0 missing)
+tick size: 0.01 (from user_data/data/binance_raw/symbol_filters.json (ETHFDUSD PRICE_FILTER.tickSize); matches the data's price grid)
+origins from: 2026-01-30 00:00:00+00:00
+
+=== A_14bars: mean pnl_for_side BEFORE fees (family = 18 tests) ===
+hurdles for scale: maker candidate 0.05%, taker viable 0.20%
+side       d  fill%    h      n       mean                 95% CI   t_hac    p_raw   p_holm  verdict
+buy    0.05%   72.3   15   4040  -0.0326% [ -0.0437%, -0.0215%]   -5.74 9.69e-09 1.74e-07  significantly < 0 (adverse selection)
+buy    0.05%   72.3   30   4040  -0.0239% [ -0.0392%, -0.0085%]   -3.04  0.00236   0.0283  significantly < 0 (adverse selection)
+buy    0.05%   72.3   60   4040  -0.0262% [ -0.0470%, -0.0054%]   -2.47   0.0136    0.136  consistent with zero
+buy    0.10%   56.6   15   3165  -0.0269% [ -0.0403%, -0.0135%]   -3.94 8.11e-05   0.0013  significantly < 0 (adverse selection)
+buy    0.10%   56.6   30   3165  -0.0146% [ -0.0332%, +0.0040%]   -1.54    0.123    0.739  consistent with zero
+buy    0.10%   56.6   60   3165  -0.0175% [ -0.0427%, +0.0076%]   -1.36    0.172    0.739  consistent with zero
+buy    0.20%   32.6   15   1820  -0.0302% [ -0.0505%, -0.0099%]   -2.91  0.00359   0.0395  significantly < 0 (adverse selection)
+buy    0.20%   32.6   30   1820  -0.0035% [ -0.0318%, +0.0249%]   -0.24    0.811    0.826  consistent with zero
+buy    0.20%   32.6   60   1820  -0.0156% [ -0.0530%, +0.0218%]   -0.82    0.413    0.826  consistent with zero
+sell   0.05%   71.3   15   3985  -0.0298% [ -0.0414%, -0.0181%]   -5.01 5.53e-07 9.41e-06  significantly < 0 (adverse selection)
+sell   0.05%   71.3   30   3985  -0.0327% [ -0.0490%, -0.0165%]   -3.94 8.11e-05   0.0013  significantly < 0 (adverse selection)
+sell   0.05%   71.3   60   3984  -0.0343% [ -0.0552%, -0.0134%]   -3.22  0.00128   0.0178  significantly < 0 (adverse selection)
+sell   0.10%   56.6   15   3166  -0.0230% [ -0.0369%, -0.0090%]   -3.22  0.00127   0.0178  significantly < 0 (adverse selection)
+sell   0.10%   56.6   30   3166  -0.0225% [ -0.0418%, -0.0032%]   -2.29   0.0221    0.199  consistent with zero
+sell   0.10%   56.6   60   3165  -0.0219% [ -0.0467%, +0.0029%]   -1.73   0.0837    0.586  consistent with zero
+sell   0.20%   32.4   15   1811  -0.0242% [ -0.0456%, -0.0029%]   -2.23   0.0261    0.209  consistent with zero
+sell   0.20%   32.4   30   1811  -0.0207% [ -0.0485%, +0.0072%]   -1.45    0.146    0.739  consistent with zero
+sell   0.20%   32.4   60   1810  -0.0247% [ -0.0619%, +0.0126%]   -1.30    0.195    0.739  consistent with zero
+
+=== B_15bars: mean pnl_for_side BEFORE fees (family = 18 tests) ===
+hurdles for scale: maker candidate 0.05%, taker viable 0.20%
+side       d  fill%    h      n       mean                 95% CI   t_hac    p_raw   p_holm  verdict
+buy    0.05%   73.2   15   4090  -0.0318% [ -0.0428%, -0.0209%]   -5.68 1.34e-08 2.41e-07  significantly < 0 (adverse selection)
+buy    0.05%   73.2   30   4090  -0.0239% [ -0.0391%, -0.0086%]   -3.07  0.00216   0.0259  significantly < 0 (adverse selection)
+buy    0.05%   73.2   60   4090  -0.0271% [ -0.0479%, -0.0063%]   -2.56   0.0105    0.105  consistent with zero
+buy    0.10%   57.8   15   3232  -0.0265% [ -0.0396%, -0.0134%]   -3.97 7.28e-05  0.00116  significantly < 0 (adverse selection)
+buy    0.10%   57.8   30   3232  -0.0156% [ -0.0339%, +0.0026%]   -1.68   0.0937    0.624  consistent with zero
+buy    0.10%   57.8   60   3232  -0.0178% [ -0.0427%, +0.0072%]   -1.40    0.162    0.649  consistent with zero
+buy    0.20%   33.6   15   1878  -0.0290% [ -0.0487%, -0.0093%]   -2.88  0.00395   0.0435  significantly < 0 (adverse selection)
+buy    0.20%   33.6   30   1878  -0.0030% [ -0.0305%, +0.0245%]   -0.21    0.832    0.886  consistent with zero
+buy    0.20%   33.6   60   1878  -0.0142% [ -0.0505%, +0.0221%]   -0.77    0.443    0.886  consistent with zero
+sell   0.05%   72.0   15   4027  -0.0293% [ -0.0409%, -0.0178%]   -4.98 6.38e-07 1.08e-05  significantly < 0 (adverse selection)
+sell   0.05%   72.0   30   4027  -0.0319% [ -0.0480%, -0.0157%]   -3.87 0.000108  0.00161  significantly < 0 (adverse selection)
+sell   0.05%   72.0   60   4026  -0.0334% [ -0.0542%, -0.0127%]   -3.17  0.00155   0.0216  significantly < 0 (adverse selection)
+sell   0.10%   57.7   15   3224  -0.0221% [ -0.0359%, -0.0083%]   -3.14   0.0017   0.0222  significantly < 0 (adverse selection)
+sell   0.10%   57.7   30   3224  -0.0219% [ -0.0409%, -0.0029%]   -2.25   0.0242    0.194  consistent with zero
+sell   0.10%   57.7   60   3223  -0.0213% [ -0.0458%, +0.0033%]   -1.70   0.0892    0.624  consistent with zero
+sell   0.20%   33.4   15   1868  -0.0264% [ -0.0474%, -0.0054%]   -2.46   0.0137    0.124  consistent with zero
+sell   0.20%   33.4   30   1868  -0.0231% [ -0.0507%, +0.0045%]   -1.64    0.101    0.624  consistent with zero
+sell   0.20%   33.4   60   1867  -0.0261% [ -0.0628%, +0.0106%]   -1.40    0.163    0.649  consistent with zero
+
+Wrote user_data/analysis/results/runs/20260920T014429Z_passive_fill_baseline.{csv,json} and *_orders.csv
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 

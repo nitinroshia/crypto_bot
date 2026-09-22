@@ -1,0 +1,32 @@
+{
+  "5m": {
+    "overlap_rows": 67104,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "15m": {
+    "overlap_rows": 22368,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "30m": {
+    "overlap_rows": 11184,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1h": {
+    "overlap_rows": 5592,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1d": {
+    "overlap_rows": 233,
+    "status": "MATCH",
+    "mismatches": {}
+  },
+  "1w": {
+    "overlap_rows": 32,
+    "status": "MATCH",
+    "mismatches": {}
+  }
+}

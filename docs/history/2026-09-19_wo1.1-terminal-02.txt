@@ -1,0 +1,148 @@
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ python3 user_data/analysis/fetch_klines.py --start 2026-01-30 --export-freqtrade
+Fetching exchange filters ...
+  ETHFDUSD: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHUSDT: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  FDUSDUSDT: tickSize=0.0001 stepSize=1.0 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+[1/6] ETHFDUSD 1m
+  fetching ETHFDUSD 1m: 2026-01-30 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    ETHFDUSD 1m: 50 pages, up to 2026-03-05 17:19:00+00:00
+    ETHFDUSD 1m: 100 pages, up to 2026-04-09 10:39:00+00:00
+    ETHFDUSD 1m: 150 pages, up to 2026-05-14 03:59:00+00:00
+    ETHFDUSD 1m: 200 pages, up to 2026-06-17 21:19:00+00:00
+    ETHFDUSD 1m: 250 pages, up to 2026-07-22 14:39:00+00:00
+    ETHFDUSD 1m: 300 pages, up to 2026-08-26 07:59:00+00:00
+  -> OK: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 32170
+[2/6] ETHUSDT 1m
+  fetching ETHUSDT 1m: 2026-01-30 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    ETHUSDT 1m: 50 pages, up to 2026-03-05 17:19:00+00:00
+    ETHUSDT 1m: 100 pages, up to 2026-04-09 10:39:00+00:00
+    ETHUSDT 1m: 150 pages, up to 2026-05-14 03:59:00+00:00
+    ETHUSDT 1m: 200 pages, up to 2026-06-17 21:19:00+00:00
+    ETHUSDT 1m: 250 pages, up to 2026-07-22 14:39:00+00:00
+    ETHUSDT 1m: 300 pages, up to 2026-08-26 07:59:00+00:00
+  -> OK: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[3/6] ETHUSDT 5m
+  -> UP_TO_DATE: 329088 rows, 2023-08-04 08:00:00+00:00 .. 2026-09-19 23:55:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[4/6] ETHUSDT 1h
+  fetching ETHUSDT 1h: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    ETHUSDT 1h: 50 pages, up to 2023-05-06 19:00:00+00:00
+  -> OK: 79572 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-19 23:00:00+00:00, missing bars vs regular grid: 128, zero-trade bars: 6
+[5/6] ETHUSDT 1d
+  fetching ETHUSDT 1d: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+  -> OK: 3321 rows, 2017-08-17 00:00:00+00:00 .. 2026-09-19 00:00:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[6/6] FDUSDUSDT 1m
+  fetching FDUSDUSDT 1m: 2026-01-30 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    FDUSDUSDT 1m: 50 pages, up to 2026-03-05 17:19:00+00:00
+    FDUSDUSDT 1m: 100 pages, up to 2026-04-09 10:39:00+00:00
+    FDUSDUSDT 1m: 150 pages, up to 2026-05-14 03:59:00+00:00
+    FDUSDUSDT 1m: 200 pages, up to 2026-06-17 21:19:00+00:00
+    FDUSDUSDT 1m: 250 pages, up to 2026-07-22 14:39:00+00:00
+    FDUSDUSDT 1m: 300 pages, up to 2026-08-26 07:59:00+00:00
+  -> OK: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 15010
+
+Wrote user_data/data/binance_raw/fetch_manifest.json and symbol_filters.json
+
+Exported to freqtrade data dir:
+{
+  "file": "user_data/data/binance/ETH_FDUSD-1m.feather",
+  "backup": "user_data/data/binance/ETH_FDUSD-1m.backup-20260920T002449Z.feather.bak",
+  "rows_before": 266400,
+  "rows_after": 335520,
+  "first": "2026-01-30 00:00:00+00:00",
+  "last": "2026-09-19 23:59:00+00:00"
+}
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ wc -c user_data/analysis/fetch_klines.py
+python3 user_data/analysis/fetch_klines.py --help | grep -E "start|export"
+   33637 user_data/analysis/fetch_klines.py
+                       [--pair PAIR] [--history-start HISTORY_START]
+                       [--exchange-info-only] [--start YYYY-MM-DD]
+                       [--export-freqtrade] [--export-only] [--self-test]
+    ETHUSDT   1h   full history from --history-start (default 2017-08-01)
+    ETHUSDT   1d   full history from --history-start
+  --history-start HISTORY_START
+                        start for the full-history ETHUSDT 1h/1d jobs
+  --start YYYY-MM-DD    start date for the three 1m jobs (default: start of
+  --export-freqtrade    after downloading, rewrite <data-
+  --export-only         only run the export, download nothing
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ python3 user_data/analysis/fetch_klines.py --start 2026-01-30 --export-freqtrade
+python3 user_data/analysis/task0_report.py
+Fetching exchange filters ...
+  ETHFDUSD: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHUSDT: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  FDUSDUSDT: tickSize=0.0001 stepSize=1.0 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+[1/6] ETHFDUSD 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 32170
+[2/6] ETHUSDT 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[3/6] ETHUSDT 5m
+  -> UP_TO_DATE: 329088 rows, 2023-08-04 08:00:00+00:00 .. 2026-09-19 23:55:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[4/6] ETHUSDT 1h
+  fetching ETHUSDT 1h: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+    ETHUSDT 1h: 50 pages, up to 2023-05-06 19:00:00+00:00
+  -> OK: 79572 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-19 23:00:00+00:00, missing bars vs regular grid: 128, zero-trade bars: 6
+[5/6] ETHUSDT 1d
+  fetching ETHUSDT 1d: 2017-08-01 00:00:00+00:00 -> 2026-09-19 23:59:59.999000+00:00
+  -> OK: 3321 rows, 2017-08-17 00:00:00+00:00 .. 2026-09-19 00:00:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+[6/6] FDUSDUSDT 1m
+  -> UP_TO_DATE: 335520 rows, 2026-01-30 00:00:00+00:00 .. 2026-09-19 23:59:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 15010
+
+Wrote user_data/data/binance_raw/fetch_manifest.json and symbol_filters.json
+
+Exported to freqtrade data dir:
+{
+  "file": "user_data/data/binance/ETH_FDUSD-1m.feather",
+  "backup": "user_data/data/binance/ETH_FDUSD-1m.backup-20260920T003008Z.feather.bak",
+  "rows_before": 335520,
+  "rows_after": 335520,
+  "first": "2026-01-30 00:00:00+00:00",
+  "last": "2026-09-19 23:59:00+00:00"
+}
+=== Task 0 report: ETH_FDUSD ===
+
+Fees: maker 0.000%, taker 0.100%   (Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19)
+Filters ETHFDUSD: tick=0.01 step=0.0001 minNotional=5.0 LIMIT_MAKER=yes
+Filters ETHUSDT: tick=0.01 step=0.0001 minNotional=5.0 LIMIT_MAKER=yes
+Filters FDUSDUSDT: tick=0.0001 step=1.0 minNotional=5.0 LIMIT_MAKER=yes
+
+History (freqtrade files). Break day = 2026-01-29; splits shown for fit/validate = 90/30 and 270/90 days
+tf   first        last              rows    days  missing  flat%      pre  break     post  splits(full) splits(post-break)
+1m   2026-01-30   2026-09-19      335520   233.0        0   9.59        0      0   335520    4/0            4/0  
+5m   2023-08-04   2026-09-19      329088  1142.7        0   3.33   261696    288    67104   35/9            4/0  
+15m  2023-08-04   2026-09-19      109696  1142.7        0   1.47    87232     96    22368   35/9            4/0  
+30m  2023-08-04   2026-09-19       54848  1142.7        0   0.73    43616     48    11184   35/9            4/0  
+1h   2023-08-04   2026-09-19       27424  1142.6        0   0.25    21808     24     5592   35/9            4/0  
+1d   2023-08-04   2026-09-19        1143  1142.0        0   0.00      909      1      233   35/9            4/0  
+1w   2023-07-31   2026-09-07         163  1134.0        0   0.00      131      0       32   34/9            4/0  
+
+Raw-kline store:
+  ETH_FDUSD-1m       2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=32170
+  ETH_USDT-1d        2017-08-17 .. 2026-09-19  rows=     3321  missing=      0  zero-trade bars=0
+  ETH_USDT-1h        2017-08-17 .. 2026-09-19  rows=    79572  missing=    128  zero-trade bars=6
+  ETH_USDT-1m        2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=0
+  ETH_USDT-5m        2023-08-04 .. 2026-09-19  rows=   329088  missing=      0  zero-trade bars=0
+  FDUSD_USDT-1m      2026-01-30 .. 2026-09-19  rows=   335520  missing=      0  zero-trade bars=15010
+
+Raw vs freqtrade ETH_FDUSD 1m over 2026-01-30 00:00 .. 2026-09-19 23:59: common=335520, only-in-freqtrade=0 (of which flat placeholders: 0), only-in-raw=0, OHLCV identical on common rows: True
+
+1d built from 1m vs native 1d: MISMATCH -- 233 complete days checked, 5 mismatched (5 explained by missing 1m minutes or a flat first/last row, 0 unexplained)
+
+WARNINGS:
+  - 5m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 5m with 1m is only as long as the 1m file.
+  - 15m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 15m with 1m is only as long as the 1m file.
+  - 30m history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 30m with 1m is only as long as the 1m file.
+  - 1h history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1h with 1m is only as long as the 1m file.
+  - 1d history starts 2023-08-04 but 1m starts 2026-01-30: every result pairing 1d with 1m is only as long as the 1m file.
+  - 1w history starts 2023-07-31 but 1m starts 2026-01-30: every result pairing 1w with 1m is only as long as the 1m file.
+  - 5m: 261696 rows before 2026-01-29, 288 on the break day, 67104 after -- NOT entirely post-break.
+  - 15m: 87232 rows before 2026-01-29, 96 on the break day, 22368 after -- NOT entirely post-break.
+  - 30m: 43616 rows before 2026-01-29, 48 on the break day, 11184 after -- NOT entirely post-break.
+  - 1h: 21808 rows before 2026-01-29, 24 on the break day, 5592 after -- NOT entirely post-break.
+  - 1d: 909 rows before 2026-01-29, 1 on the break day, 233 after -- NOT entirely post-break.
+  - 1w: 131 rows before 2026-01-29, 0 on the break day, 32 after -- NOT entirely post-break.
+
+Written: user_data/analysis/results/task0_report.json
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 

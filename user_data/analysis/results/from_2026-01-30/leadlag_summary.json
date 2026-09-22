@@ -1,0 +1,149 @@
+{
+  "1m:5m": {
+    "lag_unit": "1m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 4,
+        "n": 30501,
+        "correlation": 0.32729916417813976,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 4,
+        "n": 335510,
+        "beta": 0.7348512232188892,
+        "correlation": 0.3342985892683579,
+        "t_stat_hac": 49.80096018941445,
+        "p_value_hac": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 6,
+        "lag_minutes": 6.0,
+        "n": 67101,
+        "beta": -0.008792916734862507,
+        "correlation": -0.01823922597909032,
+        "t_stat_hac": -2.320325003702232,
+        "p_value_hac": 0.020323302499388733,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 15,
+          "p_raw": 0.020323302499388733,
+          "p_bonferroni": 0.304849537490831,
+          "p_holm": 0.304849537490831
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 1.0,
+        "p_holm_all_pairs": 1.0
+      }
+    }
+  },
+  "5m:15m": {
+    "lag_unit": "5m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 2,
+        "n": 6100,
+        "correlation": 0.29729793810966865,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 2,
+        "n": 67098,
+        "beta": 0.6254952803549451,
+        "correlation": 0.364393113069743,
+        "t_stat_hac": 34.18108260465478,
+        "p_value_hac": 4.619386957622531e-256,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 5,
+        "lag_minutes": 25.0,
+        "n": 22365,
+        "beta": -0.015090033407594078,
+        "correlation": -0.02490277026676447,
+        "t_stat_hac": -2.2374158332259126,
+        "p_value_hac": 0.025259174660572703,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 15,
+          "p_raw": 0.025259174660572703,
+          "p_bonferroni": 0.37888761990859054,
+          "p_holm": 0.37888761990859054
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 1.0,
+        "p_holm_all_pairs": 1.0
+      }
+    }
+  },
+  "5m:1h": {
+    "lag_unit": "5m",
+    "nonoverlapping_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 6,
+        "n": 5590,
+        "correlation": 0.3334900067448483,
+        "p_value": 0.0,
+        "significant_at_5pct": true
+      }
+    },
+    "hac_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag": 10,
+        "n": 67080,
+        "beta": 0.750646101933784,
+        "correlation": 0.22512967876772497,
+        "t_stat_hac": 22.619406122812485,
+        "p_value_hac": 2.7921285224942296e-113,
+        "significant_at_5pct": true
+      }
+    },
+    "event_anchored_best": {
+      "status": "SIGNIFICANT_LAG_FOUND",
+      "best_lag": {
+        "lag_bars": 25,
+        "lag_minutes": 125.0,
+        "n": 5588,
+        "beta": -0.021240955428341757,
+        "correlation": -0.06674005896407809,
+        "t_stat_hac": -3.1077314517812096,
+        "p_value_hac": 0.0018852929585245004,
+        "significant_at_5pct": true
+      },
+      "family": {
+        "this_pair": {
+          "family_size": 36,
+          "p_raw": 0.0018852929585245004,
+          "p_bonferroni": 0.06787054650688201,
+          "p_holm": 0.06787054650688201
+        },
+        "all_pairs_family_size": 66,
+        "p_bonferroni_all_pairs": 0.12442933526261703,
+        "p_holm_all_pairs": 0.12442933526261703
+      }
+    }
+  }
+}

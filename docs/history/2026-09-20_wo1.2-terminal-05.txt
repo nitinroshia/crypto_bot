@@ -1,0 +1,23 @@
+ source /Users/apple/apps/crypto_bot/.venv/bin/activate
+apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼  source /Users/apple/apps/crypto_bot/.venv/bin/activate
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd user_data/analysis && bash selftest_all.sh 2>&1 | tail -5 && cd ../..
+python3 user_data/analysis/research_cli.py --list-formulas
+grep statsmodels user_data/analysis/requirements.txt
+python3 user_data/analysis/costs.py
+  vectorised simulator matches an independent per-origin brute force (both sides, 3 d, both variants, 400 missing bars)
+  stats: HAC mean/t match the naive iid values on iid data; Holm >= raw, Bonferroni >= Holm; family = tests run (18 when every cell has >=30 fills)
+Self-test passed: passive_fill_baseline implements every stated timing convention.
+
+ALL SELF-TESTS PASSED
+event_anchored: TRUSTED for cross-timeframe pairs. Needs --param pair=TF_A:TF_B. Anchors once per closed coarse bar, tests fine-grid minutes at/after its close -- immune to the composition-overlap artifact (mistake #5).
+hac: KNOWN CONTAMINATED for cross-timeframe pairs (mistake #5) -- comparison/history only. Needs --param pair=TF_A:TF_B. HAC/Newey-West regression, row-sliding lag.
+nonoverlap: KNOWN CONTAMINATED for cross-timeframe pairs (mistake #5) -- comparison/history only. Needs --param pair=TF_A:TF_B. Block-subsampled correlation, row-sliding lag.
+volume_leads_volatility: EXAMPLE of a non-pairwise formula -- single timeframe only (needs --param timeframe=5m, optional --param window=20). Tests whether elevated volume on a bar predicts a BIGGER absolute return `lag` bars later, same timeframe. This is a forward-looking extension of the project's own volume-participation finding, which only showed volume and move size are associated at the SAME bar -- not that one predicts the other. No pair, no upsample_factor, no mistake-#5 exposure: predictor and target are two different measurements of price action, never arithmetically built from each other, so this is safe at any lag including 0 (lag=0 is a contemporaneous check; lag>=1 is the new, genuinely predictive question).
+statsmodels>=0.15
+Self-test passed: two-case taker cost model (base 0.24%, stress 0.30% round trip; next-open execution).
+  Planning fee 0.10% maker / 0.10% taker. The account's current maker 0% is a promotion and is ignored (work order 1.2).
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 
+

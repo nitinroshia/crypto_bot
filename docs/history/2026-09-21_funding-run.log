@@ -1,0 +1,26 @@
+
+[ETHUSDT]
+    ETHUSDT REST: 8 page(s), 7471 rows
+
+ETHUSDT: source used = REST
+  first settlement 2019-11-27 08:00:00+00:00   last settlement 2026-09-21 08:00:00+00:00   rows 7471 (7471 fetched this run)
+  settlement intervals (hours -> rows): {'8.0': 7470}
+  interval changes: none
+  irregular spacing rows: 0   reported-vs-derived interval mismatches: 0 (reported interval available: False)
+  8h observations: 7471 (first 2019-11-27 08:00:00+00:00), complete 7470, masked 1, touched by an interval change 0
+  tie share up to the cutoff: 0.3963 (modal value 0.0001, 2502 of 6313)
+  tie share, full range (descriptive only): 0.3447 (modal value 0.0001, 2575 of 7470)
+
+[BTCUSDT]
+    BTCUSDT REST: 8 page(s), 7705 rows
+
+BTCUSDT: source used = REST
+  first settlement 2019-09-10 08:00:00+00:00   last settlement 2026-09-21 08:00:00+00:00   rows 7705 (7705 fetched this run)
+  settlement intervals (hours -> rows): {'8.0': 7704}
+  interval changes: none
+  irregular spacing rows: 0   reported-vs-derived interval mismatches: 0 (reported interval available: False)
+  8h observations: 7705 (first 2019-09-10 08:00:00+00:00), complete 7704, masked 1, touched by an interval change 0
+  tie share up to the cutoff: 0.4005 (modal value 0.0001, 2622 of 6547)
+  tie share, full range (descriptive only): 0.3524 (modal value 0.0001, 2715 of 7704)
+
+Wrote user_data/data/binance_raw/funding_manifest.json

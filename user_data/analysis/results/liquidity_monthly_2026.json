@@ -1,0 +1,117 @@
+{
+  "year": 2026,
+  "pair_a": "ETH_FDUSD",
+  "pair_b": "ETH_USDT",
+  "descriptive_only": "no returns computed",
+  "definitions": "days_covered = minutes/1440; per-day = total / days_covered; quote in each pair's own quote currency; ratio = a / b",
+  "table": {
+    "2026-01": {
+      "days_covered__ETH_FDUSD": 2.0,
+      "trades_per_day__ETH_FDUSD": 1112709.5,
+      "quote_per_day__ETH_FDUSD": 997546821.766571,
+      "zero_trade_share__ETH_FDUSD": 0.0,
+      "days_covered__ETH_USDT": 2.0,
+      "trades_per_day__ETH_USDT": 9983464.0,
+      "quote_per_day__ETH_USDT": 2460602785.2048483,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.1114552524,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.4054074992
+    },
+    "2026-02": {
+      "days_covered__ETH_FDUSD": 28.0,
+      "trades_per_day__ETH_FDUSD": 323024.1785714286,
+      "quote_per_day__ETH_FDUSD": 114374638.42569235,
+      "zero_trade_share__ETH_FDUSD": 0.0042162698,
+      "days_covered__ETH_USDT": 28.0,
+      "trades_per_day__ETH_USDT": 6695101.607142857,
+      "quote_per_day__ETH_USDT": 1420567159.6009479,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0482478381,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0805133623
+    },
+    "2026-03": {
+      "days_covered__ETH_FDUSD": 31.0,
+      "trades_per_day__ETH_FDUSD": 128986.064516129,
+      "quote_per_day__ETH_FDUSD": 36462459.08976206,
+      "zero_trade_share__ETH_FDUSD": 0.0304659498,
+      "days_covered__ETH_USDT": 31.0,
+      "trades_per_day__ETH_USDT": 4974347.0,
+      "quote_per_day__ETH_USDT": 855081520.5863882,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0259302506,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0426420852
+    },
+    "2026-04": {
+      "days_covered__ETH_FDUSD": 30.0,
+      "trades_per_day__ETH_FDUSD": 76434.0,
+      "quote_per_day__ETH_FDUSD": 20869962.049806867,
+      "zero_trade_share__ETH_FDUSD": 0.0813657407,
+      "days_covered__ETH_USDT": 30.0,
+      "trades_per_day__ETH_USDT": 3219867.7,
+      "quote_per_day__ETH_USDT": 643469075.8470105,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0237382424,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0324335121
+    },
+    "2026-05": {
+      "days_covered__ETH_FDUSD": 31.0,
+      "trades_per_day__ETH_FDUSD": 47619.0322580645,
+      "quote_per_day__ETH_FDUSD": 15017891.102259323,
+      "zero_trade_share__ETH_FDUSD": 0.1386200717,
+      "days_covered__ETH_USDT": 31.0,
+      "trades_per_day__ETH_USDT": 2386858.6774193547,
+      "quote_per_day__ETH_USDT": 582463619.2033392,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0199505034,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0257833976
+    },
+    "2026-06": {
+      "days_covered__ETH_FDUSD": 30.0,
+      "trades_per_day__ETH_FDUSD": 59788.6,
+      "quote_per_day__ETH_FDUSD": 15669527.2265758,
+      "zero_trade_share__ETH_FDUSD": 0.065625,
+      "days_covered__ETH_USDT": 30.0,
+      "trades_per_day__ETH_USDT": 4048668.8333333335,
+      "quote_per_day__ETH_USDT": 612058313.9709365,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0147674711,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0256013633
+    },
+    "2026-07": {
+      "days_covered__ETH_FDUSD": 31.0,
+      "trades_per_day__ETH_FDUSD": 41910.9677419355,
+      "quote_per_day__ETH_FDUSD": 11095877.557520421,
+      "zero_trade_share__ETH_FDUSD": 0.1408154122,
+      "days_covered__ETH_USDT": 31.0,
+      "trades_per_day__ETH_USDT": 2264512.7741935486,
+      "quote_per_day__ETH_USDT": 448106390.2240755,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0185077197,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0247617035
+    },
+    "2026-08": {
+      "days_covered__ETH_FDUSD": 31.0,
+      "trades_per_day__ETH_FDUSD": 52327.7096774194,
+      "quote_per_day__ETH_FDUSD": 14765895.354465226,
+      "zero_trade_share__ETH_FDUSD": 0.2130376344,
+      "days_covered__ETH_USDT": 31.0,
+      "trades_per_day__ETH_USDT": 2376101.419354839,
+      "quote_per_day__ETH_USDT": 579687215.4249818,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0220225068,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.025472177
+    },
+    "2026-09": {
+      "days_covered__ETH_FDUSD": 19.0,
+      "trades_per_day__ETH_FDUSD": 71498.5789473684,
+      "quote_per_day__ETH_FDUSD": 25931685.58949316,
+      "zero_trade_share__ETH_FDUSD": 0.0842836257,
+      "days_covered__ETH_USDT": 19.0,
+      "trades_per_day__ETH_USDT": 2495866.263157895,
+      "quote_per_day__ETH_USDT": 770245947.6822292,
+      "zero_trade_share__ETH_USDT": 0.0,
+      "ratio_trades_per_day__ETH_FDUSD_over_ETH_USDT": 0.0286467989,
+      "ratio_quote_per_day__ETH_FDUSD_over_ETH_USDT": 0.0336667602
+    }
+  }
+}

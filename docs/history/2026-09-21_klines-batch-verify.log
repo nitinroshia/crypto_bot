@@ -1,0 +1,8 @@
+ETH_USDT-5m old rows 329088 new rows 955046
+first 2017-08-17 04:00:00+00:00 last 2026-09-21 06:00:00+00:00
+missing vs 5m grid, whole file 1715
+missing vs 5m grid, inside the old span 0
+old rows absent from new 0
+value differences on old rows {'open': 0, 'high': 0, 'low': 0, 'close': 0, 'volume': 0, 'quote_volume': 0, 'n_trades': 0, 'taker_buy_base': 0, 'taker_buy_quote': 0}
+BTC_USDT-1h rows 79602 first 2017-08-17 04:00:00+00:00 last 2026-09-21 05:00:00+00:00 missing vs grid 128
+BTC_USDT-1d rows 3322 first 2017-08-17 00:00:00+00:00 last 2026-09-20 00:00:00+00:00 missing vs grid 0

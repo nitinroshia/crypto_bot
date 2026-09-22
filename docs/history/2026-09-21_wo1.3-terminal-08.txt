@@ -1,0 +1,67 @@
+ source /Users/apple/apps/crypto_bot/.venv/bin/activate
+apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼  source /Users/apple/apps/crypto_bot/.venv/bin/activate
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd ~/apps/crypto_bot && mkdir -p ~/handover-2026-09-20/user_data && cp README.md project_context.md ~/handover-2026-09-20/ && cp -R scripts ~/handover-2026-09-20/ && cp user_data/test_params.json ~/handover-2026-09-20/user_data/ && rsync -a --exclude '__pycache__' --exclude '*_orders.csv' user_data/analysis ~/handover-2026-09-20/user_data/ && (cd ~/handover-2026-09-20 && ls -lR . > ls_lR.txt) && find ~/handover-2026-09-20 -type f | wc -l && du -sh ~/handover-2026-09-20
+      56
+596K    /Users/apple/handover-2026-09-20
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd ~/apps/crypto_bot && cp user_data/data/binance_raw/ETH_USDT-5m.feather user_data/data/binance_raw/ETH_USDT-5m.backup-20260921.feather.bak && cp user_data/data/binance_raw/fetch_manifest.json user_data/data/binance_raw/fetch_manifest.backup-20260921.json && cp user_data/data/binance_raw/symbol_filters.json user_data/data/binance_raw/symbol_filters.backup-20260921.json && ls -l user_data/data/binance_raw
+total 168928
+-rw-r--r--@ 1 apple  staff  15940722 Sep 20 06:23 ETH_FDUSD-1m.feather
+-rw-r--r--@ 1 apple  staff    212730 Sep 20 06:24 ETH_USDT-1d.feather
+-rw-r--r--@ 1 apple  staff   4800506 Sep 20 06:24 ETH_USDT-1h.feather
+-rw-r--r--@ 1 apple  staff  17779634 Sep 20 06:23 ETH_USDT-1m.feather
+-rw-r--r--@ 1 apple  staff  18366954 Sep 21 11:36 ETH_USDT-5m.backup-20260921.feather.bak
+-rw-r--r--@ 1 apple  staff  18366954 Sep 20 06:23 ETH_USDT-5m.feather
+-rw-r--r--@ 1 apple  staff  10986178 Sep 20 06:24 FDUSD_USDT-1m.feather
+-rw-r--r--@ 1 apple  staff      2507 Sep 21 11:36 fetch_manifest.backup-20260921.json
+-rw-r--r--@ 1 apple  staff      2507 Sep 20 06:24 fetch_manifest.json
+-rw-r--r--@ 1 apple  staff      6467 Sep 21 11:36 symbol_filters.backup-20260921.json
+-rw-r--r--@ 1 apple  staff      6467 Sep 20 06:23 symbol_filters.json
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd ~/apps/crypto_bot && .venv/bin/python3 user_data/analysis/fetch_klines.py --dry-run --jobs ETHUSDT:5m:2017-08-17 BTCUSDT:1h:2017-08-17 BTCUSDT:1d:2017-08-17 2>&1 | tee klines_batch_dryrun.log
+ETHUSDT 5m     2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:26.526000+00:00   ~957 requests
+BTCUSDT 1h     2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:26.526000+00:00   ~80 requests
+BTCUSDT 1d     2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:26.526000+00:00   ~4 requests
+total ~1041 requests (~2.1 min at the built-in rate limit)
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd ~/apps/crypto_bot && .venv/bin/python3 user_data/analysis/fetch_klines.py --jobs ETHUSDT:5m:2017-08-17 BTCUSDT:1h:2017-08-17 BTCUSDT:1d:2017-08-17 2>&1 | tee klines_batch_run.log
+Fetching exchange filters ...
+  BTCUSDT: tickSize=0.01 stepSize=1e-05 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHFDUSD: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHUSDT: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  FDUSDUSDT: tickSize=0.0001 stepSize=1.0 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+[1/3] ETHUSDT 5m
+  fetching ETHUSDT 5m: 2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:37.096000+00:00
+    ETHUSDT 5m: 50 pages, up to 2018-02-07 05:15:00+00:00
+    ETHUSDT 5m: 100 pages, up to 2018-08-02 01:30:00+00:00
+    ETHUSDT 5m: 150 pages, up to 2019-01-23 02:40:00+00:00
+    ETHUSDT 5m: 200 pages, up to 2019-07-16 10:20:00+00:00
+    ETHUSDT 5m: 250 pages, up to 2020-01-06 13:20:00+00:00
+    ETHUSDT 5m: 300 pages, up to 2020-06-28 18:55:00+00:00
+    ETHUSDT 5m: 350 pages, up to 2020-12-19 10:35:00+00:00
+    ETHUSDT 5m: 400 pages, up to 2021-06-11 16:20:00+00:00
+    ETHUSDT 5m: 450 pages, up to 2021-12-02 13:30:00+00:00
+    ETHUSDT 5m: 500 pages, up to 2022-05-25 04:10:00+00:00
+    ETHUSDT 5m: 550 pages, up to 2022-11-14 18:50:00+00:00
+    ETHUSDT 5m: 600 pages, up to 2023-05-07 10:50:00+00:00
+    ETHUSDT 5m: 650 pages, up to 2023-10-28 01:30:00+00:00
+    ETHUSDT 5m: 700 pages, up to 2024-04-18 16:10:00+00:00
+    ETHUSDT 5m: 750 pages, up to 2024-10-09 06:50:00+00:00
+    ETHUSDT 5m: 800 pages, up to 2025-03-31 21:30:00+00:00
+    ETHUSDT 5m: 850 pages, up to 2025-09-21 12:10:00+00:00
+    ETHUSDT 5m: 900 pages, up to 2026-03-14 02:50:00+00:00
+    ETHUSDT 5m: 950 pages, up to 2026-09-03 17:30:00+00:00
+  -> OK: 955046 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-21 06:00:00+00:00, missing bars vs regular grid: 1715, zero-trade bars: 1795
+[2/3] BTCUSDT 1h
+  fetching BTCUSDT 1h: 2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:37.096000+00:00
+    BTCUSDT 1h: 50 pages, up to 2023-05-06 19:00:00+00:00
+  -> OK: 79602 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-21 05:00:00+00:00, missing bars vs regular grid: 128, zero-trade bars: 4
+[3/3] BTCUSDT 1d
+  fetching BTCUSDT 1d: 2017-08-17 00:00:00+00:00 -> 2026-09-21 06:06:37.096000+00:00
+  -> OK: 3322 rows, 2017-08-17 00:00:00+00:00 .. 2026-09-20 00:00:00+00:00, missing bars vs regular grid: 0, zero-trade bars: 0
+
+Wrote user_data/data/binance_raw/fetch_manifest.json and symbol_filters.json
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 

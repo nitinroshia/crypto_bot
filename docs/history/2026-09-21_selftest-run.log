@@ -1,0 +1,240 @@
+=================== resample.py
+1m rows: 60  ->  5m rows: 12
+Self-test passed: resample_ohlcv + compare_resampled_vs_native both work.
+  5m: filled rule mismatches={'open': 255, 'high': 63, 'low': 41} -> traded rule: MATCH (1728 bins)
+  1h: filled rule mismatches={'open': 21, 'high': 4, 'low': 2} -> traded rule: MATCH (144 bins)
+  1d: filled rule mismatches={'open': 1} -> traded rule: MATCH (6 bins)
+Self-test passed: traded-minutes rule reproduces bars built from raw trades exactly; the filled rule does not.
+=================== resample_rule_test.py --self-test
+Open-price test, ETH_FDUSD 1m 2026-01-05 07:13 .. 2026-01-14 23:59
+
+tf      bins | filled rule: mismatched rows           | traded rule
+5m      2793 | {'open': 485, 'high': 104, 'low': 105} | MATCH 
+15m      931 | {'open': 160, 'high': 19, 'low': 11}   | MATCH 
+30m      465 | {'open': 86, 'high': 8, 'low': 4}      | MATCH 
+1h       232 | {'open': 39, 'high': 2, 'low': 2}      | MATCH 
+1d         9 | {'open': 1}                            | MATCH 
+1w   NATIVE_FILE_NOT_FOUND
+
+VERDICT: ZERO MISMATCHES with the traded rule on every tested timeframe (NOT TESTED, no native file: 1w) -> adopt it as the default resampling rule
+
+Self-test passed: the test excludes partial bins, shows the filled-rule mismatches, and the traded rule matches.
+=================== stats_fingerprint.py
+Self-test passed on synthetic random-walk data:
+  ADF p-value (lookback=1): 0.0000
+  Ljung-Box p-value (lookback=1): 0.4225
+  Volume participation p-value: 0.5942
+=================== walkforward.py
+Split 0: fit [2025-01-01 -> 2025-09-28] (271 rows), validate [2025-09-28 -> 2025-12-27] (91 rows)
+Split 1: fit [2025-04-01 -> 2025-12-27] (271 rows), validate [2025-12-27 -> 2026-03-27] (91 rows)
+Split 2: fit [2025-06-30 -> 2026-03-27] (271 rows), validate [2026-03-27 -> 2026-06-25] (91 rows)
+Self-test passed: 3 walk-forward split(s) generated with no fit/validate overlap.
+=================== config_schema.py
+      ]
+    },
+    "5m": {
+      "enabled": true,
+      "lookbacks": [
+        3
+      ]
+    },
+    "15m": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "30m": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1h": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1d": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    },
+    "1w": {
+      "enabled": false,
+      "lookbacks": [
+        1
+      ]
+    }
+  }
+}
+=================== leadlag.py
+Non-overlapping method best lag: 3
+HAC regression method best lag: 3
+Self-test passed: both methods point at lag=3, the lag we built into the data.
+
+Mixed-frequency self-test: true lag = 3 minutes, recovered lag = 3
+Self-test passed: align_to_common_grid correctly expresses lag in minutes, not coarse-timeframe steps.
+NOTE: max_lag=8 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+
+Overlap-artifact check: shift_periods=0 best lag = 0 (beta=0.90) -- expect lag=0 with beta near 0.9, confirming the artifact
+NOTE: max_lag=8 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+Fixed (shift_periods=1) best lag = 0 (beta=0.70) -- this is the genuine, non-overlapping relationship
+Self-test passed: shift_periods=1 isolates genuine lead-lag from within-window overlap contamination.
+
+Event-anchored null check: 0/12 lags flagged significant on pure noise (hac_lagged_regression on this same data reports one 'significant' at the boundary with beta near 0.8).
+Event-anchored recovery check: injected true_j=3 beta=0.05 -> recovered lag=3, significant lags=[3]
+Self-test passed: event_anchored_lead_lag is blind to the mechanical-overlap artifact and recovers a real, realistically-sized injected effect cleanly.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+
+Strict-alignment check (a): coarse bars closing inside fine range = 4320; strict n(lag1)=4320, legacy n(lag1)=12958; injected beta 0.05 -> strict 0.041, legacy 0.017
+NOTE: event_anchored_lead_lag: 8675/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Strict-alignment check (b): n matches an independent on-time-pair count at every lag around a 3-hour gap, and the injected lag is still recovered.
+Strict-alignment check (c): grid_returns drops the return that spans a missing row.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Self-test passed: strict time alignment excludes out-of-range / gap-straddling pairs instead of mis-pairing them.
+NOTE: event_anchored_lead_lag: 8639/12959 coarse bars have no fine row exactly at their close (outside the fine data's date range, or inside a gap) -- excluded, not mis-paired.
+Self-test passed: lag_bars / lag_minutes units are explicit (5m fine bars = 5 minutes) and correlation is reported next to beta.
+=================== costs.py
+Self-test passed: two-case taker cost model (base 0.24%, stress 0.30% round trip; next-open execution).
+  Planning fee 0.10% maker / 0.10% taker. The account's current maker 0% is a promotion and is ignored (work order 1.2).
+  --per-side base -> 0.0012, --per-side stress -> 0.0015; agrees with freqtrade's fee accounting within 1e-8.
+=================== retired/costs_scenarios_AB.py
+Self-test passed: cost scenarios A/B reproduce freqtrade-style fee accounting.
+  Source: Binance fee page for ETH/FDUSD, regular user, as reported by project owner 2026-09-19
+  maker=0.0000%  taker=0.1000%  |  A profit-exit round trip=0.0000%, A stop/time=0.1000%, B=0.2000%
+=================== multitest.py
+Self-test passed: Bonferroni and Holm match statsmodels; family size excludes untested rows.
+=================== databundle.py
+Self-test passed: bare-tf aliasing, PAIR:tf keys, raw-store routing, half-open slicing.
+=================== selftest_research_cli.py
+  fixed-lag rule: validate tests only the fit-selected lag (a significant neighbour no longer rescues it)
+  bundle: bare keys and PAIR:tf keys both resolve
+  run_once(event_anchored): recovers injected lag 3; family=8, raw p=6.5e-52, Holm p=5.2e-51
+NOTE: max_lag=6 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+NOTE: max_lag=6 >= upsample_factor=5 would re-enter the source window (the exact overlap artifact this alignment is meant to avoid). Clipping max_lag to 4.
+  hac / nonoverlap / volume_leads_volatility still run
+Split 0: fit lag=3 effect=+0.05296 p=3.78e-31 (fit family 6, Holm p=2.27e-30) -> validate @ lag 3: effect=+0.03774 p=4.18e-05 n=2878 -- REPLICATED
+Split 1: fit lag=3 effect=+0.05157 p=1.09e-26 (fit family 6, Holm p=6.56e-26) -> validate @ lag 3: effect=+0.04938 p=1.12e-08 n=2878 -- REPLICATED
+
+Verdict: 2/2 splits replicated -- treat as a real, walk-forward-supported finding
+  walk-forward (injected effect): 2/2 splits replicated at fit lag 3
+Split 0: NO_SIGNIFICANT_LAG_IN_FIT -- did not replicate
+Split 1: fit lag=3 effect=-0.009537 p=0.05 (fit family 6, Holm p=0.3) -> validate @ lag 3: effect=-0.001202 p=0.891 n=2878 -- did not replicate (NOT_SIGNIFICANT_IN_VALIDATE)
+
+Verdict: 0/2 splits replicated -- did not survive out-of-sample, treat as noise
+  walk-forward (pure noise): 0/2 splits replicated (must be < all)
+Self-test passed: research_cli work-order-#1 changes behave as specified.
+=================== fetch_klines.py --self-test
+  pagination: 4329 bars over 5 requests, no duplicates, gaps preserved, open bar dropped
+  microsecond timestamps are normalised to the same bars
+  fetching ETHUSDT 1m: 2026-03-01 00:00:00+00:00 -> 2026-03-02 01:00:00+00:00
+  fetching ETHUSDT 1m: 2026-03-02 01:01:00+00:00 -> 2026-03-04 00:16:59.999000+00:00
+  fetching ETHUSDT 1m: 2026-03-04 00:16:00+00:00 -> 2026-03-04 00:16:59.999000+00:00
+  resume/extend: two partial runs == one shot; third run is UP_TO_DATE; missing bars vs grid reported = 7
+  http client: 429 -> retry, 451 -> next base URL, 400 -> immediate error
+  exchange filters parsed; default jobs derive from the local ETH_FDUSD span
+  --start moves only the three 1m job starts; every end still comes from the local 1m file
+  export: extends the freqtrade file backwards, keeps a backup, refuses on any value mismatch or lost row
+Self-test passed: fetch_klines paginates, resumes, retries and plans jobs correctly (offline fake exchange).
+=================== task0_report.py --self-test
+=== Task 0 report: ETH_FDUSD ===
+
+Cost model (planning, taker at the next bar's open): base 0.24% round trip (fee 0.10% + slippage 0.02% per side), stress 0.30%.
+  Planning fee 0.10% maker / 0.10% taker. The account's current maker 0% is a promotion and is ignored (work order 1.2).
+
+History (freqtrade files). Break day = 2026-01-29; splits shown for fit/validate = 90/30 and 270/90 days
+tf   first        last              rows    days  missing  flat%      pre  break     post  splits(full) splits(post-break)
+1m   2026-03-01   2026-04-14       64769    45.0       31   6.17        0      0    64769    0/0            0/0  
+5m   2025-12-31   2026-02-13       64800    45.0   -51840   6.17    41760   1440    21600    0/0            0/0  
+15m  2026-03-01   2026-04-14        4320    45.0        0   0.00        0      0     4320    0/0            0/0  
+30m  2026-03-01   2026-04-14        2160    45.0        0   0.00        0      0     2160    0/0            0/0  
+1h   2026-03-01   2026-04-14        1080    45.0        0   0.00        0      0     1080    0/0            0/0  
+1d   2026-03-01   2026-04-14          45    44.0        0   0.00        0      0       45    0/0            0/0  
+1w   2026-02-23   2026-04-13           8    49.0        0   0.00        0      0        8    0/0            0/0  
+
+Raw-kline store:
+  ETH_FDUSD-1m       2026-03-01 .. 2026-04-14  rows=    64765  missing=     35  zero-trade bars=0
+
+Raw vs freqtrade ETH_FDUSD 1m over 2026-03-01 00:00 .. 2026-04-14 23:59: common=64764, only-in-freqtrade=5 (of which flat placeholders: 5), only-in-raw=1, OHLCV identical on common rows: False
+
+1d built from 1m vs native 1d: MISMATCH -- 45 complete days checked, 2 mismatched (1 explained by missing 1m minutes or a flat first/last row, 1 unexplained)
+
+Flat (zero-trade) minute share by month, ETH_FDUSD_1m: 2026-03:6.2%  2026-04:6.1%
+
+Seam freqtrade_ETH_FDUSD_1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=25889/38880
+
+Seam raw_ETH_FDUSD-1m: consecutive across 2026-03-19: True, duplicates=0, missing in +-1 day window=0, rows before/after seam=25888/38877
+
+WARNINGS:
+  - 5m history starts 2025-12-31 but 1m starts 2026-03-01: every result pairing 5m with 1m is only as long as the 1m file.
+  - 1m file has 31 literal missing minutes (3999 flat rows are present as placeholders).
+  - 5m: 41760 rows before 2026-01-29, 1440 on the break day, 21600 after -- NOT entirely post-break.
+  - 1 day(s) mismatch between 1m-resampled and native 1d with NO missing 1m minute or flat edge row to explain it -- investigate before trusting daily bars.
+  - raw-kline store and freqtrade 1m file disagree on common rows -- see raw_vs_freqtrade_1m.
+  seam check: consecutive across the join, flags a missing bar or duplicate; extension-vs-previous detects change or loss
+
+Self-test passed: task0_report counts gaps/flats/break split, classifies 1d mismatches, and diffs raw vs freqtrade.
+=================== passive_fill_baseline.py --self-test
+  placement bar excluded; touching the limit is not a fill; one tick through is a fill
+  variant A covers bars T+1..T+14, variant B T+1..T+15, nothing later
+  forward return = close(fill bar + h) / limit - 1; missing forward bar drops only that horizon
+  sell side mirrors: fills on high >= limit + tick, pnl sign flipped
+  buy limit rounds down, sell limit rounds up
+  missing reference bar -> origin skipped and counted; --start excludes earlier origins
+  tick inference from the price grid
+  vectorised simulator matches an independent per-origin brute force (both sides, 3 d, both variants, 400 missing bars)
+  stats: HAC mean/t match the naive iid values on iid data; Holm >= raw, Bonferroni >= Holm; family = tests run (18 when every cell has >=30 fills)
+Self-test passed: passive_fill_baseline implements every stated timing convention.
+=================== funding.py
+  8h regime: jitter rounds onto the second; every observation after the first equals its native rate
+  interval change 8h->4h: observations sum the native rates in (s-8h, s]; touched=5, masked=1
+  missing native settlement: caught through the reported interval (window masked, stays on the grid); documented blind spot without it
+  merge_native: overlap resolved in favour of the new rows, no duplicates
+  parsing: REST rows, monthly CSV with and without the interval column, microsecond times; unknown header raises
+  tie share: modal-value fraction, cutoff-limited and full-range reported separately
+Self-test passed: funding.py parses, rounds, chains and masks funding settlements as answer A3 specifies.
+=================== fetch_funding.py --self-test
+    ETHUSDT REST: 7 page(s), 324 rows
+  REST path: 7 pages, jitter rounded, stored, first settlement reported, no interval change
+    ETHUSDT REST: 1 page(s), 0 rows
+  resume: second run requests from the last published time + 1 ms and keeps the series unchanged
+    ETHUSDT: futures REST unreachable (all base URLs failed (fake)); falling back to data.binance.vision monthly files
+    ETHUSDT monthly files: 3 found (2025-12 .. 2026-02), interior gaps: none
+  fallback: REST failure -> monthly files; header-driven parsing; interval change 2026-02-01 -> 4h and 83 touched observations reported
+  --source rest never falls back; interior missing month flagged; unknown monthly layout raises
+Self-test passed: fetch_funding.py falls back correctly, resumes, reports interval changes and never guesses a layout.
+=================== locate_gaps.py --self-test
+  gaps: runs, sizes and positions found; the 4 leading hours are reported separately, not as a gap
+  cross-check: fine bars inside each coarse gap counted (0 present), extra fine gaps outside them located
+  compare: bars missing in both / only in one pair counted
+  mask_to_grid: 9 NaN rows added on the regular grid, every real row kept, nothing filled
+  irregular spacing and duplicate timestamps are reported
+ETH_USDT 1h: 1451 rows, 2020-01-01 04:00:00+00:00 .. 2020-03-01 23:00:00+00:00
+  leading partial day: series starts 2020-01-01 04:00:00+00:00, 4 bar(s) of that day precede it (not counted as gaps)
+  interior gaps: 3 block(s), 9 bar(s) missing (3 block(s) / 9 bar(s) up to the cutoff)
+  expected rows first..last: 1460   irregular spacings: 0   duplicates: 0
+  by year: {2020: {'blocks': 3, 'bars': 9}}
+  longest: 2020-02-20 00:00:00+00:00 .. 2020-02-20 04:00:00+00:00  (5 bars)
+  longest: 2020-01-10 05:00:00+00:00 .. 2020-01-10 07:00:00+00:00  (3 bars)
+  longest: 2020-02-01 12:00:00+00:00 .. 2020-02-01 12:00:00+00:00  (1 bars)
+  5m cross-check: fine rows still present inside coarse gaps = 0 (windows affected 0); fine bars missing total 111 = 108 inside coarse gaps + 3 outside (2 block(s))
+  vs BTC_USDT: missing bars 9 vs 10; in both 8; only ETH_USDT 1; only BTC_USDT 2
+
+Wrote /Users/apple/apps/crypto_bot/temp/selftest/tmp03h8ecoq/out/gaps/gaps_ETH_USDT-1h.csv and .json
+Self-test passed: locate_gaps.py finds, cross-checks, compares and masks gaps without dropping a bar.
+=================== liquidity_table.py --self-test
+  monthly table: per-day rates use days actually covered, zero-trade share and ratios as defined
+Monthly liquidity 2026: ETH_FDUSD vs ETH_USDT (raw 1m store; counts and volumes only)
+  ETH_FDUSD: 2026-01-01 00:00:00+00:00 .. 2026-02-10 23:59:00+00:00    ETH_USDT: 2026-01-01 00:00:00+00:00 .. 2026-02-10 23:59:00+00:00
+
+month      days |   trades/day ETH_FDUSD    trades/day ETH_USDT   ratio |      quote/day ETH_FDUSD       quote/day ETH_USDT   ratio | zero-trade ETH_FDUSD zero-trade ETH_USDT
+2026-01    31.0 |                  6,480                 14,400   0.450 |                  129,600                  288,000   0.450 |              0.1000              0.0000
+2026-02    10.0 |                  6,480                 14,400   0.450 |                  129,600                  288,000   0.450 |              0.1000              0.0000
+
+Wrote /Users/apple/apps/crypto_bot/temp/selftest/tmp4hux157o/out/liquidity_monthly_2026.csv and .json
+Self-test passed: liquidity_table.py computes the monthly trades and quote volume per day as defined.
+
+ALL SELF-TESTS PASSED

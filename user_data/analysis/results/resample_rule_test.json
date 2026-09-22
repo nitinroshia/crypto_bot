@@ -1,0 +1,107 @@
+{
+  "pair": "ETH_FDUSD",
+  "one_minute_range": [
+    "2026-01-30 00:00:00+00:00",
+    "2026-09-19 23:59:00+00:00"
+  ],
+  "timeframes": {
+    "5m": {
+      "filled": {
+        "bins_compared": 67104,
+        "status": "MISMATCH",
+        "mismatched_rows": {
+          "open": 5111,
+          "high": 1377,
+          "low": 1578
+        }
+      },
+      "traded": {
+        "bins_compared": 67104,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    },
+    "15m": {
+      "filled": {
+        "bins_compared": 22368,
+        "status": "MISMATCH",
+        "mismatched_rows": {
+          "open": 1501,
+          "high": 248,
+          "low": 266
+        }
+      },
+      "traded": {
+        "bins_compared": 22368,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    },
+    "30m": {
+      "filled": {
+        "bins_compared": 11184,
+        "status": "MISMATCH",
+        "mismatched_rows": {
+          "open": 606,
+          "high": 61,
+          "low": 90
+        }
+      },
+      "traded": {
+        "bins_compared": 11184,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    },
+    "1h": {
+      "filled": {
+        "bins_compared": 5592,
+        "status": "MISMATCH",
+        "mismatched_rows": {
+          "open": 250,
+          "high": 17,
+          "low": 20
+        }
+      },
+      "traded": {
+        "bins_compared": 5592,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    },
+    "1d": {
+      "filled": {
+        "bins_compared": 233,
+        "status": "MISMATCH",
+        "mismatched_rows": {
+          "open": 5
+        }
+      },
+      "traded": {
+        "bins_compared": 233,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    },
+    "1w": {
+      "filled": {
+        "bins_compared": 32,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "traded": {
+        "bins_compared": 32,
+        "status": "MATCH",
+        "mismatched_rows": {}
+      },
+      "missing_bins_in_rebuilt": 0
+    }
+  },
+  "volume_gt0_equals_n_trades_gt0": true,
+  "verdict": "ZERO MISMATCHES with the traded rule on every tested timeframe -> adopt it as the default resampling rule"
+}

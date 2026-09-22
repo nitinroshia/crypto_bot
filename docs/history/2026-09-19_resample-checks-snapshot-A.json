@@ -1,0 +1,118 @@
+{
+  "5m": {
+    "overlap_rows": 53047,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 4999,
+        "max_abs_diff": 2.3600000000001273,
+        "first_mismatch_ts": "2026-03-19 03:05:00+00:00"
+      },
+      "high": {
+        "n_mismatched_rows": 1357,
+        "max_abs_diff": 1.7199999999998,
+        "first_mismatch_ts": "2026-03-21 05:55:00+00:00"
+      },
+      "low": {
+        "n_mismatched_rows": 1550,
+        "max_abs_diff": 2.3600000000001273,
+        "first_mismatch_ts": "2026-03-21 03:20:00+00:00"
+      }
+    }
+  },
+  "15m": {
+    "overlap_rows": 17682,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 1468,
+        "max_abs_diff": 2.3600000000001273,
+        "first_mismatch_ts": "2026-03-21 07:15:00+00:00"
+      },
+      "high": {
+        "n_mismatched_rows": 245,
+        "max_abs_diff": 1.650000000000091,
+        "first_mismatch_ts": "2026-03-21 14:45:00+00:00"
+      },
+      "low": {
+        "n_mismatched_rows": 261,
+        "max_abs_diff": 1.6700000000000728,
+        "first_mismatch_ts": "2026-03-21 17:30:00+00:00"
+      }
+    }
+  },
+  "30m": {
+    "overlap_rows": 8841,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 593,
+        "max_abs_diff": 1.7600000000002183,
+        "first_mismatch_ts": "2026-03-21 11:00:00+00:00"
+      },
+      "high": {
+        "n_mismatched_rows": 61,
+        "max_abs_diff": 1.4100000000000819,
+        "first_mismatch_ts": "2026-04-04 11:30:00+00:00"
+      },
+      "low": {
+        "n_mismatched_rows": 89,
+        "max_abs_diff": 1.2200000000002547,
+        "first_mismatch_ts": "2026-03-25 22:30:00+00:00"
+      }
+    }
+  },
+  "1h": {
+    "overlap_rows": 4420,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 247,
+        "max_abs_diff": 1.6199999999998909,
+        "first_mismatch_ts": "2026-03-21 11:00:00+00:00"
+      },
+      "high": {
+        "n_mismatched_rows": 17,
+        "max_abs_diff": 1.1600000000003092,
+        "first_mismatch_ts": "2026-04-19 06:00:00+00:00"
+      },
+      "low": {
+        "n_mismatched_rows": 19,
+        "max_abs_diff": 0.7999999999999545,
+        "first_mismatch_ts": "2026-04-03 21:00:00+00:00"
+      }
+    }
+  },
+  "1d": {
+    "overlap_rows": 184,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 5,
+        "max_abs_diff": 0.6999999999998181,
+        "first_mismatch_ts": "2026-06-21 00:00:00+00:00"
+      }
+    }
+  },
+  "1w": {
+    "overlap_rows": 26,
+    "status": "MISMATCH",
+    "mismatches": {
+      "open": {
+        "n_mismatched_rows": 1,
+        "max_abs_diff": 26.730000000000018,
+        "first_mismatch_ts": "2026-03-16 00:00:00+00:00"
+      },
+      "high": {
+        "n_mismatched_rows": 1,
+        "max_abs_diff": 149.5600000000004,
+        "first_mismatch_ts": "2026-03-16 00:00:00+00:00"
+      },
+      "volume": {
+        "n_mismatched_rows": 1,
+        "max_abs_diff": 57417.6938,
+        "first_mismatch_ts": "2026-03-16 00:00:00+00:00"
+      }
+    }
+  }
+}

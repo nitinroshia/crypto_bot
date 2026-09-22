@@ -1,0 +1,4 @@
+ETHUSDT: https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&startTime=1567296000000&limit=1000  (paged)  [fallback: 84 monthly files, e.g. https://data.binance.vision/data/futures/um/monthly/fundingRate/ETHUSDT/ETHUSDT-fundingRate-2019-09.zip]
+    store: user_data/data/binance_raw/ETH_USDT-funding.feather
+BTCUSDT: https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1567296000000&limit=1000  (paged)  [fallback: 84 monthly files, e.g. https://data.binance.vision/data/futures/um/monthly/fundingRate/BTCUSDT/BTCUSDT-fundingRate-2019-09.zip]
+    store: user_data/data/binance_raw/BTC_USDT-funding.feather

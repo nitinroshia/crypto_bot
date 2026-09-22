@@ -1,0 +1,44 @@
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main
+╰╼ cd ~/apps/crypto_bot && .venv/bin/python3 --version 2>&1 | tee python-version.txt
+Python 3.12.7
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ cd ~/apps/crypto_bot && ls -l README.md project_context.md requirements.txt scripts user_data/analysis user_data/analysis/retired 2>&1 | tee ls-l.txt
+ls: requirements.txt: No such file or directory
+-rw-r--r--@ 1 apple  staff  16620 Sep 21 05:36 README.md
+-rw-r--r--@ 1 apple  staff  37283 Sep 21 05:36 project_context.md
+
+scripts:
+total 16
+-rw-r--r--@ 1 apple  staff  1979 Sep 21 05:35 backtest.sh
+-rwxr-xr-x@ 1 apple  staff  1343 Sep 19 10:02 download_data.sh
+
+user_data/analysis:
+total 544
+drwxr-xr-x@ 12 apple  staff    384 Sep 21 05:43 __pycache__
+-rw-------@  1 apple  staff   3482 Sep 19 10:02 config_schema.py
+-rw-r--r--@  1 apple  staff   6709 Sep 21 05:36 costs.py
+-rw-r--r--@  1 apple  staff   7281 Sep 19 17:46 databundle.py
+-rw-r--r--@  1 apple  staff   6017 Sep 19 10:03 diagnose_gaps.py
+-rw-r--r--@  1 apple  staff  33638 Sep 20 06:13 fetch_klines.py
+-rw-r--r--@  1 apple  staff  38029 Sep 20 06:13 leadlag.py
+-rw-r--r--@  1 apple  staff   4326 Sep 19 17:46 multitest.py
+-rw-r--r--@  1 apple  staff  26752 Sep 20 21:17 passive_fill_baseline.py
+-rw-r--r--@  1 apple  staff    332 Sep 20 06:13 requirements.txt
+-rw-r--r--@  1 apple  staff  13469 Sep 20 07:01 resample.py
+-rw-r--r--@  1 apple  staff   9693 Sep 20 06:13 resample_rule_test.py
+-rw-r--r--@  1 apple  staff  28206 Sep 20 06:13 research_cli.py
+drwxr-xr-x@  7 apple  staff    224 Sep 20 06:31 results
+drwxr-xr-x@  4 apple  staff    128 Sep 20 21:17 retired
+-rw-r--r--@  1 apple  staff  12447 Sep 20 06:13 run_fingerprint.py
+-rw-r--r--@  1 apple  staff    941 Sep 20 21:17 selftest_all.sh
+-rw-r--r--@  1 apple  staff   7875 Sep 20 06:13 selftest_research_cli.py
+-rw-------@  1 apple  staff  10850 Sep 19 10:03 stats_fingerprint.py
+-rw-r--r--@  1 apple  staff  27390 Sep 20 21:17 task0_report.py
+-rw-------@  1 apple  staff   3784 Sep 16 02:11 walkforward.py
+
+user_data/analysis/retired:
+total 24
+-rw-r--r--@ 1 apple  staff  1864 Sep 20 21:17 README_retired.md
+-rw-r--r--@ 1 apple  staff  4587 Sep 20 21:17 costs_scenarios_AB.py
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 

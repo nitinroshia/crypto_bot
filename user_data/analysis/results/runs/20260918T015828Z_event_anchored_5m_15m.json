@@ -1,0 +1,27 @@
+{
+  "run_id": "20260918T015828Z_event_anchored_5m_15m",
+  "timestamp_utc": "2026-09-18T01:58:28.673939+00:00",
+  "git_commit": "180f163",
+  "formula": "event_anchored",
+  "formula_description": "TRUSTED for cross-timeframe pairs. Anchors once per closed coarse bar, tests fine-grid minutes at/after its close -- immune to the composition-overlap artifact (project_context.md mistake #5).",
+  "asset_pair": "ETH_FDUSD",
+  "lead_lag_pair": "5m:15m",
+  "max_lag": 20,
+  "data_dir": "user_data/data/binance",
+  "data_date_range": [
+    "2023-08-04 08:00:00+00:00",
+    "2026-09-16 02:00:00+00:00"
+  ],
+  "result": {
+    "status": "SIGNIFICANT_LAG_FOUND",
+    "best_lag": {
+      "lag_minutes_after_close": 4,
+      "n": 109319,
+      "beta": -0.010465752954566539,
+      "t_stat_hac": -2.720913268404993,
+      "p_value_hac": 0.006510183984093595,
+      "significant_at_5pct": true
+    }
+  },
+  "result_csv": "user_data/analysis/results/runs/20260918T015828Z_event_anchored_5m_15m.csv"
+}

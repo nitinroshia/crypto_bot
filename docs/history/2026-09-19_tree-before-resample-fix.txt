@@ -1,0 +1,120 @@
+apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼  source /Users/apple/apps/crypto_bot/.venv/bin/activate
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ tree -ls
+[        512]  .
+├── [      12073]  README.md
+├── [        806]  docker-compose.yml
+├── [        614]  extension_dryrun.log
+├── [       1834]  extension_run.log
+├── [      20712]  project_context.md
+├── [        128]  scripts
+│   ├── [       1329]  backtest.sh
+│   └── [       1343]  download_data.sh
+├── [        160]  temp
+│   ├── [         96]  dev
+│   │   └── [       4056]  README_workorder01.md
+│   └── [         96]  phd
+│       └── [       5913]  README_workorder01.md
+└── [        576]  user_data
+    ├── [        768]  analysis
+    │   ├── [        384]  __pycache__
+    │   │   ├── [       5757]  config_schema.cpython-312.pyc
+    │   │   ├── [       4685]  costs.cpython-312.pyc
+    │   │   ├── [      10862]  databundle.cpython-312.pyc
+    │   │   ├── [      40008]  leadlag.cpython-312.pyc
+    │   │   ├── [       6913]  multitest.cpython-312.pyc
+    │   │   ├── [      14982]  resample.cpython-312.pyc
+    │   │   ├── [      35500]  research_cli.cpython-312.pyc
+    │   │   ├── [      11816]  run_fingerprint.cpython-312.pyc
+    │   │   ├── [      12268]  stats_fingerprint.cpython-312.pyc
+    │   │   └── [       4858]  walkforward.cpython-312.pyc
+    │   ├── [       3482]  config_schema.py
+    │   ├── [       4188]  costs.py
+    │   ├── [       7281]  databundle.py
+    │   ├── [       6017]  diagnose_gaps.py
+    │   ├── [      33638]  fetch_klines.py
+    │   ├── [      38029]  leadlag.py
+    │   ├── [       4326]  multitest.py
+    │   ├── [      26032]  passive_fill_baseline.py
+    │   ├── [       1233]  project_context_additions.md
+    │   ├── [        332]  requirements.txt
+    │   ├── [      13003]  resample.py
+    │   ├── [       9693]  resample_rule_test.py
+    │   ├── [      28206]  research_cli.py
+    │   ├── [        224]  results
+    │   │   ├── [        480]  from_2026-01-30
+    │   │   │   ├── [        636]  data_ranges.json
+    │   │   │   ├── [      29522]  fingerprints.json
+    │   │   │   ├── [       2085]  leadlag_1m_5m_event_anchored.csv
+    │   │   │   ├── [        908]  leadlag_1m_5m_hac.csv
+    │   │   │   ├── [        476]  leadlag_1m_5m_nonoverlap.csv
+    │   │   │   ├── [       2123]  leadlag_5m_15m_event_anchored.csv
+    │   │   │   ├── [        547]  leadlag_5m_15m_hac.csv
+    │   │   │   ├── [        281]  leadlag_5m_15m_nonoverlap.csv
+    │   │   │   ├── [       4703]  leadlag_5m_1h_event_anchored.csv
+    │   │   │   ├── [       2066]  leadlag_5m_1h_hac.csv
+    │   │   │   ├── [       1003]  leadlag_5m_1h_nonoverlap.csv
+    │   │   │   ├── [       4009]  leadlag_summary.json
+    │   │   │   └── [       2619]  resample_checks.json
+    │   │   ├── [       2359]  resample_rule_test.json
+    │   │   ├── [        448]  runs
+    │   │   │   ├── [       8431]  20260918T015806Z_event_anchored_5m_15m_walkforward.json
+    │   │   │   ├── [       1597]  20260918T015828Z_event_anchored_5m_15m.csv
+    │   │   │   ├── [        983]  20260918T015828Z_event_anchored_5m_15m.json
+    │   │   │   ├── [       8204]  20260918T015839Z_event_anchored_5m_15m_walkforward.json
+    │   │   │   ├── [       1598]  20260919T053023Z_event_anchored_5m-15m.csv
+    │   │   │   ├── [       1055]  20260919T053023Z_event_anchored_5m-15m.json
+    │   │   │   ├── [       8492]  20260919T054029Z_event_anchored_5m-15m_walkforward.json
+    │   │   │   ├── [       8492]  20260919T054058Z_event_anchored_5m-15m_walkforward.json
+    │   │   │   ├── [       8492]  20260919T074019Z_event_anchored_5m-15m_walkforward.json
+    │   │   │   ├── [      11255]  20260919T125727Z_passive_fill_baseline.csv
+    │   │   │   ├── [       3989]  20260919T125727Z_passive_fill_baseline.json
+    │   │   │   └── [    8239903]  20260919T125727Z_passive_fill_baseline_orders.csv
+    │   │   └── [      14537]  task0_report.json
+    │   ├── [      12447]  run_fingerprint.py
+    │   ├── [        907]  selftest_all.sh
+    │   ├── [       7875]  selftest_research_cli.py
+    │   ├── [      10850]  stats_fingerprint.py
+    │   ├── [      26060]  task0_report.py
+    │   └── [       3784]  walkforward.py
+    ├── [         64]  backtest_results
+    ├── [       1370]  config.json
+    ├── [        128]  data
+    │   ├── [        384]  binance
+    │   │   ├── [    2803394]  ETH_FDUSD-15m.feather
+    │   │   ├── [      40250]  ETH_FDUSD-1d.feather
+    │   │   ├── [     734386]  ETH_FDUSD-1h.feather
+    │   │   ├── [    5712546]  ETH_FDUSD-1m.backup-20260920T002449Z.feather.bak
+    │   │   ├── [    9444066]  ETH_FDUSD-1m.backup-20260920T003008Z.feather.bak
+    │   │   ├── [    9444066]  ETH_FDUSD-1m.backup-20260920T005419Z.feather.bak
+    │   │   ├── [    9444066]  ETH_FDUSD-1m.feather
+    │   │   ├── [       9394]  ETH_FDUSD-1w.feather
+    │   │   ├── [    1435202]  ETH_FDUSD-30m.feather
+    │   │   └── [    7987266]  ETH_FDUSD-5m.feather
+    │   └── [        320]  binance_raw
+    │       ├── [   15940722]  ETH_FDUSD-1m.feather
+    │       ├── [     212730]  ETH_USDT-1d.feather
+    │       ├── [    4800506]  ETH_USDT-1h.feather
+    │       ├── [   17779634]  ETH_USDT-1m.feather
+    │       ├── [   18366954]  ETH_USDT-5m.feather
+    │       ├── [   10986178]  FDUSD_USDT-1m.feather
+    │       ├── [       2507]  fetch_manifest.json
+    │       └── [       6467]  symbol_filters.json
+    ├── [         64]  freqaimodels
+    ├── [         64]  hyperopt_results
+    ├── [         64]  hyperopts
+    ├── [         96]  logs
+    │   └── [     125749]  freqtrade.log
+    ├── [         64]  notebooks
+    ├── [         64]  plot
+    ├── [         96]  strategies
+    │   └── [       3078]  MomentumTrailing.py
+    ├── [        247]  test_params.json
+    ├── [      94208]  tradesv3.sqlite
+    ├── [      32768]  tradesv3.sqlite-shm
+    └── [      45352]  tradesv3.sqlite-wal
+
+22 directories, 90 files
+(.venv) apple@Apples-MacBook-Pro › ~/apps/crypto_bot › main✲
+╰╼ 
