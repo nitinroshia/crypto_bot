@@ -427,18 +427,86 @@ def _norm_cdf(x: float) -> float:
     return 0.5 * (1 + erf(x / np.sqrt(2)))
 
 
-def summarize_best_lag(result_df: pd.DataFrame, corr_col: str = "correlation") -> dict:
-    """Given either result table, report the lag with the strongest
-    significant relationship (if any) rather than just the largest raw
-    correlation -- a big correlation at an insignificant p-value is noise."""
+# --------------------------------------------------------------------------------------
+# Lag selection (work order 1.2 item 1, answer 02 item 3)
+# --------------------------------------------------------------------------------------
+P_COLUMNS = ("p_value_hac", "p_value")           # same order as multitest.P_COLUMNS
+SELECTION_MIN_P = "min_p"
+SELECTION_LEGACY = "legacy_max_abs_effect_among_significant"
+
+
+def _first_present(columns, names):
+    return next((c for c in names if c in columns), None)
+
+
+def _selection_strength(df: pd.DataFrame, corr_col: str) -> pd.Series:
+    """Tie-breaker for equal p. A p-value that underflows to exactly 0.0 (|t| > ~38 for the HAC
+    tables, |z| > ~8.3 for the non-overlapping table) says nothing about which lag is stronger, so
+    equal p is broken by the underlying statistic: |HAC t|; else |Fisher z| = |atanh(r)| * sqrt(n - 3);
+    else |effect|."""
+    if "t_stat_hac" in df.columns:
+        return pd.to_numeric(df["t_stat_hac"], errors="coerce").abs()
+    if "correlation" in df.columns and "n" in df.columns:
+        r = pd.to_numeric(df["correlation"], errors="coerce").clip(-0.999999, 0.999999)
+        n = pd.to_numeric(df["n"], errors="coerce")
+        return (np.arctanh(r) * np.sqrt((n - 3).clip(lower=0))).abs()
+    if corr_col in df.columns:
+        return pd.to_numeric(df[corr_col], errors="coerce").abs()
+    return pd.Series(0.0, index=df.index)
+
+
+def summarize_best_lag(result_df: pd.DataFrame, corr_col: str = "correlation", select: str = SELECTION_MIN_P) -> dict:
+    """Pick one lag from a result table (one row per lag tested).
+
+    select="min_p" (DEFAULT, work order 1.2 item 1): the lag with the SMALLEST p-value -- equivalently
+    the largest |HAC t| -- with NO "significant" pre-filter and NOT the largest |beta| or |correlation|
+    (|beta| favours lags whose target is more volatile, so it selects noise). Ties in p (a p that
+    underflows to 0.0) are broken by the larger |t| (see _selection_strength), then by the smaller lag.
+    Rows without a p-value (INSUFFICIENT_DATA) cannot be ranked and are skipped. A best lag therefore
+    always exists unless NO row is testable; its own `significant_at_5pct` says whether it clears 5%.
+    Result: {"status": "BEST_LAG_BY_MIN_P", "selection": "min_p", "n_lags_tested", "n_lags_ranked",
+    "best_lag": <that row>}, or {"status": "NO_TESTABLE_LAG", ...}.
+
+    select="legacy_max_abs_effect_among_significant": the rule used until work order 1.2 (largest
+    |corr_col| among rows significant at 5%). Kept ONLY so a frozen ETH/FDUSD result can be recomputed
+    exactly as it was reported; pass it explicitly by name -- it is never the default and no caller
+    invokes it implicitly. Do not use it for new claims.
+    """
+    if select == SELECTION_LEGACY:
+        out = _summarize_best_lag_legacy(result_df, corr_col)
+        out["selection"] = SELECTION_LEGACY
+        return out
+    if select != SELECTION_MIN_P:
+        raise ValueError(f"unknown selection rule {select!r}; use {SELECTION_MIN_P!r} or {SELECTION_LEGACY!r}")
+    n_tested = 0 if result_df is None else len(result_df)
+    base = {"selection": SELECTION_MIN_P, "n_lags_tested": n_tested}
+    if result_df is None or result_df.empty:
+        return {"status": "NO_TESTABLE_LAG", **base}
+    pcol = _first_present(result_df.columns, P_COLUMNS)
+    if pcol is None:
+        return {"status": "NO_TESTABLE_LAG", **base,
+                "note": "No p-value column: every lag had too little data to test (see the per-lag 'status' "
+                        "column). Not a real null result, just not enough history for this pair/max_lag."}
+    d = result_df.copy()
+    d["_p"] = pd.to_numeric(d[pcol], errors="coerce")
+    d = d[np.isfinite(d["_p"])]
+    if d.empty:
+        return {"status": "NO_TESTABLE_LAG", **base, "n_lags_ranked": 0}
+    d["_strength"] = _selection_strength(d, corr_col)
+    lagc = _first_present(d.columns, ("lag", "lag_bars")) or _first_present(d.columns, [c for c in d.columns if str(c).startswith("lag")])
+    d["_lag"] = pd.to_numeric(d[lagc], errors="coerce") if lagc else 0.0
+    d = d.sort_values(["_p", "_strength", "_lag"], ascending=[True, False, True], kind="mergesort")
+    best = d.iloc[0].drop(labels=["_p", "_strength", "_lag"])
+    return {"status": "BEST_LAG_BY_MIN_P", **base, "n_lags_ranked": int(len(d)), "best_lag": best.to_dict()}
+
+
+def _summarize_best_lag_legacy(result_df: pd.DataFrame, corr_col: str = "correlation") -> dict:
+    """The pre-1.2 rule: the lag with the largest |corr_col| among lags significant at 5% (if any)."""
     if result_df is None or result_df.empty:
         return {"status": "NO_SIGNIFICANT_LAG_FOUND", "n_lags_tested": 0}
     if "significant_at_5pct" not in result_df.columns:
-        # Every tested lag hit INSUFFICIENT_DATA (short history or a very
-        # coarse timeframe pair, e.g. 1d:1w with only ~30 weekly closes) --
-        # confirmed reachable via real testing, not just a theoretical edge
-        # case. Nothing to summarize -- and NOT the same thing as "tested
-        # and found nothing", so say so rather than reporting a plain null.
+        # Every tested lag hit INSUFFICIENT_DATA (short history or a very coarse timeframe pair, e.g. 1d:1w
+        # with only ~30 weekly closes). Not the same thing as "tested and found nothing", so say so.
         return {
             "status": "NO_SIGNIFICANT_LAG_FOUND",
             "n_lags_tested": len(result_df),
@@ -694,3 +762,53 @@ if __name__ == "__main__":
     hac_tbl = hac_lagged_regression(fine_short5.iloc[:3000], fine_short5.iloc[:3000], max_lag=3, upsample_factor=1)
     assert "correlation" in hac_tbl.columns and hac_tbl["correlation"].abs().max() <= 1.0
     print("Self-test passed: lag_bars / lag_minutes units are explicit (5m fine bars = 5 minutes) and correlation is reported next to beta.")
+
+    # Selection rule (work order 1.2 item 1): smallest p, no "significant" pre-filter, not |beta|.
+    # (a) a table where the two rules DISAGREE: lag 2 has the biggest |beta| among the significant lags,
+    #     lag 3 has by far the smallest p (largest |HAC t|) but a tiny beta.
+    tbl = pd.DataFrame({
+        "lag": [1, 2, 3, 4], "n": [1000] * 4, "beta": [0.010, 0.050, 0.004, 0.030],
+        "correlation": [0.02, 0.03, 0.12, 0.05], "t_stat_hac": [2.3, 2.1, 3.9, 1.0],
+        "p_value_hac": [0.021, 0.036, 9.5e-5, 0.31], "significant_at_5pct": [True, True, True, False],
+    })
+    assert summarize_best_lag(tbl, corr_col="beta", select=SELECTION_LEGACY)["best_lag"]["lag"] == 2, "legacy rule = largest |beta| among significant"
+    new_pick = summarize_best_lag(tbl, corr_col="beta")
+    assert new_pick["best_lag"]["lag"] == 3 and new_pick["selection"] == "min_p" and new_pick["status"] == "BEST_LAG_BY_MIN_P"
+    assert new_pick["n_lags_tested"] == 4 and new_pick["n_lags_ranked"] == 4
+    # (b) no pre-filter: with nothing significant the smallest-p lag is still returned (the legacy rule returned nothing)
+    weak = tbl.assign(p_value_hac=[0.4, 0.2, 0.09, 0.5], significant_at_5pct=False)
+    assert summarize_best_lag(weak, corr_col="beta")["best_lag"]["lag"] == 3 and summarize_best_lag(weak, corr_col="beta")["best_lag"]["significant_at_5pct"] is False
+    assert summarize_best_lag(weak, corr_col="beta", select=SELECTION_LEGACY)["status"] == "NO_SIGNIFICANT_LAG_FOUND"
+    # (c) rows without a p-value (INSUFFICIENT_DATA) are skipped; if none is testable there is no best lag
+    part = pd.concat([tbl.iloc[:2], pd.DataFrame({"lag": [5], "n": [3], "status": ["INSUFFICIENT_DATA"]})], ignore_index=True)
+    assert summarize_best_lag(part)["best_lag"]["lag"] == 1 and summarize_best_lag(part)["n_lags_ranked"] == 2 and summarize_best_lag(part)["n_lags_tested"] == 3
+    nothing = pd.DataFrame({"lag": [1, 2], "n": [3, 4], "status": ["INSUFFICIENT_DATA"] * 2})
+    assert summarize_best_lag(nothing)["status"] == "NO_TESTABLE_LAG" and "best_lag" not in summarize_best_lag(nothing)
+    assert summarize_best_lag(pd.DataFrame())["status"] == "NO_TESTABLE_LAG" and summarize_best_lag(None)["status"] == "NO_TESTABLE_LAG"
+    # (d) ties: p underflowed to 0.0 in both rows -> the larger |HAC t| wins; in the non-overlapping table the
+    #     larger |Fisher z| wins; equal everything -> the smaller lag
+    tie_hac = pd.DataFrame({"lag": [1, 2], "beta": [0.9, 0.1], "t_stat_hac": [41.0, 49.8], "p_value_hac": [0.0, 0.0]})
+    assert summarize_best_lag(tie_hac, corr_col="beta")["best_lag"]["lag"] == 2
+    tie_no = pd.DataFrame({"lag": [3, 4], "n": [30501, 30501], "correlation": [0.20, 0.33], "p_value": [0.0, 0.0]})
+    assert summarize_best_lag(tie_no)["best_lag"]["lag"] == 4
+    tie_all = pd.DataFrame({"lag": [4, 2], "n": [100, 100], "correlation": [0.3, 0.3], "p_value": [0.01, 0.01]})
+    assert summarize_best_lag(tie_all)["best_lag"]["lag"] == 2
+    # (e) the event-anchored table calls its lag column lag_bars; an unknown rule name is an error
+    ev = pd.DataFrame({"lag_bars": [1, 2, 3], "beta": [0.3, 0.1, 0.02], "t_stat_hac": [1.0, 2.5, 3.0], "p_value_hac": [0.31, 0.012, 0.0027]})
+    assert summarize_best_lag(ev, corr_col="beta")["best_lag"]["lag_bars"] == 3
+    try:
+        summarize_best_lag(ev, select="largest_beta")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("an unknown selection rule must raise")
+    # (f) on simulated data the new rule recovers the built-in lag from a real HAC table, and the row it returns
+    #     is the row with the minimum p
+    rng3 = np.random.default_rng(11)
+    a3 = pd.Series(rng3.normal(0, 1, 4000))
+    b3 = a3.shift(2) * 0.15 + pd.Series(rng3.normal(0, 1, 4000))
+    hac3 = hac_lagged_regression(a3, b3.fillna(0), max_lag=6)
+    pick3 = summarize_best_lag(hac3, corr_col="beta")
+    assert pick3["best_lag"]["lag"] == 2 and abs(pick3["best_lag"]["p_value_hac"] - hac3["p_value_hac"].min()) < 1e-300
+    print("Self-test passed: summarize_best_lag picks the smallest-p lag with no significance pre-filter (largest |HAC t| on ties); "
+          "the legacy largest-|beta|-among-significant rule is kept only under its own name.")

@@ -4,6 +4,10 @@
 # Paste the whole output back if anything fails.
 set -u
 cd "$(dirname "$0")"
+# Temporary files stay INSIDE the project (owner's rule): tempfile honours TMPDIR.
+ROOT="$(cd ../.. && pwd)"
+export TMPDIR="$ROOT/temp/selftest"
+mkdir -p "$TMPDIR"
 fail=0
 run() {
   echo "=================== $*"
@@ -25,6 +29,10 @@ run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test
 run passive_fill_baseline.py --self-test
+run funding.py
+run fetch_funding.py --self-test
+run locate_gaps.py --self-test
+run liquidity_table.py --self-test
 echo
 if [ "$fail" -eq 0 ]; then echo "ALL SELF-TESTS PASSED"; else echo "SOME SELF-TESTS FAILED (see *** lines above)"; fi
 exit $fail

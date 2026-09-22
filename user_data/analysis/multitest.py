@@ -66,7 +66,8 @@ def family_stats_for_best(annotated: pd.DataFrame, best: dict, lag_col_prefix: s
         return {}
     row = best.get("best_lag") if isinstance(best, dict) else None
     if row is None:
-        # Nothing significant: still state how many lags were tested.
+        # No row to report on (e.g. summarize_best_lag returned NO_TESTABLE_LAG, or the legacy
+        # NO_SIGNIFICANT_LAG_FOUND): still state how many lags were tested.
         return {"family_size": int(annotated["family_size"].iloc[0])}
     lag_col = next((c for c in annotated.columns if c.startswith(lag_col_prefix)), None)
     p_col = find_p_column(annotated)
@@ -102,4 +103,14 @@ if __name__ == "__main__":
     stats = family_stats_for_best(ann, {"best_lag": {"lag": 1, "p_value_hac": 0.001}})
     assert stats["family_size"] == 3 and abs(stats["p_bonferroni"] - 0.003) < 1e-12
     assert family_stats_for_best(ann, {"status": "NO_SIGNIFICANT_LAG_FOUND"}) == {"family_size": 3}
-    print("Self-test passed: Bonferroni and Holm match statsmodels; family size excludes untested rows.")
+    assert family_stats_for_best(ann, {"status": "NO_TESTABLE_LAG"}) == {"family_size": 3}
+    # End to end with the actual work-order-1.2 selector: lag 1 has the smallest p (0.001), so min-p
+    # selection reports that row (same row this table's significant-only reading would also pick here),
+    # and family_stats_for_best on it matches the hand-built `stats` above exactly.
+    from leadlag import summarize_best_lag
+    best_minp = summarize_best_lag(tbl, corr_col="beta")
+    assert best_minp["best_lag"]["lag"] == 1
+    stats_minp = family_stats_for_best(ann, best_minp)
+    assert stats_minp == stats
+    print("Self-test passed: Bonferroni and Holm match statsmodels; family size excludes untested rows; "
+          "family_stats_for_best matches summarize_best_lag's min-p pick end to end.")

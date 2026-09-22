@@ -446,8 +446,12 @@ coarser timeframes full history — which is why they differ.)*
   sample to 6 minutes (beta -0.0088) on 233 days: a sign flip. Treat
   `nonoverlapping_best` / `hac_best` in `leadlag_summary.json` (betas around
   0.6-0.75, p of 1e-113 to 1e-256) as the known-contaminated old results.
-  These "best lag" rows still use the old selection rule (largest |beta|
-  among significant lags); the rule is being changed to smallest p.
+  These "best lag" rows were computed under the old selection rule (largest
+  |beta| among significant lags), stored before the rule changed, and were
+  never recomputed. The rule itself is now smallest p, no pre-filter
+  (`leadlag.summarize_best_lag`, default since work order 1.2); the old rule
+  survives only as `select="legacy_max_abs_effect_among_significant"`, so a
+  frozen result like this one can still be reproduced exactly if needed.
 
 - **Passive-fill negative control (`passive_fill_baseline.py`, 233 days,
   about 5,590 hourly origins per cell). History: this line of work was

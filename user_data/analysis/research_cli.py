@@ -30,7 +30,9 @@ project_context.md's "Formula contract" section for non-Python readers):
     call on it for the second return value. That shared output shape is
     what makes manifests, walk-forward validation, and comparison across
     formulas all work the same way regardless of what the formula computes
-    internally.
+    internally. summarize_best_lag's default (work order 1.2) picks the
+    lag with the smallest p, with no "significant" pre-filter and not the
+    largest effect size; see its docstring in leadlag.py.
   - The one question every formula must be able to answer "no" to before
     it's trusted: does this comparison let the same price data appear on
     both sides? (project_context.md's mistake log is the full explanation

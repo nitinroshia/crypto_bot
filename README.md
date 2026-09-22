@@ -208,8 +208,8 @@ connects to the strategy layer.
 (not inside the freqtrade Docker container), so they need their own small
 environment:
 ```
-pyenv install 3.12         # if you don't already have Python 3.12 via pyenv
-pyenv local 3.12
+pyenv install 3.12.7       # the exact version the project is verified on (python3 --version inside the venv prints 3.12.7)
+pyenv local 3.12.7
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r user_data/analysis/requirements.txt
