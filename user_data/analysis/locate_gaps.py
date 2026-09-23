@@ -207,11 +207,6 @@ def main(argv=None) -> int:
 # --------------------------------------------------------------------------------------
 # Self-test
 # --------------------------------------------------------------------------------------
-def _selftest_tmp() -> Path:
-    root = Path(__file__).resolve().parents[2]
-    d = root / "temp" / "selftest"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 def _self_test() -> None:
@@ -267,8 +262,8 @@ def _self_test() -> None:
     assert odd2["irregular_spacings"] >= 1 and odd2["duplicate_timestamps"] == 1
     print("  irregular spacing and duplicate timestamps are reported")
 
-    # end to end through the CLI on feather files in the project temp dir
-    with tempfile.TemporaryDirectory(dir=_selftest_tmp()) as tmp:
+    # end to end through the CLI on feather files in the system temp dir
+    with tempfile.TemporaryDirectory() as tmp:
         raw, outp = Path(tmp) / "raw", Path(tmp) / "out"
         raw.mkdir()
         for name, ix in (("ETH_USDT-1h", idx1h), ("ETH_USDT-5m", idx5), ("BTC_USDT-1h", other)):

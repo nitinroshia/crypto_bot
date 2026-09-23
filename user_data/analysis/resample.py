@@ -35,7 +35,9 @@ TIMEFRAME_TO_PANDAS_RULE = {
 
 def resample_ohlcv(df_1m: pd.DataFrame, target_timeframe: str, rule: str = "traded") -> pd.DataFrame:
     """
-    Resample 1-minute OHLCV data up to `target_timeframe`.
+    Resample 1-minute OHLCV data up to `target_timeframe`. The source does not actually have to be
+    1-minute -- see resample_ohlcv_traded's docstring; this parameter is still called df_1m because
+    that's the only source granularity used before work order 1.4.
 
     rule="traded" (DEFAULT since work order 1.1): the exchange's own convention -- see
         `resample_ohlcv_traded`. Adopted after resample_rule_test.py showed ZERO mismatches
@@ -98,7 +100,8 @@ def resample_ohlcv(df_1m: pd.DataFrame, target_timeframe: str, rule: str = "trad
 
 def resample_ohlcv_traded(df_1m: pd.DataFrame, target_timeframe: str, traded: pd.Series | None = None) -> pd.DataFrame:
     """
-    Resample 1m -> `target_timeframe` from TRADED minutes only (work order 1.1).
+    Resample 1m (or any finer granularity -- see below) -> `target_timeframe` from TRADED
+    source bars only (work order 1.1; the finer-than-1m generalization is work order 1.4).
 
     Why: Binance emits a flat placeholder bar (O=H=L=C=previous close, volume 0) for a
     minute with no trades. Treating those as real prices lets a placeholder become a
@@ -116,6 +119,12 @@ def resample_ohlcv_traded(df_1m: pd.DataFrame, target_timeframe: str, traded: pd
 
     Bins are decided from ALL rows (so the set of bins is the same as the original rule);
     leading bins with no earlier trade to carry are dropped.
+
+    SOURCE GRANULARITY: nothing in this function actually assumes 1-minute source bars -- the
+    "traded" mask, the aggregation, and the carry-forward all operate on whatever rows `df_1m`
+    contains. Work order 1.4 uses this to build BTC/USDT's 15m raw-store file from its native 5m
+    (not 1m, which nothing else needs for that pair) -- see the self-test below and
+    build_derived_raw.py, which is the tool that actually persists a derived file.
     """
     if target_timeframe not in TIMEFRAME_TO_PANDAS_RULE:
         raise ValueError(f"Unsupported timeframe '{target_timeframe}'. Supported: {sorted(TIMEFRAME_TO_PANDAS_RULE)}")
@@ -255,7 +264,7 @@ if __name__ == "__main__":
         g = trades.set_index("t").resample(freq, label="left", closed="left")
         b = g["price"].agg(open="first", high="max", low="min", close="last")
         b["volume"] = g["size"].sum()
-        full = pd.date_range("2026-01-01", periods={"1min": n_min, "5min": n_min // 5, "1h": n_min // 60, "1D": days}[freq],
+        full = pd.date_range("2026-01-01", periods={"1min": n_min, "5min": n_min // 5, "15min": n_min // 15, "1h": n_min // 60, "1D": days}[freq],
                              freq=freq, tz="UTC").as_unit("ns")
         b = b.reindex(full)
         empty_ = b["close"].isna()
@@ -286,3 +295,25 @@ if __name__ == "__main__":
         row = r5.loc[pd.Timestamp(ts, tz="UTC")]
         assert row["volume"] == 0 and row["open"] == row["high"] == row["low"] == row["close"] == gap.loc["2026-01-01 00:09", "close"]
     print("Self-test passed: traded-minutes rule reproduces bars built from raw trades exactly; the filled rule does not.")
+    # Third self-test (work order 1.4) -- the traded rule from a 5m SOURCE, not 1m. Same trades
+    # simulation, but this time build native 5m bars from raw trades AND independently resample
+    # 1m-from-trades up to 5m ourselves (the "source" a real BTC/USDT run would have, since only
+    # 5m is fetched natively for that pair), then ask resample_ohlcv_traded to go 5m -> 15m and
+    # compare against 15m built directly from the same raw trades.
+    src_5m = bars_from_trades("5min")               # this stands in for "the fetched native 5m file"
+    native_15m = bars_from_trades("15min")           # independent ground truth
+    derived_15m = resample_ohlcv_traded(src_5m, "15m")
+    cmp_5to15 = compare_resampled_vs_native(derived_15m, native_15m)
+    assert cmp_5to15["status"] == "MATCH", ("5m-source -> 15m must match native 15m built from the same trades", cmp_5to15)
+    # and the placeholder-skipping behaviour survives at this coarser source grain too
+    src_5m_gap = src_5m.copy()
+    hit = src_5m_gap.index[2]
+    src_5m_gap.loc[hit, ["open", "high", "low", "close"]] = src_5m_gap["close"].iloc[1]
+    src_5m_gap.loc[hit, "volume"] = 0.0
+    out_15m_gap = resample_ohlcv_traded(src_5m_gap, "15m")
+    bin_of_hit = hit.floor("15min")
+    real_first_traded_open = src_5m.loc[src_5m.index[(src_5m.index >= bin_of_hit) & (src_5m.index < bin_of_hit + pd.Timedelta(minutes=15)) & (src_5m.index != hit)][0], "open"]
+    assert abs(out_15m_gap.loc[bin_of_hit, "open"] - real_first_traded_open) < 1e-9
+    print(f"  5m source -> 15m target: {cmp_5to15['status']} against native 15m built from the same trades ({cmp_5to15['overlap_rows']} bins); "
+          f"a zero-trade 5m placeholder is skipped the same way a zero-trade 1m placeholder would be")
+    print("Self-test passed: resample_ohlcv_traded generalizes to a non-1m source (work order 1.4's BTC/USDT 5m->15m case).")

@@ -231,11 +231,6 @@ def describe_observations(obs: pd.DataFrame, cutoff: pd.Timestamp = DISCOVERY_CU
 # --------------------------------------------------------------------------------------
 # Self-test
 # --------------------------------------------------------------------------------------
-def _selftest_tmp() -> Path:
-    root = Path(__file__).resolve().parents[2]          # <root>/user_data/analysis/<this file>
-    d = root / "temp" / "selftest"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 def _mk_native(times, rates, reported=None, source="test") -> pd.DataFrame:
@@ -333,8 +328,8 @@ def _self_test() -> None:
     assert tie_share([])["tie_share"] is None
     print("  tie share: modal-value fraction, cutoff-limited and full-range reported separately")
 
-    # 7. the whole native -> observations path round-trips through a feather file in the project temp dir
-    with tempfile.TemporaryDirectory(dir=_selftest_tmp()) as tmp:
+    # 7. the whole native -> observations path round-trips through a feather file in the system temp dir
+    with tempfile.TemporaryDirectory() as tmp:
         f = Path(tmp) / "x.feather"
         nat.to_feather(f)
         back = pd.read_feather(f)

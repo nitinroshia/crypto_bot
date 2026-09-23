@@ -117,11 +117,6 @@ def main(argv=None) -> int:
 # --------------------------------------------------------------------------------------
 # Self-test
 # --------------------------------------------------------------------------------------
-def _selftest_tmp() -> Path:
-    root = Path(__file__).resolve().parents[2]
-    d = root / "temp" / "selftest"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 def _frame(start, end, trades_of, quote_of, missing=()) -> pd.DataFrame:
@@ -153,7 +148,7 @@ def _self_test() -> None:
     assert monthly(a, 2025).empty
     print("  monthly table: per-day rates use days actually covered, zero-trade share and ratios as defined")
 
-    with tempfile.TemporaryDirectory(dir=_selftest_tmp()) as tmp:
+    with tempfile.TemporaryDirectory() as tmp:
         raw, outp = Path(tmp) / "raw", Path(tmp) / "out"
         raw.mkdir()
         for name, f in (("ETH_FDUSD", a), ("ETH_USDT", b)):

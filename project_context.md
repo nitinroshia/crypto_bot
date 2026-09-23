@@ -1,4 +1,17 @@
-# Project Context: ETH/FDUSD Multi-Timeframe Momentum Math
+# Project Context: ETH/USDT & BTC/USDT Research (ETH/FDUSD retained as history)
+
+## Current pairs (work order 1.4, 2026-09-23 -- owner-approved, not a proposal)
+
+**ETH/USDT and BTC/USDT are the project's two live pairs, for both research and execution.**
+ETH/FDUSD is retired as an execution-pair candidate: its liquidity (2.0-4.5% of ETH/USDT's daily
+trade count in every fully-covered 2026 month) makes realized slippage on it too uncertain to plan
+around, regardless of any research finding. ETH/FDUSD's existing results below (the fingerprint,
+the dead lead-lag result, the Task 2 baseline) stay as historical reference; no further formula
+work targets it. Every "S1", "S2", "Task 3" mention below that predates this work order refers to
+ETH/FDUSD/BTC/USDT-replication-only history -- from work order 1.4 on, S1/S2/Task 3/Task 4 each run
+as two fully independent families, `<task>-ETHUSDT` and `<task>-BTCUSDT`, each with its own Holm
+adjustment, registry entry, freeze and forward test. See `docs/work-orders/1.4.md` for the full
+decision and `context/STATUS.md` for current status.
 
 ## What this document is for
 

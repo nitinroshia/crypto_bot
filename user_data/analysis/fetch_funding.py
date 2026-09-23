@@ -270,11 +270,6 @@ def main(argv=None) -> int:
 # --------------------------------------------------------------------------------------
 # Self-test (offline: fake REST and fake monthly files)
 # --------------------------------------------------------------------------------------
-def _selftest_tmp() -> Path:
-    root = Path(__file__).resolve().parents[2]
-    d = root / "temp" / "selftest"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 class _FakeREST:
@@ -306,7 +301,7 @@ def _self_test() -> None:
     rates = np.round(np.where(np.arange(len(t)) % 3 == 0, 1e-4, np.linspace(-1e-4, 6e-4, len(t))), 8)
     nrows = len(t)
 
-    with tempfile.TemporaryDirectory(dir=_selftest_tmp()) as tmp:
+    with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp)
         # 1. REST: paging (limit 1000 -> force 2 pages with a small monkeypatched limit), rounding, store, report
         global REST_LIMIT
@@ -332,7 +327,7 @@ def _self_test() -> None:
         assert rest2.calls[0]["startTime"] == int(ms[-1]) + 1 and res2["rows_fetched_this_run"] == 0 and res2["native"]["rows"] == nrows
         print("  resume: second run requests from the last published time + 1 ms and keeps the series unchanged")
 
-    with tempfile.TemporaryDirectory(dir=_selftest_tmp()) as tmp:
+    with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp)
         # 3. REST unreachable -> monthly files; header read from the CSV; a 4h regime and its interval change are reported
         months = {}
