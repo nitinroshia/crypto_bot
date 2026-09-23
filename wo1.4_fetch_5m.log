@@ -1,0 +1,29 @@
+Fetching exchange filters ...
+  BTCUSDT: tickSize=0.01 stepSize=1e-05 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHFDUSD: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  ETHUSDT: tickSize=0.01 stepSize=0.0001 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+  FDUSDUSDT: tickSize=0.0001 stepSize=1.0 minNotional=5.0 LIMIT_MAKER=yes status=TRADING
+[1/1] BTCUSDT 5m
+  fetching BTCUSDT 5m: 2017-08-17 00:00:00+00:00 -> 2026-09-23 10:35:49.653000+00:00
+    BTCUSDT 5m: 50 pages, up to 2018-02-07 05:15:00+00:00
+    BTCUSDT 5m: 100 pages, up to 2018-08-02 01:30:00+00:00
+    BTCUSDT 5m: 150 pages, up to 2019-01-23 02:40:00+00:00
+    BTCUSDT 5m: 200 pages, up to 2019-07-16 10:20:00+00:00
+    BTCUSDT 5m: 250 pages, up to 2020-01-06 13:20:00+00:00
+    BTCUSDT 5m: 300 pages, up to 2020-06-28 18:55:00+00:00
+    BTCUSDT 5m: 350 pages, up to 2020-12-19 10:35:00+00:00
+    BTCUSDT 5m: 400 pages, up to 2021-06-11 16:20:00+00:00
+    BTCUSDT 5m: 450 pages, up to 2021-12-02 13:30:00+00:00
+    BTCUSDT 5m: 500 pages, up to 2022-05-25 04:10:00+00:00
+    BTCUSDT 5m: 550 pages, up to 2022-11-14 18:50:00+00:00
+    BTCUSDT 5m: 600 pages, up to 2023-05-07 10:50:00+00:00
+    BTCUSDT 5m: 650 pages, up to 2023-10-28 01:30:00+00:00
+    BTCUSDT 5m: 700 pages, up to 2024-04-18 16:10:00+00:00
+    BTCUSDT 5m: 750 pages, up to 2024-10-09 06:50:00+00:00
+    BTCUSDT 5m: 800 pages, up to 2025-03-31 21:30:00+00:00
+    BTCUSDT 5m: 850 pages, up to 2025-09-21 12:10:00+00:00
+    BTCUSDT 5m: 900 pages, up to 2026-03-14 02:50:00+00:00
+    BTCUSDT 5m: 950 pages, up to 2026-09-03 17:30:00+00:00
+  -> OK: 955676 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-23 10:30:00+00:00, missing bars vs regular grid: 1715, zero-trade bars: 910
+
+Wrote user_data/data/binance_raw/fetch_manifest.json and symbol_filters.json

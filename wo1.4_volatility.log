@@ -1,0 +1,10 @@
+ETH_USDT: 2936 discovery-sample daily returns, 2017-08-18 .. 2025-08-31
+  daily sigma 0.047157   mean daily log return 0.000912
+  annualized (x sqrt(365), DEFAULT): 0.9009
+  annualized (x sqrt(252), labeled alternate): 0.7486
+BTC_USDT: 2936 discovery-sample daily returns, 2017-08-18 .. 2025-08-31
+  daily sigma 0.036691   mean daily log return 0.001100
+  annualized (x sqrt(365), DEFAULT): 0.7010
+  annualized (x sqrt(252), labeled alternate): 0.5824
+
+Wrote user_data/analysis/results/volatility_discovery_sample.json

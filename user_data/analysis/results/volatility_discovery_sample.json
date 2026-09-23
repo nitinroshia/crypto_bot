@@ -1,0 +1,30 @@
+{
+  "pairs": [
+    {
+      "pair": "ETH_USDT",
+      "discovery_cutoff": "2025-08-31 23:59:59+00:00",
+      "daily_closes_available": 3321,
+      "n": 2936,
+      "status": "OK",
+      "first_return_date": "2017-08-18 00:00:00+00:00",
+      "last_return_date": "2025-08-31 00:00:00+00:00",
+      "mean_daily_log_return": 0.0009118100334897288,
+      "sigma_daily": 0.04715724944933511,
+      "annualized_365": 0.9009379857147705,
+      "annualized_252": 0.7485981273406699
+    },
+    {
+      "pair": "BTC_USDT",
+      "discovery_cutoff": "2025-08-31 23:59:59+00:00",
+      "daily_closes_available": 3322,
+      "n": 2936,
+      "status": "OK",
+      "first_return_date": "2017-08-18 00:00:00+00:00",
+      "last_return_date": "2025-08-31 00:00:00+00:00",
+      "mean_daily_log_return": 0.001099887747416744,
+      "sigma_daily": 0.03669054091929489,
+      "annualized_365": 0.7009718000225937,
+      "annualized_252": 0.5824442804453608
+    }
+  ]
+}

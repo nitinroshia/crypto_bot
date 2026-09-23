@@ -1,0 +1,4 @@
+BTC_USDT: 5m (955676 rows) -> 15m (318566 rows)
+  span 2017-08-17 04:00:00+00:00 .. 2026-09-23 10:30:00+00:00   missing vs regular 15m grid: 565
+  summed columns: ['quote_volume', 'n_trades']   left NaN (no clean traded-only rule yet): ['taker_buy_base', 'taker_buy_quote']
+  wrote user_data/data/binance_raw/BTC_USDT-15m.feather

@@ -1,0 +1,13 @@
+BTC_USDT 5m: 955676 rows, 2017-08-17 04:00:00+00:00 .. 2026-09-23 10:30:00+00:00
+  leading partial day: series starts 2017-08-17 04:00:00+00:00, 48 bar(s) of that day precede it (not counted as gaps)
+  interior gaps: 34 block(s), 1715 bar(s) missing (34 block(s) / 1715 bar(s) up to the cutoff)
+  expected rows first..last: 957391   irregular spacings: 0   duplicates: 0
+  by year: {2017: {'blocks': 4, 'bars': 104}, 2018: {'blocks': 9, 'bars': 793}, 2019: {'blocks': 6, 'bars': 352}, 2020: {'blocks': 8, 'bars': 253}, 2021: {'blocks': 6, 'bars': 197}, 2023: {'blocks': 1, 'bars': 16}}
+  longest: 2018-02-08 00:30:00+00:00 .. 2018-02-09 09:55:00+00:00  (402 bars)
+  longest: 2018-06-26 02:00:00+00:00 .. 2018-06-26 11:55:00+00:00  (120 bars)
+  longest: 2019-05-15 03:00:00+00:00 .. 2019-05-15 12:55:00+00:00  (120 bars)
+  longest: 2019-08-15 02:00:00+00:00 .. 2019-08-15 09:55:00+00:00  (96 bars)
+  longest: 2018-07-04 00:25:00+00:00 .. 2018-07-04 07:55:00+00:00  (91 bars)
+  vs ETH_USDT: missing bars 1715 vs 1715; in both 1715; only BTC_USDT 0; only ETH_USDT 0
+
+Wrote user_data/analysis/results/gaps/gaps_BTC_USDT-5m.csv and .json
