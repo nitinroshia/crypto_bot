@@ -1,0 +1,30 @@
+Break-even hit rate, base cost 0.24% round trip (stress 0.30% also shown), discovery sample only, empirical E|return| (not Gaussian-assumed):
+
+ETH_USDT:
+   15m: empirical  90.6% base / 100.7% stress   (old Gaussian-shortcut would have said  79.9% base, a +10.7pp difference)   n=281,364   skew=-0.00 kurtosis_excess=+60.82 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 281 of 281,364 observations (0.1%) moves the base breakeven to  91.3%
+        max |return| seen: 21.50%; 3 largest moves: -21.50% (393333), +21.34% (393339), +14.82% (43872)
+    1h: empirical  70.3% base /  75.3% stress   (old Gaussian-shortcut would have said  65.3% base, a +5.0pp difference)   n=70,355   skew=-0.16 kurtosis_excess=+25.46 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 70 of 70,355 observations (0.1%) moves the base breakeven to  70.6%
+        max |return| seen: 20.87%; 3 largest moves: -20.87% (22415), +18.08% (700), -17.49% (435)
+    4h: empirical  60.0% base /  62.5% stress   (old Gaussian-shortcut would have said  57.9% base, a +2.2pp difference)   n=17,588   skew=+0.24 kurtosis_excess=+15.73 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 18 of 17,588 observations (0.1%) moves the base breakeven to  60.2%
+        max |return| seen: 33.64%; 3 largest moves: +33.64% (700), -22.08% (22428), -20.41% (22416)
+    1d: empirical  53.8% base /  54.7% stress   (old Gaussian-shortcut would have said  53.2% base, a +0.5pp difference)   n=2,936   skew=-0.16 kurtosis_excess=+6.36 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 3 of 2,936 observations (0.1%) moves the base breakeven to  53.8%
+        max |return| seen: 44.60%; 3 largest moves: -44.60% (938), -27.74% (1371), +26.33% (1376)
+BTC_USDT:
+   15m: empirical 101.7% base / 114.7% stress   (old Gaussian-shortcut would have said  86.7% base, a +15.1pp difference)   n=281,364   skew=+0.00 kurtosis_excess=+54.57 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 281 of 281,364 observations (0.1%) moves the base breakeven to 102.8% <-- IMPOSSIBLE (>100%)
+        max |return| seen: 14.61%; 3 largest moves: +14.61% (393339), -12.79% (393333), -12.43% (269022)
+    1h: empirical  76.1% base /  82.7% stress   (old Gaussian-shortcut would have said  68.9% base, a +7.3pp difference)   n=70,355   skew=-0.03 kurtosis_excess=+33.46 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 70 of 70,355 observations (0.1%) moves the base breakeven to  76.6%
+        max |return| seen: 18.21%; 3 largest moves: -18.21% (22415), +17.38% (22431), -17.28% (22428)
+    4h: empirical  63.0% base /  66.2% stress   (old Gaussian-shortcut would have said  59.8% base, a +3.2pp difference)   n=17,588   skew=+0.26 kurtosis_excess=+19.41 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 18 of 17,588 observations (0.1%) moves the base breakeven to  63.2%
+        max |return| seen: 28.14%; 3 largest moves: +28.14% (700), -20.50% (22428), -17.93% (22416)
+    1d: empirical  55.0% base /  56.2% stress   (old Gaussian-shortcut would have said  54.1% base, a +0.8pp difference)   n=2,936   skew=-0.24 kurtosis_excess=+8.33 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 3 of 2,936 observations (0.1%) moves the base breakeven to  55.0%
+        max |return| seen: 39.50%; 3 largest moves: -39.50% (938), +22.50% (112), +19.54% (1271)
+
+Wrote user_data/analysis/results/breakeven_hit_rate.json

@@ -1,0 +1,14 @@
+Break-even hit rate, base cost 0.24% round trip (stress 0.30% also shown), discovery sample only, empirical E|return| (not Gaussian-assumed):
+
+ETH_USDT:
+   15m: empirical  90.6% base / 100.7% stress   (old Gaussian-shortcut would have said  79.9% base, a +10.7pp difference)   n=281,364   skew=-0.00 kurtosis_excess=+60.82 (NOT normal at 5%, Jarque-Bera)
+    1h: empirical  70.3% base /  75.3% stress   (old Gaussian-shortcut would have said  65.3% base, a +5.0pp difference)   n=70,355   skew=-0.16 kurtosis_excess=+25.46 (NOT normal at 5%, Jarque-Bera)
+    4h: empirical  60.0% base /  62.5% stress   (old Gaussian-shortcut would have said  57.9% base, a +2.2pp difference)   n=17,588   skew=+0.24 kurtosis_excess=+15.73 (NOT normal at 5%, Jarque-Bera)
+    1d: empirical  53.8% base /  54.7% stress   (old Gaussian-shortcut would have said  53.2% base, a +0.5pp difference)   n=2,936   skew=-0.16 kurtosis_excess=+6.36 (NOT normal at 5%, Jarque-Bera)
+BTC_USDT:
+   15m: empirical 101.7% base / 114.7% stress   (old Gaussian-shortcut would have said  86.7% base, a +15.1pp difference)   n=281,364   skew=+0.00 kurtosis_excess=+54.57 (NOT normal at 5%, Jarque-Bera)
+    1h: empirical  76.1% base /  82.7% stress   (old Gaussian-shortcut would have said  68.9% base, a +7.3pp difference)   n=70,355   skew=-0.03 kurtosis_excess=+33.46 (NOT normal at 5%, Jarque-Bera)
+    4h: empirical  63.0% base /  66.2% stress   (old Gaussian-shortcut would have said  59.8% base, a +3.2pp difference)   n=17,588   skew=+0.26 kurtosis_excess=+19.41 (NOT normal at 5%, Jarque-Bera)
+    1d: empirical  55.0% base /  56.2% stress   (old Gaussian-shortcut would have said  54.1% base, a +0.8pp difference)   n=2,936   skew=-0.24 kurtosis_excess=+8.33 (NOT normal at 5%, Jarque-Bera)
+
+Wrote user_data/analysis/results/breakeven_hit_rate.json

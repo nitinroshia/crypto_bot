@@ -1,0 +1,268 @@
+{
+  "discovery_cutoff": "2025-08-31 23:59:59+00:00",
+  "base_round_trip": 0.0024,
+  "stress_round_trip": 0.003,
+  "method": "empirical mean absolute non-overlapping return per horizon, symmetric-payoff breakeven (p = 0.5 + cost / (2m))",
+  "table": {
+    "ETH_USDT": {
+      "15m": {
+        "status": "OK",
+        "n": 281364,
+        "source_timeframe": "5m",
+        "k": 3,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:55:00+00:00",
+        "mean_abs_return_empirical": 0.0029582151312117643,
+        "mean_abs_return_if_gaussian": 0.004018312867352236,
+        "mean_abs_return_trimmed": 0.0029030898113917973,
+        "trim_n_dropped": 281,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.2149875371244997,
+        "worst_3_returns": [
+          -0.2149875371244997,
+          0.21343680525255038,
+          0.14816848881168898
+        ],
+        "worst_3_dates": [
+          "2021-05-19 12:50:00+00:00",
+          "2021-05-19 13:20:00+00:00",
+          "2018-01-16 22:40:00+00:00"
+        ],
+        "std": 0.005036208324809341,
+        "skew": -0.0019218673929749413,
+        "kurtosis_excess": 60.82495655268017,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.905650010825429,
+        "breakeven_hit_rate_empirical_stress": 1.0070625135317863,
+        "breakeven_hit_rate_trimmed_base": 0.9133526959073639,
+        "breakeven_hit_rate_gaussian_base": 0.7986327943126811
+      },
+      "1h": {
+        "status": "OK",
+        "n": 70355,
+        "source_timeframe": "1h",
+        "k": 1,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:00:00+00:00",
+        "mean_abs_return_empirical": 0.005925120544464792,
+        "mean_abs_return_if_gaussian": 0.007853811964990987,
+        "mean_abs_return_trimmed": 0.005827191841640531,
+        "trim_n_dropped": 70,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.2087277490027981,
+        "worst_3_returns": [
+          -0.2087277490027981,
+          0.18079244292836538,
+          -0.17488748874887494
+        ],
+        "worst_3_dates": [
+          "2020-03-12 10:00:00+00:00",
+          "2017-09-15 14:00:00+00:00",
+          "2017-09-04 07:00:00+00:00"
+        ],
+        "std": 0.009843293567540832,
+        "skew": -0.1602808232784156,
+        "kurtosis_excess": 25.46103991047677,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.7025275251355066,
+        "breakeven_hit_rate_empirical_stress": 0.7531594064193834,
+        "breakeven_hit_rate_trimmed_base": 0.7059310955621745,
+        "breakeven_hit_rate_gaussian_base": 0.6527920461234746
+      },
+      "4h": {
+        "status": "OK",
+        "n": 17588,
+        "source_timeframe": "1h",
+        "k": 4,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:00:00+00:00",
+        "mean_abs_return_empirical": 0.011972293525106474,
+        "mean_abs_return_if_gaussian": 0.015267790442798593,
+        "mean_abs_return_trimmed": 0.011811546342523765,
+        "trim_n_dropped": 18,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.3363690358344882,
+        "worst_3_returns": [
+          0.3363690358344882,
+          -0.2207848522078486,
+          -0.20406736204183906
+        ],
+        "worst_3_dates": [
+          "2017-09-15 14:00:00+00:00",
+          "2020-03-12 23:00:00+00:00",
+          "2020-03-12 11:00:00+00:00"
+        ],
+        "std": 0.019135337607529956,
+        "skew": 0.23500013949051585,
+        "kurtosis_excess": 15.728167244891111,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.6002314216138739,
+        "breakeven_hit_rate_empirical_stress": 0.6252892770173424,
+        "breakeven_hit_rate_trimmed_base": 0.6015955036877582,
+        "breakeven_hit_rate_gaussian_base": 0.5785968345908237
+      },
+      "1d": {
+        "status": "OK",
+        "n": 2936,
+        "source_timeframe": "1d",
+        "k": 1,
+        "first_return_date": "2017-08-17 00:00:00+00:00",
+        "last_return_date": "2025-08-31 00:00:00+00:00",
+        "mean_abs_return_empirical": 0.031804570834295796,
+        "mean_abs_return_if_gaussian": 0.03715318406824765,
+        "mean_abs_return_trimmed": 0.031500699017552765,
+        "trim_n_dropped": 3,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.44596886079852016,
+        "worst_3_returns": [
+          -0.44596886079852016,
+          -0.27737202487652113,
+          0.2633288653351713
+        ],
+        "worst_3_dates": [
+          "2020-03-12 00:00:00+00:00",
+          "2021-05-19 00:00:00+00:00",
+          "2021-05-24 00:00:00+00:00"
+        ],
+        "std": 0.046564610839019784,
+        "skew": -0.1643790016499841,
+        "kurtosis_excess": 6.363132572201538,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.5377304258011243,
+        "breakeven_hit_rate_empirical_stress": 0.5471630322514054,
+        "breakeven_hit_rate_trimmed_base": 0.5380943927412956,
+        "breakeven_hit_rate_gaussian_base": 0.5322987122125439
+      }
+    },
+    "BTC_USDT": {
+      "15m": {
+        "status": "OK",
+        "n": 281364,
+        "source_timeframe": "5m",
+        "k": 3,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:55:00+00:00",
+        "mean_abs_return_empirical": 0.0023196944630539205,
+        "mean_abs_return_if_gaussian": 0.0032720106868118063,
+        "mean_abs_return_trimmed": 0.0022730620480557917,
+        "trim_n_dropped": 281,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.14614165642337462,
+        "worst_3_returns": [
+          0.14614165642337462,
+          -0.12788991239055447,
+          -0.12429578166649446
+        ],
+        "worst_3_dates": [
+          "2021-05-19 13:20:00+00:00",
+          "2021-05-19 12:50:00+00:00",
+          "2020-03-12 23:30:00+00:00"
+        ],
+        "std": 0.004100857251228636,
+        "skew": 0.0032455457406125304,
+        "kurtosis_excess": 54.57334853315271,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 1.0173095073995986,
+        "breakeven_hit_rate_empirical_stress": 1.1466368842494983,
+        "breakeven_hit_rate_trimmed_base": 1.0279222364503382,
+        "breakeven_hit_rate_gaussian_base": 0.8667469684120317
+      },
+      "1h": {
+        "status": "OK",
+        "n": 70355,
+        "source_timeframe": "1h",
+        "k": 1,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:00:00+00:00",
+        "mean_abs_return_empirical": 0.004592255895872579,
+        "mean_abs_return_if_gaussian": 0.006357762548994741,
+        "mean_abs_return_trimmed": 0.004509521577029924,
+        "trim_n_dropped": 70,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.18211473428145242,
+        "worst_3_returns": [
+          -0.18211473428145242,
+          0.17383988921813565,
+          -0.17279886949178824
+        ],
+        "worst_3_dates": [
+          "2020-03-12 10:00:00+00:00",
+          "2020-03-13 02:00:00+00:00",
+          "2020-03-12 23:00:00+00:00"
+        ],
+        "std": 0.007968273684350139,
+        "skew": -0.0329540683087244,
+        "kurtosis_excess": 33.463559572832715,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.7613094799613702,
+        "breakeven_hit_rate_empirical_stress": 0.8266368499517127,
+        "breakeven_hit_rate_trimmed_base": 0.7661036164262791,
+        "breakeven_hit_rate_gaussian_base": 0.6887456460905006
+      },
+      "4h": {
+        "status": "OK",
+        "n": 17588,
+        "source_timeframe": "1h",
+        "k": 4,
+        "first_return_date": "2017-08-17 04:00:00+00:00",
+        "last_return_date": "2025-08-31 23:00:00+00:00",
+        "mean_abs_return_empirical": 0.009245930191015342,
+        "mean_abs_return_if_gaussian": 0.012288622557178806,
+        "mean_abs_return_trimmed": 0.009107708790201827,
+        "trim_n_dropped": 18,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.28135593220338984,
+        "worst_3_returns": [
+          0.28135593220338984,
+          -0.20496235993672818,
+          -0.1792609166776017
+        ],
+        "worst_3_dates": [
+          "2017-09-15 14:00:00+00:00",
+          "2020-03-12 23:00:00+00:00",
+          "2020-03-12 11:00:00+00:00"
+        ],
+        "std": 0.015401504379046351,
+        "skew": 0.2612954934111235,
+        "kurtosis_excess": 19.406463215139755,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.6297868332562244,
+        "breakeven_hit_rate_empirical_stress": 0.6622335415702806,
+        "breakeven_hit_rate_trimmed_base": 0.6317565183123743,
+        "breakeven_hit_rate_gaussian_base": 0.5976513026107211
+      },
+      "1d": {
+        "status": "OK",
+        "n": 2936,
+        "source_timeframe": "1d",
+        "k": 1,
+        "first_return_date": "2017-08-17 00:00:00+00:00",
+        "last_return_date": "2025-08-31 00:00:00+00:00",
+        "mean_abs_return_empirical": 0.024153553635603366,
+        "mean_abs_return_if_gaussian": 0.028964191166108832,
+        "mean_abs_return_trimmed": 0.023900241964065448,
+        "trim_n_dropped": 3,
+        "trim_pct": 0.001,
+        "max_abs_return": 0.3950484717412017,
+        "worst_3_returns": [
+          -0.3950484717412017,
+          0.22501392983789725,
+          0.1953613919484356
+        ],
+        "worst_3_dates": [
+          "2020-03-12 00:00:00+00:00",
+          "2017-12-07 00:00:00+00:00",
+          "2021-02-08 00:00:00+00:00"
+        ],
+        "std": 0.03630123026439292,
+        "skew": -0.23751437759605684,
+        "kurtosis_excess": 8.330627022681288,
+        "looks_normal_at_5pct": false,
+        "breakeven_hit_rate_empirical_base": 0.5496821303442135,
+        "breakeven_hit_rate_empirical_stress": 0.562102662930267,
+        "breakeven_hit_rate_trimmed_base": 0.5502086967070973,
+        "breakeven_hit_rate_gaussian_base": 0.5414304681638797
+      }
+    }
+  }
+}

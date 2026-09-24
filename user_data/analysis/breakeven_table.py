@@ -70,23 +70,44 @@ def breakeven_hit_rate(m: float, cost: float) -> float | None:
     return 0.5 + cost / (2.0 * m)
 
 
-def horizon_stats(raw_dir: Path, pair: str, timeframe: str, k: int, cutoff: pd.Timestamp = DISCOVERY_CUTOFF) -> dict:
+def horizon_stats(raw_dir: Path, pair: str, timeframe: str, k: int, cutoff: pd.Timestamp = DISCOVERY_CUTOFF, trim_pct: float = 0.001) -> dict:
     df = load_raw(raw_dir, pair, timeframe)
     df = df[df["date"] <= cutoff]
     returns = get_nonoverlapping_returns(df, k)
     if len(returns) < 8:
         return {"status": "INSUFFICIENT_DATA", "n": int(len(returns))}
     dist = distribution_stats(returns)
-    m_empirical = float(returns.abs().mean())
+    abs_r = returns.abs()
+    m_empirical = float(abs_r.mean())
     m_gaussian = float(dist["std"] * np.sqrt(2.0 / np.pi))   # what the old table's shortcut implied
+    # Outlier-sensitivity check: does the headline mean survive dropping the most extreme observations,
+    # or is it being set by a handful of historical events (real or data artifacts)? trim_pct=0.001 drops
+    # the most extreme 0.1% of |returns| by count (at least 1 observation) and recomputes the mean on
+    # the remainder -- reported alongside, never silently substituted for the untrimmed figure.
+    n_drop = max(1, int(round(len(abs_r) * trim_pct)))
+    sorted_abs = np.sort(abs_r.to_numpy())
+    trimmed = sorted_abs[:-n_drop] if n_drop < len(sorted_abs) else sorted_abs
+    m_trimmed = float(trimmed.mean())
+    worst_idx = abs_r.to_numpy().argsort()[-min(3, len(abs_r)):][::-1]
+    worst_returns = returns.to_numpy()[worst_idx]
+    # get_nonoverlapping_returns' Series index is the SOURCE dataframe's row position at each sampled
+    # point (from `df[price_col].iloc[::k]`), not a date -- map it back through the source `df` to get
+    # an actual calendar date. Using .loc (not .iloc) because that index IS the label to look up, and
+    # df's index is the plain 0..N-1 range load_raw() resets it to (so this holds even after cutoff
+    # filtering, which drops trailing rows but never relabels the ones that remain).
+    worst_source_idx = returns.index[worst_idx]
+    worst_dates = [str(df.loc[i, "date"]) for i in worst_source_idx]
     return {
         "status": "OK", "n": dist["n"], "source_timeframe": timeframe, "k": k,
         "first_return_date": str(df["date"].iloc[0]), "last_return_date": str(df["date"].iloc[-1]),
         "mean_abs_return_empirical": m_empirical, "mean_abs_return_if_gaussian": m_gaussian,
+        "mean_abs_return_trimmed": m_trimmed, "trim_n_dropped": n_drop, "trim_pct": trim_pct,
+        "max_abs_return": float(abs_r.max()), "worst_3_returns": [float(x) for x in worst_returns], "worst_3_dates": worst_dates,
         "std": dist["std"], "skew": dist["skew"], "kurtosis_excess": dist["kurtosis_excess"],
         "looks_normal_at_5pct": dist["looks_normal_at_5pct"],
         "breakeven_hit_rate_empirical_base": breakeven_hit_rate(m_empirical, BASE_ROUND_TRIP),
         "breakeven_hit_rate_empirical_stress": breakeven_hit_rate(m_empirical, STRESS_ROUND_TRIP),
+        "breakeven_hit_rate_trimmed_base": breakeven_hit_rate(m_trimmed, BASE_ROUND_TRIP),
         "breakeven_hit_rate_gaussian_base": breakeven_hit_rate(m_gaussian, BASE_ROUND_TRIP),
     }
 
@@ -110,6 +131,11 @@ def print_table(table: dict) -> None:
                   f"(old Gaussian-shortcut would have said {r['breakeven_hit_rate_gaussian_base']*100:5.1f}% base, "
                   f"a {gap*100:+.1f}pp difference)   n={r['n']:,}   skew={r['skew']:+.2f} kurtosis_excess={r['kurtosis_excess']:+.2f} "
                   f"{'(normal-looking)' if r['looks_normal_at_5pct'] else '(NOT normal at 5%, Jarque-Bera)'}")
+            flag = " <-- IMPOSSIBLE (>100%)" if r["breakeven_hit_rate_empirical_base"] > 1.0 else ""
+            print(f"        outlier check: dropping the most extreme {r['trim_n_dropped']} of {r['n']:,} observations "
+                  f"({r['trim_pct']*100:.2g}%) moves the base breakeven to {r['breakeven_hit_rate_trimmed_base']*100:5.1f}%{flag}")
+            print(f"        max |return| seen: {r['max_abs_return']*100:.2f}%; 3 largest moves: "
+                  + ", ".join(f"{x*100:+.2f}% ({d[:10]})" for x, d in zip(r["worst_3_returns"], r["worst_3_dates"])))
     print()
 
 
@@ -192,6 +218,36 @@ def _self_test() -> None:
             "so its E|X| should be SMALLER than sigma*sqrt(2/pi), not larger")
         print(f"  fat-tailed synthetic data (same std, kurtosis_excess={rt['kurtosis_excess']:+.2f}): empirical E|X| differs from the "
               f"Gaussian shortcut by {gap_gauss*100:.1f}% -- this is exactly the imprecision the empirical method fixes")
+
+    # 3b. Outlier-sensitivity diagnostic: inject ONE extreme return into an otherwise Gaussian series
+    #     and confirm the trimmed mean drops it while the untrimmed mean is visibly moved by it --
+    #     this is the exact check that would catch a bad tick masquerading as a fat tail.
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = Path(tmp)
+        clean = rng.normal(0, sigma, 999)
+        spiked = np.concatenate([clean, [50 * sigma]])   # one wildly implausible single-bar move
+        df_spike = _mk_1d(spiked)
+        df_spike.to_feather(raw / "TEST_PAIR-1d.feather")
+        rs = horizon_stats(raw, "TEST_PAIR", "1d", 1, cutoff=df_spike["date"].iloc[-1], trim_pct=0.001)
+        assert rs["trim_n_dropped"] == 1, "0.1% of 1000 rounds up to at least 1 dropped observation"
+        assert rs["max_abs_return"] > 40 * sigma
+        assert rs["mean_abs_return_trimmed"] < rs["mean_abs_return_empirical"], "dropping the spike must lower the mean"
+        expected_trimmed = float(np.abs(clean).mean())
+        assert abs(rs["mean_abs_return_trimmed"] - expected_trimmed) / expected_trimmed < 0.02, \
+            "trimmed mean should closely match the mean of the clean data alone, once the single spike is dropped"
+        expected_worst_simple_return = np.exp(spiked[-1]) - 1   # _mk_1d compounds LOG returns into price; the
+                                                                 # measured return is SIMPLE (pct_change) -- only
+                                                                 # negligible for small returns, not for this spike
+        assert abs(rs["worst_3_returns"][0] - expected_worst_simple_return) < 1e-6, "the injected spike must be reported as the single worst move"
+        # the reported "date" must be an actual calendar date (matching the source dataframe), not the
+        # raw row-position label that get_nonoverlapping_returns' own index happens to use
+        expected_date = str(df_spike["date"].iloc[-1])
+        assert rs["worst_3_dates"][0] == expected_date, (
+            f"worst-move date must resolve to the real calendar date {expected_date!r}, not a row index; got {rs['worst_3_dates'][0]!r}")
+        assert not rs["worst_3_dates"][0].isdigit(), "a bare row-position number leaking through as a 'date' is exactly the bug this checks for"
+        print(f"  outlier-sensitivity diagnostic: a single 50-sigma injected spike is correctly isolated -- "
+              f"untrimmed mean {rs['mean_abs_return_empirical']:.5f} vs trimmed {rs['mean_abs_return_trimmed']:.5f} "
+              f"(clean-data truth {expected_trimmed:.5f}), and reported among the 3 worst moves")
 
     # 4. Discovery cutoff: no non-overlapping return may span the cutoff boundary
     with tempfile.TemporaryDirectory() as tmp:
