@@ -33,6 +33,7 @@ run locate_gaps.py --self-test
 run liquidity_table.py --self-test
 run build_derived_raw.py --self-test
 run volatility_report.py --self-test
+run breakeven_table.py --self-test
 echo
 if [ "$fail" -eq 0 ]; then echo "ALL SELF-TESTS PASSED"; else echo "SOME SELF-TESTS FAILED (see *** lines above)"; fi
 exit $fail
