@@ -43,6 +43,26 @@ the ordinary-bar economics at 15m are bad enough that a strategy has to be doing
 "trade every bar" to have a chance, which is exactly Task 3's structure. Worth stating explicitly so
 this finding reads as a constraint on one specific model, not a verdict on 15m/intraday work generally.
 
-## Still open
-Waiting on the corrected-dates rerun (command given to the owner) to name the actual event(s) rather
-than estimate them. Not blocking anything else.
+## Confirmed: these are three real, documented market events
+
+The mathematician cross-referenced the actual dates from the corrected tool and closed this out:
+- **2020-03-12** ("Black Thursday," the COVID crash)
+- **2021-05-19** (documented as the largest flash crash since March 2020: ETH -46%, BTC -32% in
+  under 12 hours) -- this is almost certainly the adjacent-bar crash-and-recovery pair described above
+- **2017-09-04 / 2017-09-15** (China's ICO ban, followed by the exchange-shutdown escalation)
+
+All three are genuine market history, not data artifacts. Recorded here rather than left as
+"presumed real."
+
+## Also added: median |return| alongside the mean (mathematician's remaining ask, now closed)
+
+`breakeven_table.py` now reports median |return| next to the empirical mean at every cell, with its
+own breakeven hit rate (base and stress). Self-tested: on Gaussian synthetic data the median matches
+its own known closed form (sigma * sqrt(2) * erfinv(0.5)) rather than the mean's; on fat-tailed data
+with matched variance, the median/mean ratio is confirmed to drop further below the Gaussian case's
+(fat tails concentrate more of the distribution's mass near zero, not less) -- proving median and mean
+are telling genuinely different, both-worth-reporting parts of the same story, not two estimates of
+the same thing.
+
+Everything else in this table -- the formula, the empirical-mean methodology, the outlier-sensitivity
+check -- stands as previously reported; the mathematician confirmed it final.
