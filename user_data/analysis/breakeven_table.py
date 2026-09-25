@@ -15,7 +15,12 @@ move size even when sigma itself is measured correctly.
 NEW METHOD: at each horizon, take the actual non-overlapping returns over the discovery sample
 (stats_fingerprint.get_nonoverlapping_returns) and use their empirical mean absolute value directly
 as the typical move size m. Payoffs are still assumed symmetric (a win and a loss are both size m) --
-that assumption isn't being dropped here, only how m itself is obtained.
+that assumption isn't being dropped here, only how m itself is obtained. The median absolute return is
+reported alongside (mathematician's request, 2026-09-24): median and mean tell a genuinely different
+part of the story under fat tails -- a fat-tailed-but-same-variance distribution concentrates MORE of
+its mass near zero than a Gaussian does (to leave room for the rare huge moves), so its median/mean
+ratio is lower than the Gaussian case's, not higher. Its own breakeven hit rate is reported too, not
+just the raw statistic, so it's directly comparable to the mean-based headline figure.
 
 BREAKEVEN FORMULA (symmetric payoff m per trade, round-trip cost C, hit rate p):
     expected P&L = p*m - (1-p)*m - C = 0  =>  p = 0.5 + C / (2*m)
@@ -79,6 +84,7 @@ def horizon_stats(raw_dir: Path, pair: str, timeframe: str, k: int, cutoff: pd.T
     dist = distribution_stats(returns)
     abs_r = returns.abs()
     m_empirical = float(abs_r.mean())
+    m_median = float(abs_r.median())
     m_gaussian = float(dist["std"] * np.sqrt(2.0 / np.pi))   # what the old table's shortcut implied
     # Outlier-sensitivity check: does the headline mean survive dropping the most extreme observations,
     # or is it being set by a handful of historical events (real or data artifacts)? trim_pct=0.001 drops
@@ -101,12 +107,15 @@ def horizon_stats(raw_dir: Path, pair: str, timeframe: str, k: int, cutoff: pd.T
         "status": "OK", "n": dist["n"], "source_timeframe": timeframe, "k": k,
         "first_return_date": str(df["date"].iloc[0]), "last_return_date": str(df["date"].iloc[-1]),
         "mean_abs_return_empirical": m_empirical, "mean_abs_return_if_gaussian": m_gaussian,
+        "median_abs_return": m_median,
         "mean_abs_return_trimmed": m_trimmed, "trim_n_dropped": n_drop, "trim_pct": trim_pct,
         "max_abs_return": float(abs_r.max()), "worst_3_returns": [float(x) for x in worst_returns], "worst_3_dates": worst_dates,
         "std": dist["std"], "skew": dist["skew"], "kurtosis_excess": dist["kurtosis_excess"],
         "looks_normal_at_5pct": dist["looks_normal_at_5pct"],
         "breakeven_hit_rate_empirical_base": breakeven_hit_rate(m_empirical, BASE_ROUND_TRIP),
         "breakeven_hit_rate_empirical_stress": breakeven_hit_rate(m_empirical, STRESS_ROUND_TRIP),
+        "breakeven_hit_rate_median_base": breakeven_hit_rate(m_median, BASE_ROUND_TRIP),
+        "breakeven_hit_rate_median_stress": breakeven_hit_rate(m_median, STRESS_ROUND_TRIP),
         "breakeven_hit_rate_trimmed_base": breakeven_hit_rate(m_trimmed, BASE_ROUND_TRIP),
         "breakeven_hit_rate_gaussian_base": breakeven_hit_rate(m_gaussian, BASE_ROUND_TRIP),
     }
@@ -134,6 +143,9 @@ def print_table(table: dict) -> None:
             flag = " <-- IMPOSSIBLE (>100%)" if r["breakeven_hit_rate_empirical_base"] > 1.0 else ""
             print(f"        outlier check: dropping the most extreme {r['trim_n_dropped']} of {r['n']:,} observations "
                   f"({r['trim_pct']*100:.2g}%) moves the base breakeven to {r['breakeven_hit_rate_trimmed_base']*100:5.1f}%{flag}")
+            med_flag = " <-- IMPOSSIBLE (>100%)" if r["breakeven_hit_rate_median_base"] > 1.0 else ""
+            print(f"        median |return| {r['median_abs_return']*100:.4f}% (vs mean {r['mean_abs_return_empirical']*100:.4f}%): "
+                  f"breakeven {r['breakeven_hit_rate_median_base']*100:5.1f}% base / {r['breakeven_hit_rate_median_stress']*100:5.1f}% stress{med_flag}")
             print(f"        max |return| seen: {r['max_abs_return']*100:.2f}%; 3 largest moves: "
                   + ", ".join(f"{x*100:+.2f}% ({d[:10]})" for x, d in zip(r["worst_3_returns"], r["worst_3_dates"])))
     print()
@@ -198,7 +210,15 @@ def _self_test() -> None:
         rel_gap = abs(r["mean_abs_return_empirical"] - r["mean_abs_return_if_gaussian"]) / r["mean_abs_return_if_gaussian"]
         assert rel_gap < 0.05, f"Gaussian data should have empirical E|X| within 5% of the Gaussian formula, got {rel_gap:.3f}"
         assert abs(r["kurtosis_excess"]) < 0.5, "Gaussian synthetic data should show ~0 excess kurtosis"
+        # median|X| for a Gaussian is sigma * sqrt(2) * erfinv(0.5) ~= 0.6745*sigma -- a DIFFERENT
+        # constant from the mean's sigma*sqrt(2/pi) ~= 0.7979*sigma, so the two should agree with each
+        # other's known formulas but NOT with each other.
+        expected_median_gaussian = sigma * np.sqrt(2) * 0.4769362762  # erfinv(0.5)
+        rel_gap_median = abs(r["median_abs_return"] - expected_median_gaussian) / expected_median_gaussian
+        assert rel_gap_median < 0.05, f"Gaussian median|X| should match its own known formula, got {rel_gap_median:.3f} relative gap"
+        assert r["median_abs_return"] < r["mean_abs_return_empirical"], "median|X| < mean|X| for a half-normal-shaped distribution, always"
         print(f"  Gaussian synthetic data: empirical and Gaussian-shortcut E|X| agree within {rel_gap*100:.1f}% (n={n}), "
+              f"median|X| matches its own known formula within {rel_gap_median*100:.1f}%, "
               f"excess kurtosis {r['kurtosis_excess']:+.2f} as expected")
 
         # 3. Fat-tailed synthetic data with the SAME std as the Gaussian case: empirical E|X| and the
@@ -216,8 +236,21 @@ def _self_test() -> None:
         assert rt["mean_abs_return_empirical"] < rt["mean_abs_return_if_gaussian"], (
             "a heavy-tailed-but-same-std distribution concentrates more mass near 0 than a Gaussian, "
             "so its E|X| should be SMALLER than sigma*sqrt(2/pi), not larger")
+        # The median makes the same point even more sharply: a fat-tailed-but-same-std distribution
+        # packs MORE of its mass very close to zero (to leave room for the rare huge tail values), so
+        # its median/mean ratio should be LOWER than the Gaussian case's ~0.845 -- median and mean tell
+        # a genuinely different part of the story here, which is exactly why both are reported.
+        gauss_ratio = r["median_abs_return"] / r["mean_abs_return_empirical"]
+        fat_ratio = rt["median_abs_return"] / rt["mean_abs_return_empirical"]
+        assert fat_ratio < gauss_ratio, (
+            f"fat-tailed median/mean ratio ({fat_ratio:.3f}) should be lower than the Gaussian case's ({gauss_ratio:.3f}) "
+            "-- the median should diverge from the mean MORE under fat tails, not less")
+        assert breakeven_hit_rate(rt["median_abs_return"], BASE_ROUND_TRIP) > breakeven_hit_rate(rt["mean_abs_return_empirical"], BASE_ROUND_TRIP), (
+            "a smaller median than mean must imply a HIGHER (harder) breakeven hit rate when median is used as m")
         print(f"  fat-tailed synthetic data (same std, kurtosis_excess={rt['kurtosis_excess']:+.2f}): empirical E|X| differs from the "
               f"Gaussian shortcut by {gap_gauss*100:.1f}% -- this is exactly the imprecision the empirical method fixes")
+        print(f"  median/mean ratio: Gaussian {gauss_ratio:.3f} vs fat-tailed {fat_ratio:.3f} -- median diverges from mean MORE "
+              f"under fat tails, confirming median adds information the mean alone doesn't capture")
 
     # 3b. Outlier-sensitivity diagnostic: inject ONE extreme return into an otherwise Gaussian series
     #     and confirm the trimmed mean drops it while the untrimmed mean is visibly moved by it --

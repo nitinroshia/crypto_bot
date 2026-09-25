@@ -1,0 +1,38 @@
+Break-even hit rate, base cost 0.24% round trip (stress 0.30% also shown), discovery sample only, empirical E|return| (not Gaussian-assumed):
+
+ETH_USDT:
+   15m: empirical  90.6% base / 100.7% stress   (old Gaussian-shortcut would have said  79.9% base, a +10.7pp difference)   n=281,364   skew=-0.00 kurtosis_excess=+60.82 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 281 of 281,364 observations (0.1%) moves the base breakeven to  91.3%
+        median |return| 0.1783% (vs mean 0.2958%): breakeven 117.3% base / 134.1% stress <-- IMPOSSIBLE (>100%)
+        max |return| seen: 21.50%; 3 largest moves: -21.50% (2021-05-19), +21.34% (2021-05-19), +14.82% (2018-01-16)
+    1h: empirical  70.3% base /  75.3% stress   (old Gaussian-shortcut would have said  65.3% base, a +5.0pp difference)   n=70,355   skew=-0.16 kurtosis_excess=+25.46 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 70 of 70,355 observations (0.1%) moves the base breakeven to  70.6%
+        median |return| 0.3543% (vs mean 0.5925%): breakeven  83.9% base /  92.3% stress
+        max |return| seen: 20.87%; 3 largest moves: -20.87% (2020-03-12), +18.08% (2017-09-15), -17.49% (2017-09-04)
+    4h: empirical  60.0% base /  62.5% stress   (old Gaussian-shortcut would have said  57.9% base, a +2.2pp difference)   n=17,588   skew=+0.24 kurtosis_excess=+15.73 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 18 of 17,588 observations (0.1%) moves the base breakeven to  60.2%
+        median |return| 0.7110% (vs mean 1.1972%): breakeven  66.9% base /  71.1% stress
+        max |return| seen: 33.64%; 3 largest moves: +33.64% (2017-09-15), -22.08% (2020-03-12), -20.41% (2020-03-12)
+    1d: empirical  53.8% base /  54.7% stress   (old Gaussian-shortcut would have said  53.2% base, a +0.5pp difference)   n=2,936   skew=-0.16 kurtosis_excess=+6.36 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 3 of 2,936 observations (0.1%) moves the base breakeven to  53.8%
+        median |return| 2.0925% (vs mean 3.1805%): breakeven  55.7% base /  57.2% stress
+        max |return| seen: 44.60%; 3 largest moves: -44.60% (2020-03-12), -27.74% (2021-05-19), +26.33% (2021-05-24)
+BTC_USDT:
+   15m: empirical 101.7% base / 114.7% stress   (old Gaussian-shortcut would have said  86.7% base, a +15.1pp difference)   n=281,364   skew=+0.00 kurtosis_excess=+54.57 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 281 of 281,364 observations (0.1%) moves the base breakeven to 102.8% <-- IMPOSSIBLE (>100%)
+        median |return| 0.1349% (vs mean 0.2320%): breakeven 139.0% base / 161.2% stress <-- IMPOSSIBLE (>100%)
+        max |return| seen: 14.61%; 3 largest moves: +14.61% (2021-05-19), -12.79% (2021-05-19), -12.43% (2020-03-12)
+    1h: empirical  76.1% base /  82.7% stress   (old Gaussian-shortcut would have said  68.9% base, a +7.3pp difference)   n=70,355   skew=-0.03 kurtosis_excess=+33.46 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 70 of 70,355 observations (0.1%) moves the base breakeven to  76.6%
+        median |return| 0.2614% (vs mean 0.4592%): breakeven  95.9% base / 107.4% stress
+        max |return| seen: 18.21%; 3 largest moves: -18.21% (2020-03-12), +17.38% (2020-03-13), -17.28% (2020-03-12)
+    4h: empirical  63.0% base /  66.2% stress   (old Gaussian-shortcut would have said  59.8% base, a +3.2pp difference)   n=17,588   skew=+0.26 kurtosis_excess=+19.41 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 18 of 17,588 observations (0.1%) moves the base breakeven to  63.2%
+        median |return| 0.5146% (vs mean 0.9246%): breakeven  73.3% base /  79.2% stress
+        max |return| seen: 28.14%; 3 largest moves: +28.14% (2017-09-15), -20.50% (2020-03-12), -17.93% (2020-03-12)
+    1d: empirical  55.0% base /  56.2% stress   (old Gaussian-shortcut would have said  54.1% base, a +0.8pp difference)   n=2,936   skew=-0.24 kurtosis_excess=+8.33 (NOT normal at 5%, Jarque-Bera)
+        outlier check: dropping the most extreme 3 of 2,936 observations (0.1%) moves the base breakeven to  55.0%
+        median |return| 1.5209% (vs mean 2.4154%): breakeven  57.9% base /  59.9% stress
+        max |return| seen: 39.50%; 3 largest moves: -39.50% (2020-03-12), +22.50% (2017-12-07), +19.54% (2021-02-08)
+
+Wrote user_data/analysis/results/breakeven_hit_rate.json
