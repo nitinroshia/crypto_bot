@@ -22,7 +22,9 @@ run leadlag.py
 run costs.py
 run retired/costs_scenarios_AB.py
 run multitest.py
+run registry.py
 run databundle.py
+run cutoff.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test

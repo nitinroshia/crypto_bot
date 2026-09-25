@@ -59,12 +59,39 @@ summary but matter for not repeating past mistakes.
   `docs/correspondence/` instead and let the mathematician fold it in on their end.
 
 ## Decided but not yet built
-- Registry naming for item 2: `<task>-ETHUSDT`, `<task>-BTCUSDT` (e.g. `S1-ETHUSDT`). Settled
-  in work order 1.4 so item 2 doesn't need to retrofit it.
 - Forward-test command must report step 5's statistical criteria (one-sided p<0.05, estimate
   >= half the discovery estimate) and step 3's holdout requirement (frozen rule net-positive at
   stress cost) as two separate labeled results, and must auto-log the ETH/FDUSD holdout-exposure
   disclosure note on every run, unconditionally.
+- The actual holdout lock (an enforcement/audit layer -- stopping non-forward-test code from
+  reading post-cutoff data at all, not just truncating what a discovery-mode load returns) is
+  still open. `cutoff.py`'s guard (below) is necessary for this but not sufficient on its own:
+  it only truncates when a caller passes `end_date`, it doesn't stop a caller from omitting it.
+
+## Item 2 pieces already built (2026-09-26) -- read before touching either module
+- `cutoff.py`: the `--end-date` guard. One rule -- "keep a bar iff its label (open time) <= the
+  cutoff" -- reproduces all four of section 6's worked last-usable-bar examples (1d/1h/15m/5m)
+  without a per-timeframe table; see its self-test if a fifth timeframe ever needs checking.
+  `origin_window_side(entry_time, window_end_label, ...)` takes bar LABELS for both arguments,
+  never close timestamps -- passing a close time will wrongly reject legitimate discovery windows
+  ending on the last usable bar (see the module docstring's "INTERPRETIVE CHOICE" note). Wired
+  into `research_cli.py` as `load_all_dataframes(..., end_date=...)` and the CLI's `--end-date`
+  flag; `--end-date` takes any UTC date/timestamp (it's not hardcoded to 2025-08-31), so pass
+  `cutoff.CUTOFF`'s value explicitly for a real discovery run.
+- `registry.py`: append-only JSONL (`user_data/analysis/results/registry.jsonl`, not yet created
+  for real -- nothing has actually been appended to it outside this module's own self-test).
+  Family names must be `<TASK>-ETHUSDT`/`<TASK>-BTCUSDT` for every status except `history` and
+  `void_pre_fix` (the two used to import pre-existing ETH/FDUSD-era runs, which predate the
+  naming scheme -- `validate_family` exempts them on purpose, don't "fix" this later). Gotcha:
+  `holm_at_step(records, pair, step)` reads each family's SINGLE MOST RECENT record overall (not
+  its most recent record among only-that-step records) -- a family that has moved on to a later
+  step no longer counts at an earlier one, so querying an earlier step naturally empties out as
+  candidates graduate. This was a real bug caught by the self-test (naive "most recent among
+  matching-status records" logic double-counted a family at both its old and new step) --
+  don't revert to that simpler-looking version if refactoring this function.
+- Neither module has been imported into `research_cli.py`'s formula-running path for actual
+  registry writes yet (no formula run currently appends anything) -- that wiring is stability
+  check / freeze-manifest work, still ahead.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:

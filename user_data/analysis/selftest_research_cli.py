@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 import research_cli as rc
+from cutoff import CUTOFF
 from resample import resample_ohlcv
 
 
@@ -101,8 +102,37 @@ def test_fixed_lag_rule() -> None:
     print("  fixed-lag rule: validate tests only the fit-selected lag (a significant neighbour no longer rescues it)")
 
 
+def test_end_date_guard() -> None:
+    """Item 2's --end-date guard, exercised through load_all_dataframes (not
+    just cutoff.py's own self-test): loading with end_date=CUTOFF must
+    return a bundle where the post-cutoff rows are gone from the actual
+    DataFrame object, not merely something a formula would need to filter --
+    and loading with no end_date (the default) must be unaffected, so every
+    existing caller above that never passes it keeps working exactly as
+    before."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        idx = pd.date_range(CUTOFF - pd.Timedelta(days=3), CUTOFF + pd.Timedelta(days=3), freq="1D", tz="UTC")
+        df = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0}, index=idx)
+        _write(tmp / "binance", "ETH_FDUSD", "1d", df)
+
+        full = rc.load_all_dataframes(tmp / "binance", "ETH_FDUSD", ["1d"])
+        assert full["1d"].index.max() > CUTOFF, "sanity check: the synthetic data does reach past the cutoff"
+        assert len(full["1d"]) == len(idx), "no end_date given -- nothing should be truncated"
+
+        guarded = rc.load_all_dataframes(tmp / "binance", "ETH_FDUSD", ["1d"], end_date=CUTOFF)
+        assert guarded["1d"].index.max() <= CUTOFF, "end_date must hard-truncate, not just flag, post-cutoff rows"
+        assert (guarded["1d"].index > CUTOFF).sum() == 0
+        assert len(guarded["1d"]) == 4, "expected exactly the 4 on-or-before-cutoff rows to survive"
+        # And the untruncated bundle from the call above is untouched by the guarded one -- confirms
+        # load_all_dataframes returns a fresh truncated frame rather than mutating a shared one.
+        assert len(full["1d"]) == len(idx)
+    print("  --end-date guard: load_all_dataframes hard-truncates when given, leaves data untouched when not")
+
+
 def main() -> None:
     test_fixed_lag_rule()
+    test_end_date_guard()
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
 

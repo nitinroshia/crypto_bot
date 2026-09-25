@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 21 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 23 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,14 +52,32 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (not started):** `--end-date` guard, holdout lock, registry (pair-qualified naming
-  `<task>-ETHUSDT`/`<task>-BTCUSDT` already decided, not yet built), by-year/leave-one-year-out,
-  the section-6 stability check (90-day tiling + one-sided Stouffer -- **confirmed in scope for
-  item 2**, since it's what replaces the current wrong `research_cli.evaluate_fixed_lag` verdict,
-  not separate follow-on work), freeze manifest, forward-test command. The forward-test command
-  must report step 5's statistical criteria and step 3's holdout requirement as two separate
-  labeled results (never collapsed into one pass/fail), and must auto-log the ETH/FDUSD
-  holdout-exposure disclosure note on every run. This is the next thing to build.
+- **Item 2 (in progress, 2 of ~6 pieces landed 2026-09-26):**
+  - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
+    structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
+    origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
+    (`end_date=` param) and the CLI's new `--end-date` flag, threaded through both `run_once`
+    and `run_walkforward`, logged in every manifest as `end_date_guard`. Verified end-to-end
+    (not just cutoff.py's own self-test): `selftest_research_cli.py` proves the guard drops rows
+    from the actual returned DataFrame, and a live CLI invocation confirms the same.
+  - DONE: `registry.py` -- append-only JSONL, pair-qualified family names (`<TASK>-ETHUSDT` /
+    `<TASK>-BTCUSDT`, Work Order 1.4) enforced for every status except the two used for importing
+    ETH/FDUSD-era runs (`history`, `void_pre_fix`, which predate the naming scheme and are
+    exempt); `cumulative_count` and `holm_at_step` both exclude those two statuses per section 6.
+    `holm_at_step` reads each family's single most-recent record so a superseded checkpoint
+    p-value (e.g. discovery, once a candidate has moved on to stability) never double-counts.
+    Nothing has actually been imported or appended into the real registry yet -- this is the
+    mechanism, not populated data.
+  - NOT YET BUILT: the holdout lock itself (an enforcement/audit layer beyond the truncation
+    guard -- nothing yet stops non-forward-test code from reading post-cutoff data, or auto-logs
+    the ETH/FDUSD holdout-exposure disclosure note), by-year/leave-one-year-out, the section-6
+    stability check (90-day tiling + one-sided Stouffer -- **confirmed in scope for item 2**,
+    since it's what replaces the current wrong `research_cli.evaluate_fixed_lag` verdict, not
+    separate follow-on work), the S1/S2 economic gate, freeze manifest, forward-test command. The
+    forward-test command must report step 5's statistical criteria and step 3's holdout
+    requirement as two separate labeled results (never collapsed into one pass/fail), and must
+    auto-log the ETH/FDUSD holdout-exposure disclosure note on every run. This is the next thing
+    to build.
 
 ## Live finding, closed out (2026-09-24)
 Rebuilding the break-even hit-rate table with empirical (not Gaussian-assumed) return
@@ -77,11 +95,13 @@ every ordinary bar -- if anything it's a point in favor of Task 3's event-condit
 This thread is fully closed; nothing further expected from either the owner or mathematician on it.
 
 ## Immediate next step
-The owner was asked to rerun `breakeven_table.py` once more (median |return| was just added) --
-`wo1.4_breakeven_v4.log` may already be at the repo root or about to be. If so, just confirm the
-median figures look sane (same shape as before: reasonable at 1d/4h/1h, the 15m story unchanged)
-and consider this thread done; no action needed unless something looks off. After that: **start
-item 2**, beginning with the registry and `--end-date` guard.
+The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
+was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
+in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
+Item 2's registry and `--end-date` guard are now built and self-tested (above). Next: the holdout
+lock proper (auto-logging the disclosure note, and actually preventing non-forward-test code from
+touching post-cutoff data, not just the loader-level truncation guard already in place), then
+by-year/leave-one-year-out, then the section-6 stability check.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,

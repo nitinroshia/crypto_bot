@@ -75,6 +75,7 @@ import pandas as pd
 import statsmodels.api as sm
 
 from config_schema import SUPPORTED_TIMEFRAMES
+from cutoff import truncate_bundle_at_cutoff
 from databundle import DataBundle, load_bundle
 from leadlag import (
     align_to_common_grid,
@@ -232,11 +233,26 @@ def _run_volume_leads_volatility(*, data, max_lag, timeframe=None, window=20, **
 # A formula reaches into `data[tf]` for whichever it actually uses.
 # --------------------------------------------------------------------------
 def load_all_dataframes(
-    data_dir: Path, asset_pair: str, timeframes: list[str], raw_dir: Path | None = None
+    data_dir: Path, asset_pair: str, timeframes: list[str], raw_dir: Path | None = None,
+    end_date: pd.Timestamp | None = None,
 ) -> DataBundle:
     """Every key in `timeframes` may be a bare timeframe (default pair), a
-    PAIR:timeframe, or PAIR:timeframe:raw -- see databundle.py."""
-    return load_bundle(data_dir, asset_pair, timeframes, raw_dir=raw_dir)
+    PAIR:timeframe, or PAIR:timeframe:raw -- see databundle.py.
+
+    `end_date` (item 2's `--end-date` guard, cutoff.py): when given, every
+    series in the returned bundle is HARD-truncated to that cutoff, dropping
+    rows outright rather than leaving them for a formula to filter later --
+    see cutoff.py's module docstring for why this must happen here, once,
+    right after load, and not downstream. Pass cutoff.CUTOFF for the
+    project's actual ETH/USDT-phase discovery cutoff (2025-08-31 23:59:59
+    UTC); this function itself is cutoff-value-agnostic so it also serves
+    any other guard callers (self-tests, ad-hoc reproductions) may need. No
+    truncation happens when `end_date` is None -- existing callers (and the
+    self-test) that never pass it keep today's un-truncated behavior."""
+    bundle = load_bundle(data_dir, asset_pair, timeframes, raw_dir=raw_dir)
+    if end_date is not None:
+        bundle = truncate_bundle_at_cutoff(bundle, cutoff=end_date)
+    return bundle
 
 
 def _data_ranges(data: dict) -> dict:
@@ -283,9 +299,9 @@ def write_manifest(output_dir: Path, run_id: str, record: dict) -> Path:
 # --------------------------------------------------------------------------
 # Single run
 # --------------------------------------------------------------------------
-def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, timeframes=None, tag=None, raw_dir=None):
+def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, timeframes=None, tag=None, raw_dir=None, end_date=None):
     tfs = _infer_timeframes(timeframes, params)
-    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir)
+    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir, end_date=end_date)
     result_df, best = FORMULAS[formula_name]["fn"](data=data, max_lag=max_lag, **params)
     # Work order #1: every result states its family size and adjusted p. The
     # family here is the lags this table tested; both Bonferroni and Holm are
@@ -308,6 +324,7 @@ def run_once(formula_name, data_dir, asset_pair, params, max_lag, output_dir, ti
         "max_lag": max_lag,
         "timeframes_loaded": tfs,
         "data_dir": str(data_dir),
+        "end_date_guard": str(end_date) if end_date is not None else None,
         "data_date_range": [
             str(min(df.index.min() for df in data.values())),
             str(max(df.index.max() for df in data.values())),
@@ -391,10 +408,10 @@ def evaluate_fixed_lag(fit_best: dict, fit_df, val_df) -> dict:
 
 def run_walkforward(
     formula_name, data_dir, asset_pair, params, max_lag, fit_days, validate_days, step_days, output_dir,
-    timeframes=None, raw_dir=None,
+    timeframes=None, raw_dir=None, end_date=None,
 ):
     tfs = _infer_timeframes(timeframes, params)
-    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir)
+    data = load_all_dataframes(data_dir, asset_pair, tfs, raw_dir=raw_dir, end_date=end_date)
     start = max(df.index.min() for df in data.values())
     end = min(df.index.max() for df in data.values())
 
@@ -470,6 +487,7 @@ def run_walkforward(
         "params": params,
         "max_lag": max_lag,
         "timeframes_loaded": tfs,
+        "end_date_guard": str(end_date) if end_date is not None else None,
         "data_ranges": _data_ranges(data),
         "fit_days": fit_days,
         "validate_days": validate_days,
@@ -543,15 +561,19 @@ def guided_mode(args) -> None:
     max_lag = _prompt_int("Max lag to test", 20)
     asset_pair = _prompt_text("Asset pair", args.pair)
     data_dir = Path(_prompt_text("Data directory", str(args.data_dir)))
+    end_date_raw = _prompt_text(
+        "Item 2 --end-date guard: hard-truncate to this UTC date/timestamp (blank = no truncation)", ""
+    )
+    end_date = pd.Timestamp(end_date_raw, tz="UTC") if end_date_raw else None
 
     do_wf = _prompt_yes_no("\nRun as a walk-forward validation instead of a single pass?", default=False)
     if do_wf:
         fit_days = _prompt_int("Fit window, days", 270)
         validate_days = _prompt_int("Validate window, days", 90)
         step_days = _prompt_int("Step forward, days (0 = same as validate window)", 0) or None
-        run_walkforward(formula_name, data_dir, asset_pair, params, max_lag, fit_days, validate_days, step_days, args.output_dir)
+        run_walkforward(formula_name, data_dir, asset_pair, params, max_lag, fit_days, validate_days, step_days, args.output_dir, end_date=end_date)
     else:
-        manifest, path = run_once(formula_name, data_dir, asset_pair, params, max_lag, args.output_dir)
+        manifest, path = run_once(formula_name, data_dir, asset_pair, params, max_lag, args.output_dir, end_date=end_date)
         print(f"\nResult:\n{json.dumps(manifest['result'], indent=2, default=str)}")
         print(f"\nManifest written to {path}")
 
@@ -586,6 +608,10 @@ def build_argparser() -> argparse.ArgumentParser:
                     help="which timeframes to load; default: inferred from --param pair=A:B or "
                          "--param timeframe=X, else all of " + str(SUPPORTED_TIMEFRAMES))
     p.add_argument("--max-lag", type=int, default=20)
+    p.add_argument("--end-date", type=str, default=None,
+                    help="item 2's discovery-mode guard: hard-truncate every loaded series to this "
+                         "UTC date/timestamp (inclusive), e.g. 2025-08-31T23:59:59 for the project's "
+                         "actual discovery cutoff (see cutoff.CUTOFF). Omit for no truncation.")
     p.add_argument("--list-formulas", action="store_true")
     p.add_argument("--walkforward", action="store_true", help="validate out-of-sample instead of a single pass")
     p.add_argument("--fit-days", type=int, default=270)
@@ -610,15 +636,17 @@ def main() -> None:
         guided_mode(args)
         return
 
+    end_date = pd.Timestamp(args.end_date, tz="UTC") if args.end_date else None
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
     if args.walkforward:
         run_walkforward(
             args.formula, args.data_dir, args.pair, params, args.max_lag,
             args.fit_days, args.validate_days, args.step_days, args.output_dir,
-            timeframes=args.timeframes, raw_dir=args.raw_dir,
+            timeframes=args.timeframes, raw_dir=args.raw_dir, end_date=end_date,
         )
     else:
-        manifest, path = run_once(args.formula, args.data_dir, args.pair, params, args.max_lag, args.output_dir, timeframes=args.timeframes, raw_dir=args.raw_dir)
+        manifest, path = run_once(args.formula, args.data_dir, args.pair, params, args.max_lag, args.output_dir, timeframes=args.timeframes, raw_dir=args.raw_dir, end_date=end_date)
         print(json.dumps(manifest, indent=2, default=str))
         print(f"\nManifest: {path}")
 
