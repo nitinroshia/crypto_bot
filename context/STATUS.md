@@ -20,7 +20,8 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
 - Three parties: **Owner** (Shachō/final authority on cross-domain or major decisions --
   objectives, strategy principles, architecture, risk/capital exposure, direction changes),
   **Developer** (this role -- Claude, autonomous on implementation/default-choice questions),
-  **Mathematician** (runs on ChatGPT, not a human -- autonomous on research-design questions).
+  **Mathematician** (runs on Claude, continued each session via `context/mathematician/NOTES.md`,
+  not a human -- autonomous on research-design questions).
   If developer and mathematician disagree, the owner is final. The owner relays everything
   between the two AI roles manually (copy-paste), runs every terminal command themselves, and
   has asked for terminal commands rather than descriptions whenever something needs doing on
