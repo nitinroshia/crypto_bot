@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 25 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 27 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,7 +52,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 4 of ~6 pieces landed 2026-09-26):**
+- **Item 2 (in progress, 5 of ~6 pieces landed 2026-09-26):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -96,10 +96,27 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     series that must never trigger the flag, and the partial-year exemption. Not yet wired into
     any actual candidate's reporting -- this is the mechanism, and no primary cell has run through
     it for real yet.
-  - NOT YET BUILT: the section-6 stability check (90-day tiling + one-sided Stouffer --
-    **confirmed in scope for item 2**, since it's what replaces the current wrong
-    `research_cli.evaluate_fixed_lag` verdict, not separate follow-on work), the S1/S2 economic
-    gate, freeze manifest, forward-test command (which will be the first real caller of
+  - DONE: `blocks.py` + `stability_check.py` -- the section-6 stability check for S1/S2.
+    `blocks.py`'s `tile_blocks` is the SAME tiling step 3 (economic gate) will reuse, non-overlapping
+    90-day blocks from the family's own first origin, with the last block flagged
+    `is_final_partial` using an inferred bar-width (not an assumed 1-day constant, so it works for
+    any timeframe) to correctly distinguish "genuinely calendar-short" from "just sparser". A real
+    bug the self-test caught: without that inference, an EXACT multiple of 90 days (e.g. 270 daily
+    rows) was wrongly flagged partial on its last block, since bar labels understate coverage by
+    one bar-width (same class of trap as cutoff.py's label-vs-close-time issue). `stability_check`
+    Stouffer-combines every judged block's caller-supplied z-score (oriented to the pre-registered
+    direction, so S1-positive and S2-negative both read the same way), requires one-sided p<0.05,
+    AND separately vetoes the whole candidate if any judged block is significantly (p<0.05) opposite
+    in sign -- this veto can fail a candidate even when the combined result would otherwise pass, by
+    design. The final partial block is excluded from both the combination and the veto entirely,
+    however extreme its own value. `evaluate_fixed_lag` (research_cli.py) is untouched and still
+    correctly serves its own, unrelated purpose (Item 1's single fit/validate lag-replication
+    check) -- it was never actually wired up as an S1/S2 stability substitute in code (no S1/S2
+    formula exists yet), so there was nothing to migrate off; the STATUS.md/NOTES.md warning was
+    about not making that mistake once S1/S2 are built, not about removing anything today. Neither
+    module is wired into research_cli.py or the registry yet.
+  - NOT YET BUILT: the S1/S2 economic gate (reuses `blocks.tile_blocks`, different pass rule),
+    freeze manifest, forward-test command (which will be the first real caller of
     `holdout_lock.unlock_holdout_for_forward_test`). The forward-test command must report step 5's
     statistical criteria and step 3's holdout requirement as two separate labeled results (never
     collapsed into one pass/fail). This is the next thing to build.
@@ -123,9 +140,8 @@ This thread is fully closed; nothing further expected from either the owner or m
 The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-Item 2's registry, `--end-date` guard, holdout lock, and by-year/leave-one-year-out machinery are
-now built and self-tested (above). Next: the section-6 stability check (90-day tiling + one-sided
-Stouffer).
+Item 2's registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out machinery, and the
+S1/S2 stability check are now built and self-tested (above). Next: the S1/S2 economic gate.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,

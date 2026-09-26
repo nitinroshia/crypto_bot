@@ -120,6 +120,24 @@ summary but matter for not repeating past mistakes.
   `estimator` takes a DataFrame slice and returns a float; nothing in this module computes an
   actual candidate's estimate itself -- that's every individual formula's own job. Not yet wired
   into any candidate's actual reporting.
+- `blocks.py`: `tile_blocks` is shared by the stability check (built) and the economic gate (not
+  yet built) -- if step 3 needs its own tiling, reuse this, don't reimplement it. Gotcha that cost
+  a real bug during development: `is_final_partial` must compare against the data's inferred
+  CALENDAR COVERAGE (last label + inferred bar-width), not the last label itself -- otherwise an
+  exact multiple of block_days (e.g. 270 daily rows = 3 full 90-day blocks) gets its last block
+  wrongly flagged partial, since bar labels understate coverage by one bar-width. Bar width is
+  inferred from the data's own median spacing (works for any timeframe), not assumed to be 1 day.
+- `stability_check.py`: built on `blocks.py`. Gotchas: `block_test(subset) -> (z, p_two_sided)`
+  must return a genuine standard-normal z (not just any signed magnitude) or the Stouffer
+  combination (`sum(oriented_z) / sqrt(k)`) is not statistically valid -- this module can't verify
+  that property, it's on whoever writes the real S1/S2 `block_test`. The veto
+  (`any_significant_opposite`) is checked independently of the combined result -- it can fail a
+  candidate that would otherwise pass, don't merge the two checks into one condition. The final
+  partial block never enters either the combination or the veto, however extreme its value.
+  `evaluate_fixed_lag` in research_cli.py is UNRELATED to this and was not modified -- it's Item
+  1's own single fit/validate lag-replication check for the leadlag formula, not an S1/S2
+  stability mechanism; nothing currently routes S1/S2 through it since no S1/S2 formula exists yet.
+  Don't wire the two together later on the assumption they're doing the same job.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:
