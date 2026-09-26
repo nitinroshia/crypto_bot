@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 24 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 25 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,7 +52,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 3 of ~6 pieces landed 2026-09-26):**
+- **Item 2 (in progress, 4 of ~6 pieces landed 2026-09-26):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -80,10 +80,26 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     note, excluded from cumulative_count/holm_at_step like history imports. Not yet wired into
     any actual data-batch tool or into research_cli.py -- this is the mechanism, and nothing has
     called it for a real candidate yet.
-  - NOT YET BUILT: by-year/leave-one-year-out, the section-6 stability check (90-day tiling +
-    one-sided Stouffer -- **confirmed in scope for item 2**, since it's what replaces the current
-    wrong `research_cli.evaluate_fixed_lag` verdict, not separate follow-on work), the S1/S2
-    economic gate, freeze manifest, forward-test command (which will be the first real caller of
+  - DONE: `nonstationarity.py` -- the by-year/leave-one-year-out machinery (section 6's
+    "non-stationarity rule"). `by_year_table` shows every calendar period (n, days covered, own
+    estimate, judged) with "days covered" defined as distinct calendar dates present, not a row
+    count; a period below 120 days is shown but never itself droppable in `leave_one_out` -- its
+    data stays in the pooled estimate and in every OTHER period's leave-one-out subset regardless.
+    `non_stationarity_report` bundles the pooled estimate, the table, leave-one-out estimates, and
+    the section-6 red flag (year-driven: dropping a period more than halves the pooled estimate's
+    magnitude OR flips its sign -- either alone triggers it), plus a year-by-year sign-agreement
+    statement. `estimator` is caller-supplied and generic (S1's mean effect, S2's OLS slope,
+    whatever a given cell's estimate actually is) -- this module has no opinion on how it's
+    computed, only on how it's sliced by calendar period. Also supports `period="M"` for
+    ETH/FDUSD's by-month convention. Self-tested against hand-computed pooled/LOYO arithmetic for
+    both a magnitude-halving year and a sign-flipping year (isolated separately), a stationary
+    series that must never trigger the flag, and the partial-year exemption. Not yet wired into
+    any actual candidate's reporting -- this is the mechanism, and no primary cell has run through
+    it for real yet.
+  - NOT YET BUILT: the section-6 stability check (90-day tiling + one-sided Stouffer --
+    **confirmed in scope for item 2**, since it's what replaces the current wrong
+    `research_cli.evaluate_fixed_lag` verdict, not separate follow-on work), the S1/S2 economic
+    gate, freeze manifest, forward-test command (which will be the first real caller of
     `holdout_lock.unlock_holdout_for_forward_test`). The forward-test command must report step 5's
     statistical criteria and step 3's holdout requirement as two separate labeled results (never
     collapsed into one pass/fail). This is the next thing to build.
@@ -107,8 +123,9 @@ This thread is fully closed; nothing further expected from either the owner or m
 The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-Item 2's registry, `--end-date` guard, and holdout lock are now built and self-tested (above).
-Next: by-year/leave-one-year-out, then the section-6 stability check.
+Item 2's registry, `--end-date` guard, holdout lock, and by-year/leave-one-year-out machinery are
+now built and self-tested (above). Next: the section-6 stability check (90-day tiling + one-sided
+Stouffer).
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,

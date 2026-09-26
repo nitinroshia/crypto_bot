@@ -108,6 +108,18 @@ summary but matter for not repeating past mistakes.
   verdict; `registry.holm_at_step` already picks up each family's most-recent record, so this
   resolves correctly on its own, no special-casing needed. Not yet wired into any data-batch tool
   or into research_cli.py.
+- `nonstationarity.py`: by-year/leave-one-year-out. Gotcha worth remembering: a period below the
+  120-day threshold is excluded from BEING DROPPED in leave-one-out (it's shown in `by_year_table`
+  but `leave_one_out`/`year_driven`/`sign_agreement` never key on it) -- but its rows are NEVER
+  removed from any other period's leave-one-out subset, or from the pooled estimate. Don't
+  "simplify" this later into filtering sub-threshold rows out of the data entirely; that would
+  silently change the pooled estimate itself, which section 6 explicitly says must not happen.
+  "days_covered" is distinct calendar dates present, not `n` (row count) and not a period-length
+  constant -- the two self-test datasets both use daily-frequency synthetic data specifically so
+  n and days_covered happen to be equal there; don't assume that equality holds for intraday data.
+  `estimator` takes a DataFrame slice and returns a float; nothing in this module computes an
+  actual candidate's estimate itself -- that's every individual formula's own job. Not yet wired
+  into any candidate's actual reporting.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:

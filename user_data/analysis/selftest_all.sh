@@ -26,6 +26,7 @@ run registry.py
 run databundle.py
 run cutoff.py
 run holdout_lock.py
+run nonstationarity.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test
