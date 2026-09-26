@@ -75,16 +75,24 @@ STATUSES = frozenset(
         "inconclusive",
         "history",
         "void_pre_fix",
+        "descriptive_access",
     }
 )
-UNCOUNTED_STATUSES = frozenset({"history", "void_pre_fix"})
+# "descriptive_access" (holdout_lock.py's log_descriptive_access) is a
+# data-batch tool's audit-trail entry for a full-range, no-returns-computed
+# read (section 6: "logged as 'descriptive, no returns computed'") -- not a
+# candidate at all, so it's exempt from family naming exactly like the two
+# history statuses, and excluded from cumulative_count/holm_at_step the same
+# way.
+UNCOUNTED_STATUSES = frozenset({"history", "void_pre_fix", "descriptive_access"})
 
 REQUIRED_KEYS = ("family", "pair", "status", "timestamp_utc")
 
 
 def validate_family(family: str, status: str) -> None:
     """Raise ValueError unless `family` is well-formed for `status`. History
-    imports are exempt (see module docstring); every other status must be
+    imports and descriptive-access audit entries are exempt (see module
+    docstring and UNCOUNTED_STATUSES); every other status must be
     `<TASK>-<PAIR>` with PAIR in PAIR_SUFFIXES."""
     if status in UNCOUNTED_STATUSES:
         if not family:
@@ -201,6 +209,7 @@ if __name__ == "__main__":
     validate_family("S1-ETHUSDT", "discovery")  # must not raise
     validate_family("Task3-BTCUSDT", "frozen")  # must not raise
     validate_family("event_anchored_lead_lag", "history")  # exempt, must not raise
+    validate_family("locate_gaps.py", "descriptive_access")  # exempt, must not raise
     for bad_family, status in (
         ("S1_ETHUSDT", "discovery"),  # underscore, not hyphen
         ("S1-ETHFDUSD", "discovery"),  # not a live-phase pair

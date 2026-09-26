@@ -63,10 +63,8 @@ summary but matter for not repeating past mistakes.
   >= half the discovery estimate) and step 3's holdout requirement (frozen rule net-positive at
   stress cost) as two separate labeled results, and must auto-log the ETH/FDUSD holdout-exposure
   disclosure note on every run, unconditionally.
-- The actual holdout lock (an enforcement/audit layer -- stopping non-forward-test code from
-  reading post-cutoff data at all, not just truncating what a discovery-mode load returns) is
-  still open. `cutoff.py`'s guard (below) is necessary for this but not sufficient on its own:
-  it only truncates when a caller passes `end_date`, it doesn't stop a caller from omitting it.
+- The actual holdout lock is now built (`holdout_lock.py`, see below) -- this bullet used to flag
+  it as open; it isn't anymore, but nothing has called it for a real candidate yet.
 
 ## Item 2 pieces already built (2026-09-26) -- read before touching either module
 - `cutoff.py`: the `--end-date` guard. One rule -- "keep a bar iff its label (open time) <= the
@@ -92,6 +90,24 @@ summary but matter for not repeating past mistakes.
 - Neither module has been imported into `research_cli.py`'s formula-running path for actual
   registry writes yet (no formula run currently appends anything) -- that wiring is stability
   check / freeze-manifest work, still ahead.
+- `holdout_lock.py`: the actual one-shot enforcement (not just an audit log). Gotcha:
+  `unlock_holdout_for_forward_test` checks the registry for a PRIOR `holdout_consumed` record for
+  the same (family, pair) and refuses with `HoldoutAlreadyConsumedError` if one exists -- this is
+  what makes "once per candidate" real rather than a comment. It deliberately calls
+  `databundle.load_bundle` directly (bypassing `cutoff.py`'s guard entirely, on purpose) since the
+  whole point is that this is the one place allowed to return the untruncated series. The
+  ETH/FDUSD 2026-exposure disclosure note (`DISCLOSURE_NOTE_ETHUSDT`, verbatim from mathematician
+  NOTES.md section 6 -- don't paraphrase it if it's ever touched) is logged only for
+  `pair="ETHUSDT"`; a BTCUSDT call still gets a `holdout_consumed` audit record, just with
+  `detail["note"] = None`. `log_descriptive_access` is unrelated -- it's for the OTHER kind of
+  post-cutoff read section 6 allows (purely descriptive tools, no returns computed) and gates
+  nothing; it just appends the fixed "descriptive, no returns computed" note. Two-step pattern
+  worth knowing before the forward-test command is built: `unlock_holdout_for_forward_test`'s own
+  record has `detail["p_value"] = None` (it only gates access, it doesn't compute anything) --
+  the forward-test command must append a SECOND `holdout_consumed` record once it has the real
+  verdict; `registry.holm_at_step` already picks up each family's most-recent record, so this
+  resolves correctly on its own, no special-casing needed. Not yet wired into any data-batch tool
+  or into research_cli.py.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:

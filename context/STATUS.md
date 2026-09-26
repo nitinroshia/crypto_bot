@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 23 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 24 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,7 +52,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 2 of ~6 pieces landed 2026-09-26):**
+- **Item 2 (in progress, 3 of ~6 pieces landed 2026-09-26):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -68,16 +68,25 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     p-value (e.g. discovery, once a candidate has moved on to stability) never double-counts.
     Nothing has actually been imported or appended into the real registry yet -- this is the
     mechanism, not populated data.
-  - NOT YET BUILT: the holdout lock itself (an enforcement/audit layer beyond the truncation
-    guard -- nothing yet stops non-forward-test code from reading post-cutoff data, or auto-logs
-    the ETH/FDUSD holdout-exposure disclosure note), by-year/leave-one-year-out, the section-6
-    stability check (90-day tiling + one-sided Stouffer -- **confirmed in scope for item 2**,
-    since it's what replaces the current wrong `research_cli.evaluate_fixed_lag` verdict, not
-    separate follow-on work), the S1/S2 economic gate, freeze manifest, forward-test command. The
-    forward-test command must report step 5's statistical criteria and step 3's holdout
-    requirement as two separate labeled results (never collapsed into one pass/fail), and must
-    auto-log the ETH/FDUSD holdout-exposure disclosure note on every run. This is the next thing
-    to build.
+  - DONE: `holdout_lock.py` -- the actual one-shot enforcement, not just an audit log.
+    `unlock_holdout_for_forward_test` is the ONLY sanctioned way to get the untruncated series for
+    a hypothesis-specific test; it refuses outright (`HoldoutAlreadyConsumedError`) if that
+    (family, pair) has already consumed its one holdout look, and it is impossible to get data
+    from it without the required registry disclosure landing first. Logs the verbatim ETH/FDUSD
+    2026-exposure note (mathematician NOTES.md section 6) for ETHUSDT candidates specifically
+    (BTCUSDT gets an audit entry but no ETH/FDUSD note -- it was never exposed to that data).
+    `log_descriptive_access` covers the OTHER kind of post-cutoff read section 6 allows (purely
+    descriptive, no returns computed -- gap locators, liquidity tables, etc.) with its own fixed
+    note, excluded from cumulative_count/holm_at_step like history imports. Not yet wired into
+    any actual data-batch tool or into research_cli.py -- this is the mechanism, and nothing has
+    called it for a real candidate yet.
+  - NOT YET BUILT: by-year/leave-one-year-out, the section-6 stability check (90-day tiling +
+    one-sided Stouffer -- **confirmed in scope for item 2**, since it's what replaces the current
+    wrong `research_cli.evaluate_fixed_lag` verdict, not separate follow-on work), the S1/S2
+    economic gate, freeze manifest, forward-test command (which will be the first real caller of
+    `holdout_lock.unlock_holdout_for_forward_test`). The forward-test command must report step 5's
+    statistical criteria and step 3's holdout requirement as two separate labeled results (never
+    collapsed into one pass/fail). This is the next thing to build.
 
 ## Live finding, closed out (2026-09-24)
 Rebuilding the break-even hit-rate table with empirical (not Gaussian-assumed) return
@@ -98,10 +107,8 @@ This thread is fully closed; nothing further expected from either the owner or m
 The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-Item 2's registry and `--end-date` guard are now built and self-tested (above). Next: the holdout
-lock proper (auto-logging the disclosure note, and actually preventing non-forward-test code from
-touching post-cutoff data, not just the loader-level truncation guard already in place), then
-by-year/leave-one-year-out, then the section-6 stability check.
+Item 2's registry, `--end-date` guard, and holdout lock are now built and self-tested (above).
+Next: by-year/leave-one-year-out, then the section-6 stability check.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,
