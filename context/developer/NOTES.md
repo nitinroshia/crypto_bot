@@ -138,6 +138,30 @@ summary but matter for not repeating past mistakes.
   1's own single fit/validate lag-replication check for the leadlag formula, not an S1/S2
   stability mechanism; nothing currently routes S1/S2 through it since no S1/S2 formula exists yet.
   Don't wire the two together later on the assumption they're doing the same job.
+- `rule_evaluator.py` + `economic_gate.py`: read `rule_evaluator.py`'s module docstring in full
+  before touching either -- it documents a real interpretive fork in section 6's own text (the
+  "starts flat / forced exit" language for "a discovery block" vs. "a position may carry across a
+  block boundary at no cost") and how it was resolved (section 6's own self-test requirement --
+  "charged once, not twice" -- only holds under a continuous-run-then-slice design, not independent
+  per-block resets). This is flagged to the mathematician (message-10.md, not yet sent as of this
+  writing) as a financial-model interpretive choice that should be confirmed, not silently treated
+  as settled. Gotcha that cost a real bug during development, twice over: (1) `held_position[0]`
+  must be 0 by construction (`signal.shift(1).fillna(0)`) -- the segment "starts flat" and there is
+  no bar before it to have supplied a signal, so the FIRST interval of any segment always earns
+  zero regardless of what `signal[0]` says; a test that assumes "always-long over n bars compounds
+  n-1 intervals" is off by one for exactly this reason (it's n-2 contributing intervals -- see
+  `rule_evaluator.py`'s drift self-test for the corrected arithmetic). (2) when building MULTI-BLOCK
+  synthetic test data, never concatenate independently-generated per-block price paths that each
+  restart at the same base price (e.g. 100) -- that injects a fake, huge discontinuity at every
+  seam that swamps any real drift signal. Build ONE continuous price path across all blocks (a
+  single cumulative random walk, with per-block DRIFT REGIME allowed to vary) -- see
+  `economic_gate.py`'s self-test `make_continuous_path` helper. `economic_gate`'s return dict casts
+  every value to native Python `bool`/`float` explicitly -- comparisons on pandas/numpy values
+  produce `numpy.bool_`, and `numpy.bool_(True) is True` is `False` in Python; an `is True`
+  assertion against an uncast value will silently fail even when the underlying logic is correct
+  (this bit the self-test once already). Neither module is wired into research_cli.py, the
+  registry, or an actual S1/S2 formula yet -- no such formula exists, so nothing calls either of
+  these for a real candidate.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:

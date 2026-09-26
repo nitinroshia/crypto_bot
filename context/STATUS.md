@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 27 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 29 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,7 +52,8 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 5 of ~6 pieces landed 2026-09-26):**
+- **Item 2 (in progress, 6 of ~6 pieces landed 2026-09-26 -- but see the flagged interpretive
+  question below before treating the economic gate as final):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -115,11 +116,33 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     formula exists yet), so there was nothing to migrate off; the STATUS.md/NOTES.md warning was
     about not making that mistake once S1/S2 are built, not about removing anything today. Neither
     module is wired into research_cli.py or the registry yet.
-  - NOT YET BUILT: the S1/S2 economic gate (reuses `blocks.tile_blocks`, different pass rule),
-    freeze manifest, forward-test command (which will be the first real caller of
-    `holdout_lock.unlock_holdout_for_forward_test`). The forward-test command must report step 5's
-    statistical criteria and step 3's holdout requirement as two separate labeled results (never
-    collapsed into one pass/fail). This is the next thing to build.
+  - DONE: `rule_evaluator.py` + `economic_gate.py` -- the section-6 step-3 economic gate.
+    `rule_evaluator.py` is the core position/cost/return engine (entry/exit at next bar's open,
+    starts flat, costs charged only on position change, end-of-segment forced exit at the
+    segment's own last close); `economic_gate.py` applies it: pooled net return computed as ONE
+    continuous run over the whole discovery sample, per-block returns obtained by SLICING that one
+    continuous per-bar series (not by independently re-running the evaluator per block), so a
+    position spanning a block boundary is charged nothing extra there -- verified in both modules'
+    self-tests, including that the product of every block's own return (full and partial together)
+    reproduces the pooled figure exactly. Requires pooled net return > 0 AND >=70% of FULL blocks
+    net >= 0 (>=, not >; the final partial block is excluded from that count but its return still
+    feeds the pooled figure). **FLAGGED FOR THE MATHEMATICIAN (not yet sent -- see below):** section
+    6's own text has what reads like a contradiction between "every evaluation segment -- a
+    discovery block, the whole discovery sample, the holdout -- starts flat" and, two sentences
+    earlier, "a position may carry across a block boundary at no cost." I resolved this using
+    section 6's OWN self-test requirement for this exact module ("a position spanning a block
+    boundary must be charged costs once, not twice") as the deciding evidence -- that requirement
+    is only satisfiable under the continuous-run-then-slice reading, not under independently
+    resetting each 90-day tile -- and built accordingly, with the full reasoning in
+    `rule_evaluator.py`'s docstring. Confident in this reading, but it does touch the financial
+    model directly (this project's standing rule: never assume silently on anything that does), so
+    it should go to the mathematician as a confirmation request before this gate is used on a real
+    candidate, not treated as silently settled just because self-tests pass.
+  - NOT YET BUILT: the freeze manifest and the forward-test command (which will be the first real
+    caller of `holdout_lock.unlock_holdout_for_forward_test`, and will reuse `rule_evaluator.py` at
+    the holdout, per step 5). The forward-test command must report step 5's statistical criteria
+    and step 3's holdout requirement (also economic-gate-shaped, at the holdout) as two separate
+    labeled results (never collapsed into one pass/fail). This is the last piece of item 2.
 
 ## Live finding, closed out (2026-09-24)
 Rebuilding the break-even hit-rate table with empirical (not Gaussian-assumed) return
@@ -140,8 +163,13 @@ This thread is fully closed; nothing further expected from either the owner or m
 The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-Item 2's registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out machinery, and the
-S1/S2 stability check are now built and self-tested (above). Next: the S1/S2 economic gate.
+Item 2's registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out machinery, the
+S1/S2 stability check, and the S1/S2 economic gate are now built and self-tested (above). One
+interpretive question from building the economic gate needs the mathematician's confirmation
+before it's used for real (see the flagged item above and `docs/correspondence/message-10.md`) --
+not blocking further building, since the reasoning is well-supported by section 6's own text, but
+should be confirmed rather than left silently assumed. Next: the freeze manifest and the
+forward-test command -- the last piece of item 2.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,

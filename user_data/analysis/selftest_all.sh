@@ -29,6 +29,8 @@ run holdout_lock.py
 run nonstationarity.py
 run blocks.py
 run stability_check.py
+run rule_evaluator.py
+run economic_gate.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test
