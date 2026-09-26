@@ -40,29 +40,43 @@ MECHANICS, PER SECTION 6:
   close[n-1]) layered on top of that bar's already-attributed interval
   return, charged the same per-side cost if a position was actually open.
 
-INTERPRETIVE NOTE ON BLOCK BOUNDARIES -- READ BEFORE CALLING THIS FOR THE
-ECONOMIC GATE: section 6 step 3 says both "every evaluation segment [...]
-a discovery block, the whole discovery sample, the holdout -- starts flat"
-AND, two sentences earlier, "a position may carry across a block boundary
-at no cost." Read together naively these look like they might contradict
-(if each 90-day tile were its own independently flat-started, force-exited
-segment, a position spanning a tile boundary would be force-exited at one
-tile's end and re-entered at the next tile's start -- two costs, not zero).
-Section 6's OWN self-test requirement for this module resolves it
-explicitly: "a position spanning a block boundary must be charged costs
-once, not twice." That is only achievable if the economic gate's "whole
-discovery sample" is evaluated as ONE CONTINUOUS run of THIS function
-(one flat start, one forced exit, at the sample's own start and end), with
-each 90-day block's OWN reported return obtained by SLICING that one
-continuous per-bar series by date range -- not by calling this function
-independently once per block. `economic_gate.py` does exactly that; "a
-discovery block" in step 5's general end-of-segment list is read as
-referring to a block-shaped unit used elsewhere in the pipeline (e.g. Task
-3's walk-forward fit/validate windows, which genuinely are independent
-segments), not to step 3's specific 90-day tiles. This project's standing
-rule is to state interpretive choices explicitly rather than pick silently
-when a spec could go either way -- flagging it here in full, even though
-the self-test requirement leaves little real ambiguity once quoted.
+INTERPRETIVE NOTE ON BLOCK BOUNDARIES, CONFIRMED BY THE MATHEMATICIAN
+(docs/correspondence/answer-03.md, 2026-09-26) -- this was flagged rather
+than assumed, and is now settled, not an open question: section 6 step 3
+says both "every evaluation segment [...] a discovery block, the whole
+discovery sample, the holdout -- starts flat" AND, two sentences earlier,
+"a position may carry across a block boundary at no cost." These do not
+actually conflict: "evaluation segment" and "block" are not the same thing
+-- block boundaries sit INSIDE an evaluation segment, and only the
+segment's own start and end force a flat position. The economic gate's
+90-day tiles are reporting slices of ONE pre-registered rule run
+continuously across the whole discovery sample; they are not themselves
+separate evaluation segments. "A discovery block" in step 5's general list
+refers to a genuinely different kind of block used elsewhere in the
+pipeline -- Task 3's walk-forward validate windows, where each split tests
+a freshly-fit model on unseen data and there is no reason for a position to
+carry from one split into another (consecutive splits' windows aren't even
+guaranteed to be adjacent).
+
+GENERAL PRINCIPLE (stated by the mathematician, for reuse without
+re-deriving it): an evaluation segment is whatever spans ONE CONTINUOUS,
+UNCHANGING RULE. This is the test to apply anywhere else "segment" or
+"block" shows up in the pipeline:
+  - The economic gate's 90-day tiles: NOT separate segments (one rule, one
+    continuous run, tiles are just reporting slices -- this module's design).
+  - Task 3's walk-forward validate windows: ARE separate segments (a new
+    fit each time -- genuinely a different rule instance per split).
+  - THE HOLDOUT (step 5, not yet built): confirmed to follow the SAME logic
+    as the discovery sample -- one continuous flat-start/forced-exit run
+    over the WHOLE holdout window, no internal tiling. Simpler than
+    discovery: no 70%-of-blocks statistic at the holdout, just a single
+    pooled pass/fail. When the forward-test command is built, call
+    `evaluate_rule` ONCE over the full holdout range exactly as
+    `economic_gate.py` does for the discovery sample -- do not tile it.
+  - Step 2 (stability) is UNAFFECTED by any of this: it reuses the same
+    90-day date ranges as step 3 for convenience, but it's a regression-sign
+    check with no simulated position at all, so "boundary cost" doesn't
+    apply there.
 """
 
 from __future__ import annotations

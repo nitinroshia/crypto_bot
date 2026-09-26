@@ -141,11 +141,16 @@ summary but matter for not repeating past mistakes.
 - `rule_evaluator.py` + `economic_gate.py`: read `rule_evaluator.py`'s module docstring in full
   before touching either -- it documents a real interpretive fork in section 6's own text (the
   "starts flat / forced exit" language for "a discovery block" vs. "a position may carry across a
-  block boundary at no cost") and how it was resolved (section 6's own self-test requirement --
-  "charged once, not twice" -- only holds under a continuous-run-then-slice design, not independent
-  per-block resets). This is flagged to the mathematician (message-10.md, not yet sent as of this
-  writing) as a financial-model interpretive choice that should be confirmed, not silently treated
-  as settled. Gotcha that cost a real bug during development, twice over: (1) `held_position[0]`
+  block boundary at no cost"), now CONFIRMED by the mathematician (`docs/correspondence/answer-03.md`):
+  an evaluation segment is whatever spans one continuous, unchanging rule -- the economic gate's
+  tiles are reporting slices of one rule, not separate segments; Task 3's walk-forward validate
+  windows ARE separate segments (fresh fit each split). Concrete, confirmed guidance for whoever
+  builds the forward-test command: the holdout evaluation follows the SAME logic as the discovery
+  sample -- one continuous flat-start/forced-exit run over the whole holdout window via
+  `evaluate_rule`, called ONCE, no internal 90-day tiling (there's no 70%-of-blocks statistic at
+  the holdout, just a single pooled pass/fail) -- don't reach for `blocks.tile_blocks` there.
+
+  Two gotchas that cost a real bug during development, each: (1) `held_position[0]`
   must be 0 by construction (`signal.shift(1).fillna(0)`) -- the segment "starts flat" and there is
   no bar before it to have supplied a signal, so the FIRST interval of any segment always earns
   zero regardless of what `signal[0]` says; a test that assumes "always-long over n bars compounds

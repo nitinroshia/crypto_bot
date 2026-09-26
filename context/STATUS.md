@@ -52,8 +52,8 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 6 of ~6 pieces landed 2026-09-26 -- but see the flagged interpretive
-  question below before treating the economic gate as final):**
+- **Item 2 (in progress, 6 of ~6 pieces landed 2026-09-26, economic gate now confirmed by the
+  mathematician -- see `docs/correspondence/answer-03.md`):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -126,18 +126,20 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     self-tests, including that the product of every block's own return (full and partial together)
     reproduces the pooled figure exactly. Requires pooled net return > 0 AND >=70% of FULL blocks
     net >= 0 (>=, not >; the final partial block is excluded from that count but its return still
-    feeds the pooled figure). **FLAGGED FOR THE MATHEMATICIAN (not yet sent -- see below):** section
-    6's own text has what reads like a contradiction between "every evaluation segment -- a
-    discovery block, the whole discovery sample, the holdout -- starts flat" and, two sentences
-    earlier, "a position may carry across a block boundary at no cost." I resolved this using
-    section 6's OWN self-test requirement for this exact module ("a position spanning a block
-    boundary must be charged costs once, not twice") as the deciding evidence -- that requirement
-    is only satisfiable under the continuous-run-then-slice reading, not under independently
-    resetting each 90-day tile -- and built accordingly, with the full reasoning in
-    `rule_evaluator.py`'s docstring. Confident in this reading, but it does touch the financial
-    model directly (this project's standing rule: never assume silently on anything that does), so
-    it should go to the mathematician as a confirmation request before this gate is used on a real
-    candidate, not treated as silently settled just because self-tests pass.
+    feeds the pooled figure). **CONFIRMED BY THE MATHEMATICIAN** (`docs/correspondence/answer-03.md`,
+    2026-09-26): the continuous-run-then-slice reading is correct, on two independent grounds --
+    step 3's own sentence already distinguishes "evaluation segment" from "block" (block boundaries
+    sit inside a segment; only the segment's own start/end force flat), and the self-test
+    requirement is a second, independent confirmation. General principle for reuse, stated by the
+    mathematician: an evaluation segment is whatever spans ONE CONTINUOUS, UNCHANGING RULE -- the
+    economic gate's tiles are reporting slices of one rule (not separate segments), Task 3's
+    walk-forward validate windows ARE separate segments (a fresh fit each time), and **the holdout
+    (step 5) is confirmed to follow the SAME continuous-segment logic as the discovery sample** --
+    one flat-start/forced-exit run over the whole holdout window, no internal tiling, just a single
+    pooled pass/fail (simpler than discovery -- no 70%-of-blocks statistic at the holdout). This is
+    now recorded in `rule_evaluator.py`'s own docstring so the forward-test command gets it right
+    without re-deriving it. Step 2 (stability) is confirmed UNAFFECTED -- no simulated position, so
+    "boundary cost" doesn't apply there at all.
   - NOT YET BUILT: the freeze manifest and the forward-test command (which will be the first real
     caller of `holdout_lock.unlock_holdout_for_forward_test`, and will reuse `rule_evaluator.py` at
     the holdout, per step 5). The forward-test command must report step 5's statistical criteria
@@ -164,12 +166,11 @@ The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_br
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
 Item 2's registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out machinery, the
-S1/S2 stability check, and the S1/S2 economic gate are now built and self-tested (above). One
-interpretive question from building the economic gate needs the mathematician's confirmation
-before it's used for real (see the flagged item above and `docs/correspondence/message-10.md`) --
-not blocking further building, since the reasoning is well-supported by section 6's own text, but
-should be confirmed rather than left silently assumed. Next: the freeze manifest and the
-forward-test command -- the last piece of item 2.
+S1/S2 stability check, and the S1/S2 economic gate are now built and self-tested (above), and the
+economic gate's block-boundary interpretation is confirmed by the mathematician (see the flagged
+item above and `docs/correspondence/answer-03.md`) -- including forward guidance for the holdout
+evaluation (single continuous segment, no tiling) to use once the forward-test command is built.
+Next: the freeze manifest and the forward-test command -- the last piece of item 2.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,
