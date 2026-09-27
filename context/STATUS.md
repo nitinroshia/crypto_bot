@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 29 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 31 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -52,8 +52,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   default + sqrt252 labeled alternate), `breakeven_table.py` (break-even hit-rate table from
   empirical return distributions, replacing an old symmetric-Gaussian assumption -- see "Live
   finding" below).
-- **Item 2 (in progress, 6 of ~6 pieces landed 2026-09-26, economic gate now confirmed by the
-  mathematician -- see `docs/correspondence/answer-03.md`):**
+- **Item 2 (DONE, all ~6 pieces landed 2026-09-26):**
   - DONE: `cutoff.py` (the `--end-date` guard) -- hard-truncates a loaded bundle so a formula
     structurally cannot see a post-cutoff row, plus `origin_window_side` for classifying an
     origin as discovery/holdout/straddle. Wired into `research_cli.load_all_dataframes`
@@ -140,11 +139,40 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
     now recorded in `rule_evaluator.py`'s own docstring so the forward-test command gets it right
     without re-deriving it. Step 2 (stability) is confirmed UNAFFECTED -- no simulated position, so
     "boundary cost" doesn't apply there at all.
-  - NOT YET BUILT: the freeze manifest and the forward-test command (which will be the first real
-    caller of `holdout_lock.unlock_holdout_for_forward_test`, and will reuse `rule_evaluator.py` at
-    the holdout, per step 5). The forward-test command must report step 5's statistical criteria
-    and step 3's holdout requirement (also economic-gate-shaped, at the holdout) as two separate
-    labeled results (never collapsed into one pass/fail). This is the last piece of item 2.
+  - NOT YET WIRED IN: no S1/S2/Task-3 formula exists yet in `research_cli.py`'s `FORMULAS` dict,
+    so none of item 2's machinery (registry, cutoff guard, holdout lock, stability check, economic
+    gate, freeze manifest, forward-test command) has been called for a real candidate. That's
+    formula-building work, not item 2's own scope -- item 2 was building the RULES machinery that
+    every future candidate must go through, and that machinery is now complete and self-tested.
+  - DONE: `freeze_manifest.py` + `forward_test.py` -- step 4 (freeze) and step 5 (holdout/forward
+    test), completing item 2.
+    - `freeze_manifest.py`: one-shot, like the holdout lock -- `freeze_candidate` refuses a second
+      freeze of the same (family, pair) with `AlreadyFrozenError`, so a committed discovery estimate
+      can't be quietly moved after an early holdout peek. Records timestamp, git commit (degrades to
+      `"unknown"` rather than raising if commit info can't be captured), direction, discovery
+      estimate, dispersion (SE_discovery), and n_discovery -- as its own `registry.jsonl` record
+      (`status="frozen"`), not a separate manifest format.
+    - `forward_test.py`: two-phase, so the minimum-sample check never burns the one-shot holdout
+      look. Phase 1 (`check_holdout_readiness`) is a DESCRIPTIVE read (`holdout_lock.log_descriptive_access`)
+      -- counting available holdout days/observations relates no predictor to any return, so it's
+      repeatable while waiting for more data (verified: a "wait" result never touches the one-shot
+      lock). Phase 2 (`run_forward_test`) only calls `holdout_lock.unlock_holdout_for_forward_test`
+      once Phase 1's minimums (45 days, 100 observations, SE_holdout <= half the claimed effect) are
+      met. SE_holdout is SCALED from the frozen manifest's own dispersion via the exact formula
+      (`SE_discovery * sqrt(n_discovery/n_holdout)`) -- never independently re-estimated at the
+      holdout. Reads the frozen manifest for direction/estimate/dispersion/n_discovery rather than
+      accepting them as fresh parameters, so step 5 tests "exactly the frozen primary cell." Applies
+      the confirmed evaluation-segment ruling (`answer-03.md`) for the economic check: ONE continuous
+      `rule_evaluator.evaluate_rule` call over the whole holdout window, no tiling. Reports step 5's
+      statistical result and the step-3-at-holdout economic result as two SEPARATE dicts
+      (`step5`/`step3_holdout`) with no merged top-level verdict, per the standing requirement --
+      self-tested with a constructed case where one passes while the other fails on the SAME
+      underlying series, to prove they're genuinely independent, not just two labels on one number.
+      Binary pass/dead classification when `m_threshold` is omitted (S1/S2); the three-way
+      pass/dead/inconclusive classification (one-sided 95% upper bound vs. M) when it's given
+      (event-type cells). Completes the two-step registry pattern `holdout_lock.py` documented: the
+      access-log record from `unlock_holdout_for_forward_test` (p_value=None) is followed by a second
+      `holdout_consumed` record here carrying the real verdict.
 
 ## Live finding, closed out (2026-09-24)
 Rebuilding the break-even hit-rate table with empirical (not Gaussian-assumed) return
@@ -165,12 +193,14 @@ This thread is fully closed; nothing further expected from either the owner or m
 The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
 was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
 in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-Item 2's registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out machinery, the
-S1/S2 stability check, and the S1/S2 economic gate are now built and self-tested (above), and the
-economic gate's block-boundary interpretation is confirmed by the mathematician (see the flagged
-item above and `docs/correspondence/answer-03.md`) -- including forward guidance for the holdout
-evaluation (single continuous segment, no tiling) to use once the forward-test command is built.
-Next: the freeze manifest and the forward-test command -- the last piece of item 2.
+**Item 2 is done**: registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out
+machinery, the S1/S2 stability check, the S1/S2 economic gate (block-boundary interpretation
+confirmed by the mathematician, `answer-03.md`), the freeze manifest, and the forward-test command
+are all built and self-tested (31 tools, above). None of it has been exercised on a real candidate
+yet -- there is no S1/S2 or Task 3 formula in `research_cli.py`'s `FORMULAS` dict to run it against,
+so this is machinery proven against synthetic data only. What comes next (wiring an actual S1/S2
+formula through this pipeline, vs. something else entirely) is a research-design call for the
+mathematician, not something to assume here.
 
 ## Open questions awaiting the mathematician
 See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,

@@ -167,6 +167,34 @@ summary but matter for not repeating past mistakes.
   (this bit the self-test once already). Neither module is wired into research_cli.py, the
   registry, or an actual S1/S2 formula yet -- no such formula exists, so nothing calls either of
   these for a real candidate.
+- `freeze_manifest.py`: one-shot like `holdout_lock.py` -- `freeze_candidate` refuses a second
+  freeze of the same (family, pair) via `AlreadyFrozenError`, checked the same way (a prior
+  `status="frozen"` record for that family+pair in the registry). `_current_commit` must degrade to
+  `"unknown"` rather than raise if git isn't available or `repo_dir` isn't a repo -- freezing must
+  never fail just because commit info couldn't be captured. Gotcha in the self-test itself: don't
+  assert a hardcoded `"unknown"` for `_current_commit(None)` -- `cwd=None` in `subprocess.run` means
+  "use the current working directory," which usually IS inside a git repo during development, so
+  that call succeeds; test the "unknown" fallback with an explicit, genuinely non-repo temp
+  directory instead.
+- `forward_test.py`: read the module docstring before touching it -- it ties together
+  `holdout_lock.py`, `freeze_manifest.py`, and `rule_evaluator.py`. Two gotchas from building it:
+  (1) SE_holdout = SE_discovery * sqrt(n_discovery/n_holdout) only SHRINKS when n_holdout exceeds
+  n_discovery -- if a self-test's n_discovery is set too high relative to the holdout data actually
+  available, SE_holdout comes out LARGER than SE_discovery and the readiness check never passes;
+  keep n_discovery comfortably below the holdout sample size in any test data. (2) don't assume a
+  churning, no-edge signal will fail the economic check against ANY underlying series with positive
+  drift -- a strong enough trend can still leave a random/alternating signal net-positive even after
+  costs, since it still captures roughly half the move. To robustly test "step5 passes but step3
+  fails" (proving the two are independent, not the same number twice), use a near-ZERO-drift series
+  and derive `dispersion`/`n_discovery`/`discovery_estimate` from the ACTUAL realized holdout mean
+  for that fixed seed (computed once, then hardcoded) rather than from an assumed drift value --
+  this decouples "statistically significant" from "economically real," which is exactly the
+  scenario an independent economic check exists to catch. `check_holdout_readiness` is a
+  DESCRIPTIVE read (logs via `holdout_lock.log_descriptive_access`, not the one-shot gate) -- it can
+  and should be called repeatedly while waiting for more holdout data; only `run_forward_test`'s
+  Phase 2 touches `unlock_holdout_for_forward_test`. `m_threshold=None` (S1/S2) gives a binary
+  pass/dead classification; a given `m_threshold` (event-type cells) gives the three-way
+  pass/dead/inconclusive classification. Not yet wired into research_cli.py or a real S1/S2 formula.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:
