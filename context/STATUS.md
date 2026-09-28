@@ -41,7 +41,7 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
   system temp directory. If a new tool is ever found reintroducing a project-local temp
   dependency, that's a regression -- see NOTES.md.
 
-## What's built and self-tested (`user_data/analysis/`, 31 tools, all passing via `selftest_all.sh`)
+## What's built and self-tested (`user_data/analysis/`, 33 tools, all passing via `selftest_all.sh`)
 - **Item 1 (done):** `leadlag.summarize_best_lag` defaults to min-p selection (smallest p, no
   significance pre-filter; ties broken by |HAC t| then smaller lag). Old rule kept as
   `select="legacy_max_abs_effect_among_significant"` to reproduce frozen ETH/FDUSD results only.
@@ -173,6 +173,31 @@ further formula work targets it. See `docs/work-orders/1.4.md` and `project_cont
       (event-type cells). Completes the two-step registry pattern `holdout_lock.py` documented: the
       access-log record from `unlock_holdout_for_forward_test` (p_value=None) is followed by a second
       `holdout_consumed` record here carrying the real verdict.
+- **First real candidate: S1 (formula_s1.py + run_s1.py), 2026-09-26.** The first formula to
+  actually exercise item 2's machinery. Per the mathematician's explicit instruction: build S1
+  through the pipeline for both pairs, but STOP after the economic gate -- freeze_manifest.py and
+  forward_test.py are deliberately NOT called by `run_s1.py`, since `holdout_lock.unlock_holdout_for_forward_test`
+  is one-shot and this would be its first real use for any candidate. Results are for review first.
+  - `formula_s1.py`: section 7's S1 trend_slope, verbatim -- `x = ln(C_t/C_{t-L})/sigma30`, `y =
+    ln(C_{t+h}/C_t)`, L in {10,20,40,80,160}, h in {1,5}, OLS+HAC (matching leadlag.py's own
+    convention), direction positive, primary cell L=40/h=5, own-family Holm across the 10 cells
+    (`multitest.annotate_family`, separate from registry.py's across-candidate Holm). Pre-registered
+    economic rule: long from next open if x_40>0 at the day's close, else cash.
+    **A real bug caught and fixed during development:** `stability_check.py` (and, if ever wired in,
+    `nonstationarity.py`) hands `block_test`/`estimator` only a narrow date-range SLICE of the price
+    series -- naively recomputing `predictor`/`target` fresh from that slice starves the first
+    `max(L, SIGMA_WINDOW)` rows of real lookback context, silently dropping ~40-45% of a 90-day
+    block's origins and corrupting the rest, which flipped an unambiguous injected positive edge
+    into apparent per-block NEGATIVE signs. Fixed with `make_primary_estimator`/`make_primary_block_test`
+    factories that precompute x/y ONCE over the FULL series and select by date -- same "continuous
+    computation, sliced afterward" principle as `economic_gate.py`'s own confirmed design. A second,
+    smaller bug: the warmup is `max(L, SIGMA_WINDOW)`, not `L+SIGMA_WINDOW` (sigma30's own 30-day
+    requirement doesn't stack with L for lookbacks under 30).
+  - `run_s1.py`: orchestrates discovery (10 cells) -> stability check -> economic gate for a given
+    pair, appending each step to the registry (family `S1-ETHUSDT`/`S1-BTCUSDT`). Nothing here is
+    one-shot -- safe to re-run freely while results are under review. Offline self-test (`--self-test`,
+    synthetic data, no real files needed) passes; **not yet run against real market data** -- see
+    below.
 
 ## Live finding, closed out (2026-09-24)
 Rebuilding the break-even hit-rate table with empirical (not Gaussian-assumed) return
@@ -190,18 +215,28 @@ every ordinary bar -- if anything it's a point in favor of Task 3's event-condit
 This thread is fully closed; nothing further expected from either the owner or mathematician on it.
 
 ## Immediate next step
-The breakeven-median rerun thread is closed (see "Live finding" above; `wo1.4_breakeven_v4.log`
-was reviewed, shape as expected). The mathematician's platform (Claude, not ChatGPT) is corrected
-in this file's own "Repo and roles" section (v7, 2026-09-25) -- see `docs/correspondence/message-09.md`.
-**Item 2 is done**: registry, `--end-date` guard, holdout lock, by-year/leave-one-year-out
-machinery, the S1/S2 stability check, the S1/S2 economic gate (block-boundary interpretation
-confirmed by the mathematician, `answer-03.md`), the freeze manifest, and the forward-test command
-are all built and self-tested (31 tools, above). None of it has been exercised on a real candidate
-yet -- there is no S1/S2 or Task 3 formula in `research_cli.py`'s `FORMULAS` dict to run it against,
-so this is machinery proven against synthetic data only. What comes next (wiring an actual S1/S2
-formula through this pipeline, vs. something else entirely) is a research-design call for the
-mathematician, not something to assume here.
+Item 2 is done (31 tools, all self-tested against synthetic data). **S1 is now built** (above) and
+self-tested offline, but **not yet run against real ETH/USDT or BTC/USDT market data** -- this
+sandboxed environment has no network access to Binance, so `run_s1.py` needs to be run by the owner
+against the real, already-fetched local data for both pairs:
+```
+python3 user_data/analysis/run_s1.py --pair ETH_USDT
+python3 user_data/analysis/run_s1.py --pair BTC_USDT
+```
+Per the mathematician's instruction, this deliberately stops after the economic gate -- the results
+(discovery/stability/economic-gate) need to come back for review before freeze/forward-test proceed
+(the holdout is one-shot; this would be the first real use).
+
+**Funding first-settlement dates (parallel question): confirmed, no fresh pull needed.** `funding.py`'s
+`describe_native()` computes `first_settlement` from whatever native funding DataFrame it's given --
+a pure, offline function (see its own self-test), with no dependency on when that data was fetched.
+The current dates on record (ETHUSDT 2019-11-27, BTCUSDT 2019-09-10, `docs/correspondence/message-06.md`)
+already came from the owner's 2026-09-21 REST fetch -- already on disk, no new pull was needed even
+then. This unblocks S2 to start alongside S1, per the mathematician's own conditional -- not started
+in this pass (S1 alone surfaced two real bugs worth getting right first), but ready to begin next.
 
 ## Open questions awaiting the mathematician
-See `docs/correspondence/` for the full history (currently `message-01` through `message-07`,
-plus `answer-01/02`, `question-01`, `reply-1.4`). Nothing is currently blocking item 2.
+See `docs/correspondence/` for the full history (currently `message-01` through `message-11`,
+plus `answer-01/02/03`, `question-01`, `reply-1.4`). Nothing is currently blocking further work;
+S1's discovery/stability/economic-gate results (once run against real data) are what's pending
+review before freeze/forward-test.

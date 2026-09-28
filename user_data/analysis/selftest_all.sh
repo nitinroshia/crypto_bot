@@ -33,6 +33,8 @@ run rule_evaluator.py
 run economic_gate.py
 run freeze_manifest.py
 run forward_test.py
+run formula_s1.py
+run run_s1.py --self-test
 run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test

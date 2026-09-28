@@ -195,6 +195,35 @@ summary but matter for not repeating past mistakes.
   Phase 2 touches `unlock_holdout_for_forward_test`. `m_threshold=None` (S1/S2) gives a binary
   pass/dead classification; a given `m_threshold` (event-type cells) gives the three-way
   pass/dead/inconclusive classification. Not yet wired into research_cli.py or a real S1/S2 formula.
+- `formula_s1.py` + `run_s1.py`: the first real candidate wired through item 2. Two real gotchas
+  worth internalizing before touching either module again:
+  (1) `predictor`'s warmup is `max(L, SIGMA_WINDOW)`, NOT `L + SIGMA_WINDOW` -- the L-day lookback
+  and the 30-day sigma window are independent requirements on the SAME history, they don't stack.
+  For L=40 (primary) this happens not to matter (40>30), but it very much matters for L=10/20.
+  (2) THE BIG ONE: never hand `stability_check.py` (or `nonstationarity.py`, if S1 ever gets wired
+  into by-year/LOYO) a `block_test`/`estimator` that recomputes `predictor`/`target` fresh from the
+  narrow date-range slice those modules pass in. `tile_blocks`/`by_year_table` slice the ORIGINAL
+  price series by date range and hand back ONLY that slice -- recomputing x_L/y_h from just the
+  slice starves the first `max(L, SIGMA_WINDOW)` rows of real lookback (there's no earlier data in
+  the slice to look back into) and silently drops ~40-45% of a 90-day block's origins, corrupting
+  the regression on what's left. This flipped an injected, unambiguous positive edge into apparent
+  per-block NEGATIVE signs during development -- looked exactly like a stability_check.py bug at
+  first, and wasn't. Fix: `make_primary_estimator`/`make_primary_block_test` are FACTORIES --
+  precompute x_40/y_5 ONCE on the FULL series, return a closure that selects by DATE from those
+  precomputed series. Same principle as `economic_gate.py`'s "one continuous run, then slice for
+  reporting"; if a future S2/Task-3 formula needs a `block_test` or by-year `estimator`, use this
+  same factory pattern, don't write a plain function that recomputes from `subset_df` directly.
+  Separately: constructing a synthetic "known edge" test series by injecting a nudge tied to
+  `sign(x_L)` recursively (nudge today based on yesterday's x, cumulatively) produced wildly
+  inconsistent per-block signs despite a strongly significant POOLED result -- likely some
+  interaction between the recursive feedback and the window-averaging, never fully diagnosed since
+  a cleaner fix existed. The reliable way to inject a known relationship: compute x_L on a BASE
+  series first (no injection), then add `true_slope * x_L` as a return effect distributed across the
+  FOLLOWING h days directly -- no circularity, and it produces consistent per-block signs. `run_s1.py`
+  deliberately stops after the economic gate (no freeze, no forward-test) per explicit instruction --
+  nothing in it is one-shot, safe to re-run freely. Not yet run against real market data (no network
+  access in this environment) -- self-tested offline only; the owner needs to run it against real
+  local data for both pairs and report results back before freeze/forward-test proceed.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:
