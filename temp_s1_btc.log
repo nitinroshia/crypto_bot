@@ -1,0 +1,26 @@
+
+=== S1 report: S1-BTCUSDT (BTCUSDT) ===
+
+-- Discovery (10 cells, own-family Holm) --
+  L  h    slope       se   t_stat  p_value   p_holm  p_bonferroni    n
+ 10  1 0.000424 0.000215 1.972824 0.024258 0.133550      0.242578 2906
+ 20  1 0.000338 0.000151 2.243810 0.012422 0.100326      0.124223 2906
+ 40  1 0.000230 0.000111 2.073163 0.019079 0.133550      0.190786 2896
+ 80  1 0.000118 0.000078 1.524766 0.063659 0.190976      0.636588 2856
+160  1 0.000005 0.000043 0.111495 0.455612 0.911224      1.000000 2776
+ 10  5 0.002016 0.000882 2.285310 0.011147 0.100326      0.111473 2902
+ 20  5 0.001388 0.000685 2.026362 0.021364 0.133550      0.213638 2902
+ 40  5 0.001139 0.000488 2.336633 0.009729 0.097291      0.097291 2892
+ 80  5 0.000595 0.000356 1.671630 0.047299 0.189195      0.472986 2852
+160  5 0.000011 0.000203 0.053379 0.478715 0.911224      1.000000 2772
+
+Primary cell (L=40, h=5): slope=0.00113932  SE=0.000487589  n=2892
+
+-- Stability check (step 2) --
+n_blocks_judged=32  combined_z=-3.3274  p_value=0.999562  any_significant_opposite=True  passes=False
+
+-- Economic gate (step 3, stress cost) --
+pooled_net_return=98.3227  pass_rate=65.62%  passes_pooled=True  passes_block_rate=False  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+
