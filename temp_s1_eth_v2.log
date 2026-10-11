@@ -1,0 +1,26 @@
+
+=== S1 report: S1-ETHUSDT (ETHUSDT) ===
+
+-- Discovery (10 cells, own-family Holm) --
+  L  h    slope       se   t_stat  p_value   p_holm  p_bonferroni    n
+ 10  1 0.000477 0.000264 1.803278 0.035672 0.249706      0.356723 2906
+ 20  1 0.000325 0.000174 1.865564 0.031051 0.248410      0.310512 2906
+ 40  1 0.000169 0.000137 1.238240 0.107814 0.539068      1.000000 2896
+ 80  1 0.000071 0.000104 0.680878 0.247974 0.631718      1.000000 2856
+160  1 0.000068 0.000068 1.003004 0.157930 0.631718      1.000000 2776
+ 10  5 0.002324 0.001033 2.250213 0.012218 0.122177      0.122177 2902
+ 20  5 0.001511 0.000778 1.942146 0.026060 0.234537      0.260597 2902
+ 40  5 0.000850 0.000632 1.345164 0.089286 0.535717      0.892862 2892
+ 80  5 0.000359 0.000483 0.744111 0.228405 0.631718      1.000000 2852
+160  5 0.000342 0.000341 1.001718 0.158240 0.631718      1.000000 2772
+
+Primary cell (L=40, h=5): slope=0.000849665  SE=0.000631644  n=2892
+
+-- Stability check (step 2) --
+n_blocks_judged=32  combined_z=-3.9394  p_value=0.999959  any_significant_opposite=True  passes=False
+
+-- Economic gate (step 3, stress cost) --
+pooled_net_return=13.7291  pass_rate=59.38%  passes_pooled=True  passes_block_rate=False  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+
