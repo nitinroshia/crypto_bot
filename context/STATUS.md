@@ -1,5 +1,36 @@
 # Project status
 
+Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 0. This top section is the current
+state; everything below the line "Historical status" is the 2026-09-25 text, kept verbatim, and is
+STALE wherever it conflicts with this section (it still calls S1 "built, awaiting a real run").
+
+## Current state (D1, 2026-10-18)
+- Rules: `docs/PROTOCOL.md` (owner's three hard limits and the delivery contract). Task: `docs/work-orders/1.5.md`
+  (steps 0-6; section 8 amendments win). Agents: M1 (mathematician), D1 (developer, this role).
+- **No valid S1 result exists.** The S1 records in `registry.jsonl` (12 lines: two identical runs, 2026-09-28 and
+  2026-09-30, for S1-ETHUSDT and S1-BTCUSDT) came from code with three bugs (wrong warmup assumption, block test
+  recomputed from slices, section 6 common origin set not implemented). Their numbers are void; do not cite them.
+  They are still live in the registry until Work Order 1.5 step 1 voids them.
+- Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. The fix to
+  `formula_s1.py` / `run_s1.py` / `registry.py` is not yet in the repo.
+- The old stability test (combined Stouffer z plus opposite-block veto) is retired by Work Order 1.5; the new
+  statistic is defined in section 3 of the work order and ruled on in `docs/correspondence/answer-04.md` (arrives
+  with delivery 1). The self-test `formula_s1.py` asserts the old rule and will be rewritten.
+- Verified by output from the owner's machine (diag run 2026-10-17T14:05:49Z): folder was clean at `1b776f4`, equal to
+  `origin/main` at that moment; local `registry.jsonl` had the same 12 lines as GitHub (no local-only lines); no
+  stashes; venv Python 3.12.7. Not yet verified: the 33 self-tests on the owner's machine under this developer
+  (delivery 0 runs them).
+- Work Order 1.5 progress: step 0 delivered (`deliveries/0/`). Steps 1-6 not started. S1 stops after the report;
+  no freeze, no forward test (the holdout unlock is one-shot and unused). S2 only after M1 accepts the S1 report.
+- Scratch and backups go in `<repo>/temp/` (gitignored), never outside the project root; this reverses the
+  `developer/NOTES.md` convention of using the system temp directory. `temp/secret_keys.txt` is never opened, copied
+  or backed up.
+
+---
+
+## Historical status (2026-09-25 text, verbatim below this line; stale where it conflicts with the section above)
+
+
 Last updated: 2026-09-25, by the developer (Claude), at a session handoff (context limit).
 The previous developer session judged its own conversation too long to safely continue and
 handed off here rather than risk losing coherence mid-task. Nothing about the project is
