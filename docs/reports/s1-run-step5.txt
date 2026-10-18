@@ -1,0 +1,135 @@
+S1 live run, Work Order 1.5 step 5
+produced by deliveries/5/apply.sh on 2026-10-18T22:58:40Z (repo HEAD before this commit: f5a883a; void commit of step 1: ac63ff2)
+python: Python 3.12.7. Each pair was run once into the LIVE registry with --commit-to-registry; no freeze, no forward test.
+
+################################ ETH_USDT
+REGISTRY: LIVE -> /Users/apple/apps/crypto_bot/user_data/analysis/results/registry.jsonl
+
+=== S1 report: S1-ETHUSDT (ETHUSDT) ===
+
+-- Discovery (10 cells, own-family Holm) --
+  L  h    slope       se   t_stat  p_value   p_holm  p_bonferroni    n
+ 10  1 0.000494 0.000264 1.872859 0.030544 0.274895      0.305439 2772
+ 20  1 0.000315 0.000173 1.814832 0.034775 0.274895      0.347749 2772
+ 40  1 0.000149 0.000135 1.104808 0.134621 0.769151      1.000000 2772
+ 80  1 0.000054 0.000104 0.521452 0.301026 0.769151      1.000000 2772
+160  1 0.000069 0.000068 1.013541 0.155401 0.769151      1.000000 2772
+ 10  5 0.002520 0.001043 2.416018 0.007846 0.078456      0.078456 2772
+ 20  5 0.001423 0.000778 1.829232 0.033682 0.274895      0.336824 2772
+ 40  5 0.000715 0.000630 1.134980 0.128192 0.769151      1.000000 2772
+ 80  5 0.000279 0.000484 0.575465 0.282488 0.769151      1.000000 2772
+160  5 0.000342 0.000341 1.001718 0.158240 0.769151      1.000000 2772
+
+Primary cell (L=40, h=5): slope=0.000715415  SE=0.000630333  n=2772
+
+-- Origin set (one common set for all 10 cells) --
+first origin: 2018-01-24   last origin: 2025-08-26   span: 2772 days
+origins used: 2772   nominal origins (calendar positions 160..2931): 2772   excluded for gaps: 0   missing calendar days in the sample: 0
+full 90-day blocks: 30   partial block origins: 72   origins per full block (min/median/max): 90/90.0/90
+
+-- Stability check (amended statistic, Work Order 1.5 section 3) --
+T=0.7082  p_stab=0.230385  B=30  R=2000  seed=12345  mean_block_length=20  share of blocks with s_b>0: 56.7%  passes (p_stab<0.05, before Holm across candidates)=False
+origins: 2772 (in the 30 full blocks: 2700; partial block: 72)
+block  start       origins   s_b
+    0  2018-01-24       90     0.614
+    1  2018-04-24       90    -0.597
+    2  2018-07-23       90     1.585
+    3  2018-10-21       90     0.926
+    4  2019-01-19       90    -0.972
+    5  2019-04-19       90     1.112
+    6  2019-07-18       90    -0.366
+    7  2019-10-16       90     0.075
+    8  2020-01-14       90     0.117
+    9  2020-04-13       90    -0.020
+   10  2020-07-12       90     0.323
+   11  2020-10-10       90     1.705
+   12  2021-01-08       90    -0.097
+   13  2021-04-08       90     0.273
+   14  2021-07-07       90     0.110
+   15  2021-10-05       90    -0.102
+   16  2022-01-03       90     0.152
+   17  2022-04-03       90     2.027
+   18  2022-07-02       90    -0.980
+   19  2022-09-30       90    -1.904
+   20  2022-12-29       90    -0.038
+   21  2023-03-29       90    -0.937
+   22  2023-06-27       90     0.699
+   23  2023-09-25       90     0.377
+   24  2023-12-24       90     0.954
+   25  2024-03-23       90    -1.085
+   26  2024-06-21       90     0.111
+   27  2024-09-19       90    -0.931
+   28  2024-12-18       90     0.915
+   29  2025-03-18       90    -0.167
+
+-- Economic gate (step 3, stress cost) --
+pooled_net_return=4.92255  pass_rate=40.00%  passes_pooled=True  passes_block_rate=False  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+
+
+################################ BTC_USDT
+REGISTRY: LIVE -> /Users/apple/apps/crypto_bot/user_data/analysis/results/registry.jsonl
+
+=== S1 report: S1-BTCUSDT (BTCUSDT) ===
+
+-- Discovery (10 cells, own-family Holm) --
+  L  h    slope       se   t_stat  p_value   p_holm  p_bonferroni    n
+ 10  1 0.000339 0.000212 1.596426 0.055197 0.256892      0.551968 2772
+ 20  1 0.000265 0.000145 1.825447 0.033967 0.256892      0.339668 2772
+ 40  1 0.000196 0.000106 1.850629 0.032111 0.256892      0.321115 2772
+ 80  1 0.000105 0.000073 1.444742 0.074265 0.256892      0.742652 2772
+160  1 0.000005 0.000043 0.122625 0.451202 0.902404      1.000000 2772
+ 10  5 0.001708 0.000822 2.077462 0.018879 0.169915      0.188795 2772
+ 20  5 0.001107 0.000630 1.757331 0.039431 0.256892      0.394307 2772
+ 40  5 0.001009 0.000462 2.183197 0.014511 0.145107      0.145107 2772
+ 80  5 0.000538 0.000329 1.637357 0.050778 0.256892      0.507779 2772
+160  5 0.000011 0.000203 0.053379 0.478715 0.902404      1.000000 2772
+
+Primary cell (L=40, h=5): slope=0.0010087  SE=0.00046203  n=2772
+
+-- Origin set (one common set for all 10 cells) --
+first origin: 2018-01-24   last origin: 2025-08-26   span: 2772 days
+origins used: 2772   nominal origins (calendar positions 160..2931): 2772   excluded for gaps: 0   missing calendar days in the sample: 0
+full 90-day blocks: 30   partial block origins: 72   origins per full block (min/median/max): 90/90.0/90
+
+-- Stability check (amended statistic, Work Order 1.5 section 3) --
+T=1.6966  p_stab=0.0554723  B=30  R=2000  seed=12345  mean_block_length=20  share of blocks with s_b>0: 50.0%  passes (p_stab<0.05, before Holm across candidates)=False
+origins: 2772 (in the 30 full blocks: 2700; partial block: 72)
+block  start       origins   s_b
+    0  2018-01-24       90    -0.286
+    1  2018-04-24       90    -0.197
+    2  2018-07-23       90    -0.515
+    3  2018-10-21       90     2.360
+    4  2019-01-19       90     0.281
+    5  2019-04-19       90     3.308
+    6  2019-07-18       90     0.573
+    7  2019-10-16       90    -0.651
+    8  2020-01-14       90     0.397
+    9  2020-04-13       90     0.224
+   10  2020-07-12       90    -1.078
+   11  2020-10-10       90     4.169
+   12  2021-01-08       90    -0.432
+   13  2021-04-08       90     0.188
+   14  2021-07-07       90    -0.656
+   15  2021-10-05       90     0.148
+   16  2022-01-03       90    -0.378
+   17  2022-04-03       90     2.052
+   18  2022-07-02       90    -0.852
+   19  2022-09-30       90    -0.663
+   20  2022-12-29       90     0.130
+   21  2023-03-29       90    -0.972
+   22  2023-06-27       90     0.487
+   23  2023-09-25       90     1.566
+   24  2023-12-24       90     1.481
+   25  2024-03-23       90    -0.588
+   26  2024-06-21       90    -0.542
+   27  2024-09-19       90     0.330
+   28  2024-12-18       90    -0.414
+   29  2025-03-18       90    -0.179
+
+-- Economic gate (step 3, stress cost) --
+pooled_net_return=34.5543  pass_rate=50.00%  passes_pooled=True  passes_block_rate=False  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+

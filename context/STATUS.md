@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 4. This top section is the current
+Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 5. This top section is the current
 state; everything below the line "Historical status" is the 2026-09-25 text, kept verbatim, and is
 STALE wherever it conflicts with this section (it still calls S1 "built, awaiting a real run").
 
@@ -15,7 +15,7 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
   original lines are still in the file, unedited. `ac63ff2` is the void commit to quote in the S1 report.
 - Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. `formula_s1.py` /
   `run_s1.py` now have the common origin set and calendar blocks (delivery 3, verified) and the amended stability
-  statistic (delivery 4, pending the owner's PASS). `registry.py` has voiding and the R1 Holm rule (delivery 1, verified).
+  statistic (delivery 4, verified). `registry.py` has voiding and the R1 Holm rule (delivery 1, verified).
 - The old stability test (combined Stouffer z plus opposite-block veto) is retired by Work Order 1.5; the new
   statistic is defined in section 3 of the work order and ruled on in `docs/correspondence/answer-04.md` (filed
   in delivery 1). The retired rule is gone from the code (delivery 4); the amended
@@ -37,17 +37,24 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
   ETH_USDT and BTC_USDT: first origin 2018-01-24, last origin 2025-08-26, 2,772 origins, 0 gap exclusions, 0 missing
   calendar days, 30 full 90-day blocks of 90 origins plus a partial block of 72; every cell n = 2772; no discovery
   row after the cutoff; the economic gate's full blocks equal the origin-based ones (its partial block runs 77 days).
-- Work Order 1.5 progress: steps 0 to 3 done and verified (`deliveries/0/`; `deliveries/1/` = commit `ac63ff2`;
-  `deliveries/2/` = commit `bd0c8cb`; `deliveries/3/` = commit `756f56a`). Step 4 delivered (`deliveries/4/`): amended
-  stability statistic, acceptance tests; NOT verified until the owner's PASS output comes back. Steps 5-6 not started. S1 stops after the report;
+- Verified by output from the owner's machine (delivery 4, 2026-10-18): `PASS commit f5a883a`; 35 self-tests passed;
+  the live registry stayed byte-identical. Full acceptance run on the owner's machine (200 paths, R 1000), identical to
+  my sandbox: S1 null 0.010, S1 t3+SV null 0.005, S1 edge 0.850, S1 strong edge 1.000, S2 null t3+SV 0.045, S2 edge 1.000
+  all within band; S2 null Gaussian 0.085 outside its band (<= 0.07); production equals M1's reference in all seven rows.
+  Output committed as `docs/reports/stability-acceptance-full-step4.txt`.
+- Work Order 1.5 progress: steps 0 to 4 done and verified (`deliveries/0/`; `deliveries/1/` = commit `ac63ff2`;
+  `deliveries/2/` = commit `bd0c8cb`; `deliveries/3/` = commit `756f56a`; `deliveries/4/` = commit `f5a883a`). Step 5
+  delivered (`deliveries/5/`): the first live S1 run, ETH_USDT and BTC_USDT once each with `--commit-to-registry`
+  (scratch dry run first, then live; exactly three records per pair expected); NOT verified until the owner's PASS
+  output comes back. Step 6 (the report) not started. S1 stops after the report;
   no freeze, no forward test (the holdout unlock is one-shot and unused). S2 only after M1 accepts the S1 report.
-- S1 as of delivery 4 (stability part pending verification): one common origin set for all ten cells on a complete
+- S1 as of delivery 4 (verified): one common origin set for all ten cells on a complete
   daily calendar (positions 160 .. N-1-5, gap-excluded origins counted); 90-calendar-day blocks tiled from the first
   origin; stability = global-centred block scores + stationary-bootstrap null (R 2000, mean block 20, seed 12345),
   T and p_stab stored in the registry record; `run_s1.py --origin-facts` is read-only; `--commit-to-registry` is allowed
-  again (`STABILITY_REPLACED = True`) but has NOT been used since the void. The economic gate is unchanged (R4).
+  again (`STABILITY_REPLACED = True`); its first use is delivery 5 (pending verification). The economic gate is unchanged (R4).
 - OPEN FOR M1 (not blocking S1 steps 5-6): the `--full` acceptance run's row "S2 null, Gaussian" gave 0.085 (17/200)
-  against the band <= 0.07. M1's own `stability_reference.py` self-test gives the identical 0.085 with the same seeds, and
+  against the band <= 0.07 (on the owner's machine too, delivery 4). M1's own `stability_reference.py` self-test gives the identical 0.085 with the same seeds, and
   production equals the reference path by path; over 2,000 fresh paths the rate is about 5.3%. See
   `docs/correspondence/message-17.md` and `docs/reports/stability-acceptance-full-step4.txt`. Bands are not moved.
 - Registry rules after delivery 1 (`registry.py`): a void marker (`void_pre_fix` with `detail.voids_earlier_records`)
