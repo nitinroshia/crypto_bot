@@ -4,7 +4,7 @@ real candidate to run through item 2's machinery end to end. This module
 supplies the S1-specific functions every item-2 module needs as a generic
 hook (an `estimator`, a `count_origins`, a `signal_fn`/rule, a
 `block_test`); item 2's own modules (cutoff.py, nonstationarity.py,
-stability_check.py, economic_gate.py, rule_evaluator.py, holdout_lock.py,
+stability_check.py (amended statistic, Work Order 1.5 step 4), economic_gate.py, rule_evaluator.py, holdout_lock.py,
 freeze_manifest.py, forward_test.py) supply everything else and are used
 UNCHANGED here -- this module has no pipeline logic of its own.
 
@@ -70,7 +70,7 @@ just leaves a block with fewer origins.
 WHY primary_estimator AND primary_block_test ARE FACTORIES, NOT PLAIN
 FUNCTIONS -- A REAL BUG CAUGHT BY THIS MODULE'S OWN SELF-TEST: `x_L` needs
 L (up to 160) days of history before an origin, and `y_h` needs h days
-after it, to be valid. `stability_check.py` (and, if ever wired in,
+after it, to be valid. A date-range slice handed by a caller (and, if ever wired in,
 `nonstationarity.py`'s by-year/leave-one-year-out) hands `block_test` /
 `estimator` only a narrow DATE-RANGE SLICE of the price series (a 90-day
 tile, or one calendar year) -- recomputing `predictor`/`target` FRESH from
@@ -83,11 +83,10 @@ this way kept only 45-50 of its 90 origins, using effectively-truncated
 history for even those -- easily enough to flip an unambiguous, injected
 positive edge into apparent block-level NEGATIVE signs.
 FIX (same principle as `economic_gate.py`'s "one continuous run, then
-slice for reporting"): `make_primary_estimator(full_closes)` and
-`make_primary_block_test(full_closes)` are FACTORIES that precompute
-`x_40`/`y_5` ONCE over the FULL, properly-historied close series, and
-return closures that -- given whatever narrow date-range slice
-`stability_check.py` (or `nonstationarity.py`) hands them -- select the
+slice for reporting"): `make_primary_estimator(full_closes)` is a FACTORY
+that precomputes `x_40`/`y_5` ONCE over the FULL, properly-historied close
+series, and returns a closure that -- given whatever narrow date-range slice
+a caller (`nonstationarity.py`) hands it -- selects the
 matching ORIGINS from those precomputed series by DATE, never recomputing
 `predictor`/`target` on the slice itself. Callers must build the closure
 with the FULL discovery-sample close series (or full holdout series, for
@@ -110,6 +109,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+import stability_check
 from multitest import annotate_family
 
 LOOKBACKS = [10, 20, 40, 80, 160]
@@ -120,11 +120,14 @@ SIGMA_WINDOW = 30
 HAC_LAGS = {1: 5, 5: 10}
 DIRECTION = 1  # positive, per section 7
 BLOCK_DAYS = 90  # calendar days per block (Work Order 1.5, M1 ruling 2)
+STABILITY_R = 2000  # null replicates (Work Order 1.5 section 3)
+STABILITY_SEED = 12345  # fixed and stored in the registry record, so a run is reproducible
+STABILITY_MEAN_BLOCK = 20  # mean block length (days) of the stationary bootstrap
 
 
 def _norm_sf(z: float) -> float:
     """Upper-tail standard normal survival function -- see leadlag.py's
-    `_norm_cdf` / stability_check.py's / forward_test.py's own copies of
+    `_norm_cdf` / forward_test.py's own copies of
     the same convention (avoid pulling in scipy just for this)."""
     return 0.5 * (1 - erf(z / sqrt(2)))
 
@@ -139,6 +142,13 @@ def predictor(closes: pd.Series, L: int) -> pd.Series:
     daily_log_returns = log_close.diff()
     sigma30 = daily_log_returns.rolling(SIGMA_WINDOW).std()
     return (log_close - log_close.shift(L)) / sigma30
+
+
+def sigma30(closes: pd.Series) -> pd.Series:
+    """Trailing std (ddof=1) of the last SIGMA_WINDOW daily log returns ending at day t --
+    the same quantity `predictor` divides by; the stability check divides the forward return
+    by it too (y = forward return / sigma30 at the origin)."""
+    return np.log(closes).diff().rolling(SIGMA_WINDOW).std()
 
 
 def target(closes: pd.Series, h: int) -> pd.Series:
@@ -322,7 +332,7 @@ def make_primary_estimator(full_closes: pd.Series, origins: pd.DatetimeIndex | N
     be the FULL discovery-sample -- or full-holdout, for forward_test.py -- close
     series, not a block's own slice; see the module docstring's WHY note), on the
     complete daily calendar. Returns an `estimator(subset_df) -> float` closure for
-    `nonstationarity.py` / `stability_check.py`-style callers: given a date-range
+    `nonstationarity.py`-style callers: given a date-range
     slice, it selects the matching precomputed origins BY DATE -- only dates that are
     members of the common origin set (`origins`, default `common_origins(full_closes)`)
     -- and returns just the regression slope. It never recomputes x or y on the slice."""
@@ -338,22 +348,113 @@ def make_primary_estimator(full_closes: pd.Series, origins: pd.DatetimeIndex | N
     return estimator
 
 
-def make_primary_block_test(full_closes: pd.Series, origins: pd.DatetimeIndex | None = None):
-    """Factory: as `make_primary_estimator`, but returns a `block_test(subset_df) ->
-    (z, p_two_sided)` closure for the LEGACY `stability_check.py` (retired by Work
-    Order 1.5 section 3 and replaced in step 4; kept until then)."""
-    cal_closes = _calendar(full_closes)["close"]
-    members = common_origins(full_closes) if origins is None else origins
-    x_full = predictor(cal_closes, PRIMARY_L)
-    y_full = target(cal_closes, PRIMARY_H)
+def primary_xy_from_returns(r, positions, L: int = PRIMARY_L, h: int = PRIMARY_H):
+    """Vectorised x (= ln(C_t/C_{t-L}) / sigma30) and y (= ln(C_{t+h}/C_t) / sigma30) of the
+    PRIMARY cell, rebuilt from daily log returns `r` of shape (..., T) ALIGNED TO THE CLOSES
+    (r[..., j] = ln(C_j / C_{j-1}), r[..., 0] = 0, so an origin position is a close position),
+    at integer origin `positions`. sigma30 is the sample sd (ddof=1) of the 30 returns ending at
+    the origin. This is `predictor`/`target`/`sigma30` computed from cumulative sums so the same
+    code can run on thousands of resampled paths; `s1_stability` cross-checks it against the
+    pandas versions on the real series at run time, and the self-test checks it on synthetic data."""
+    r = np.asarray(r, dtype=float)
+    pos = np.asarray(positions)
+    lnC = np.cumsum(r, axis=-1)
+    c2 = np.cumsum(r**2, axis=-1)
+    s1 = lnC[..., pos] - lnC[..., pos - SIGMA_WINDOW]
+    s2 = c2[..., pos] - c2[..., pos - SIGMA_WINDOW]
+    sd30 = np.sqrt(np.maximum((s2 - s1**2 / SIGMA_WINDOW) / (SIGMA_WINDOW - 1), 1e-18))
+    x = (lnC[..., pos] - lnC[..., pos - L]) / sd30
+    y = (lnC[..., pos + h] - lnC[..., pos]) / sd30
+    return x, y
 
-    def block_test(subset_df: pd.DataFrame) -> tuple[float, float]:
-        dates = subset_df.index.intersection(members)
-        result = _regress(x_full.reindex(dates), y_full.reindex(dates), HAC_LAGS[PRIMARY_H])
-        z = result["t_stat"]
-        return z, 2 * _norm_sf(abs(z))
 
-    return block_test
+def s1_stability_from_returns(
+    r,
+    positions,
+    bounds: list[tuple[int, int]],
+    *,
+    R: int = STABILITY_R,
+    seed: int = STABILITY_SEED,
+    mean_block: float = STABILITY_MEAN_BLOCK,
+    d: int = DIRECTION,
+    chunk: int = stability_check.BOOTSTRAP_CHUNK,
+) -> dict:
+    """The S1 stability statistic (see stability_check.py) from close-aligned daily log returns
+    `r` (length T, r[0] = 0), origin `positions` (close positions of the COMMON origin set) and
+    the full-block `bounds` over that set. Null: stationary block bootstrap of the genuine
+    returns r[1:] (the r[0] = 0 anchor is not part of the pool), predictor and target REBUILT
+    from every resampled path at the same origin positions, `chunk` replicates at a time."""
+    r = np.asarray(r, dtype=float)
+    positions = np.asarray(positions)
+    x0, y0 = primary_xy_from_returns(r, positions)
+    c_obs = stability_check.block_scores(x0, y0, bounds, d)
+    pool = r[1:]
+    rng = np.random.default_rng(seed)
+    c_null = np.empty((R, len(bounds)))
+    done = 0
+    while done < R:
+        m = min(chunk, R - done)
+        bi = stability_check.stationary_bootstrap_idx(m, len(pool), mean_block, rng)
+        paths = np.concatenate([np.zeros((m, 1)), pool[bi]], axis=1)
+        xb, yb = primary_xy_from_returns(paths, positions)
+        c_null[done : done + m] = stability_check.block_scores(xb, yb, bounds, d)
+        done += m
+    T_obs, p, s_obs = stability_check.combine(c_obs, c_null)
+    return stability_check.result_dict(T_obs, p, s_obs, c_obs, R, seed, {"mean_block_length": float(mean_block)})
+
+
+def s1_stability(
+    data,
+    origins: pd.DatetimeIndex | None = None,
+    *,
+    R: int = STABILITY_R,
+    seed: int = STABILITY_SEED,
+    mean_block: float = STABILITY_MEAN_BLOCK,
+) -> dict:
+    """The S1 stability check on the discovery frame `data` (already truncated at the cutoff):
+    the common origin set (default `common_origins(data)`), its 90-calendar-day full blocks
+    (`block_structure`), observed x and y at the origins, and the bootstrap null (see
+    `s1_stability_from_returns`). Refuses a series with missing days: a resampled return path
+    needs a complete daily calendar (returns across a gap are not defined, and nothing is
+    imputed). Cross-checks the vectorised x and y against the pandas `predictor`/`target`/
+    `sigma30` on the real series and raises on any mismatch. Returns `stability_check.result_dict`
+    plus origin/block facts."""
+    cal = _calendar(data)
+    closes = cal["close"]
+    if closes.isna().any():
+        raise ValueError(
+            f"S1 stability needs a gap-free daily series; {int(closes.isna().sum())} calendar day(s) have no bar. "
+            "Nothing is imputed: ask the mathematician how to handle the gap."
+        )
+    if origins is None:
+        origins = common_origins(data)
+    if len(origins) == 0:
+        raise ValueError("no common origins")
+    struct = block_structure(origins)
+    bounds = stability_check.full_block_bounds(origins, struct)
+    log_c = np.log(closes.to_numpy())
+    r = np.diff(log_c, prepend=log_c[0])  # r[0] = 0, r[j] = ln(C_j / C_{j-1})
+    positions = closes.index.get_indexer(origins)
+    if (positions < 0).any():
+        raise ValueError("an origin is not on the calendar")
+    # Cross-check against the pandas production predictor / target / sigma30 (once, on the real series).
+    x_v, y_v = primary_xy_from_returns(r, positions)
+    x_p = predictor(closes, PRIMARY_L).reindex(origins).to_numpy()
+    y_p = (target(closes, PRIMARY_H) / sigma30(closes)).reindex(origins).to_numpy()
+    if not (np.allclose(x_v, x_p, rtol=1e-9, atol=1e-9) and np.allclose(y_v, y_p, rtol=1e-9, atol=1e-9)):
+        raise ValueError("vectorised x/y differ from the pandas predictor/target: refusing to run")
+    out = s1_stability_from_returns(r, positions, bounds, R=R, seed=seed, mean_block=mean_block)
+    full = [b for b in struct["blocks"] if b["is_full"]]
+    out.update(
+        {
+            "n_origins": len(origins),
+            "n_origins_in_blocks": int(bounds[-1][1]),
+            "partial_block_origins": struct["partial_origins"],
+            "block_starts": [b["start"].date().isoformat() for b in full],
+            "block_origin_counts": [len(b["origins"]) for b in full],
+        }
+    )
+    return out
 
 
 def primary_signal(df: pd.DataFrame) -> pd.Series:
@@ -397,7 +498,7 @@ def _brute_force_origins(df: pd.DataFrame) -> pd.DatetimeIndex:
 if __name__ == "__main__":
     import blocks
     import economic_gate
-    import stability_check
+    import stability_reference as ref
     from rule_evaluator import STRESS_COST_PER_SIDE
 
     # ---- predictor/target: hand-computable on a small, deterministic series (long
@@ -528,9 +629,7 @@ if __name__ == "__main__":
 
     # ---- Factories: select by date from a full-series precomputation, never recompute
     # on a slice; only common-set dates are used.
-    full_test = make_primary_block_test(closes_edge)
-    z, p_two = full_test(df_edge)
-    assert abs(z - cell_40_5["t_stat"]) < 1e-12 and abs(p_two - 2 * cell_40_5["p_value"]) < 1e-9
+    assert abs(make_primary_estimator(closes_edge)(df_edge) - cell_40_5["slope"]) < 1e-12
     block1 = struct["blocks"][3]
     block_slice = df_edge[(df_edge.index >= block1["start"]) & (df_edge.index < block1["end"])]
     naive_n = predictor(block_slice["close"], PRIMARY_L).notna().sum()
@@ -545,14 +644,53 @@ if __name__ == "__main__":
     only_origins = warm_slice.loc[warm_slice.index.intersection(oset["origins"])]
     assert abs(est(warm_slice) - est(only_origins)) < 1e-12, "dates outside the common set must be ignored"
 
-    # ---- INTEGRATION: the primary hooks plug into the (still-legacy) stability_check.py
-    # and economic_gate.py with no adapter code. The legacy stability VERDICT is retired
-    # (Work Order 1.5 R3/A4) and is deliberately NOT asserted; step 4 replaces this check.
+    # ---- STABILITY (Work Order 1.5 step 4). The vectorised x/y equal the pandas predictor/target/sigma30.
+    log_c = np.log(closes_edge.to_numpy())
+    r_edge = np.diff(log_c, prepend=log_c[0])
+    pos_edge = closes_edge.index.get_indexer(oset["origins"])
+    x_v, y_v = primary_xy_from_returns(r_edge, pos_edge)
+    assert np.allclose(x_v, predictor(closes_edge, PRIMARY_L).reindex(oset["origins"]), rtol=1e-9, atol=1e-9)
+    assert np.allclose(y_v, (target(closes_edge, PRIMARY_H) / sigma30(closes_edge)).reindex(oset["origins"]), rtol=1e-9, atol=1e-9)
+
+    # Equal to the mathematician's reference where the definitions coincide (no partial block, same seed,
+    # one chunk and several chunks): the reference path of T genuine returns = production r[1:].
+    r_ref, idx_ref = ref.sim_s1(np.random.default_rng(21), 2, 6, 30, "gauss", 0.006)
+    for i, R_ in ((0, 200), (1, 600)):
+        want_T, want_p, want_s, want_c = ref.stability_s1(r_ref[i], idx_ref, 6, 30, +1, R=R_, seed=i)
+        got = s1_stability_from_returns(
+            np.concatenate([[0.0], r_ref[i]]), idx_ref + 1, [(b_ * 30, (b_ + 1) * 30) for b_ in range(6)], R=R_, seed=i
+        )
+        assert abs(got["T"] - want_T) < 1e-9 and abs(got["p_stab"] - want_p) < 1e-12, "must reproduce the reference exactly"
+        assert np.allclose(got["s_b"], want_s) and np.allclose(got["c_b"], want_c)
+
+    # With a PARTIAL block: the scores equal the definition applied literally (pandas, whole-set centring),
+    # and differ from slice centring (the reference's [:B*n] simplification).
+    st = s1_stability(df_edge, R=200, seed=1)
+    assert (st["B"], st["n_origins"], st["partial_block_origins"], st["n_origins_in_blocks"]) == (20, n - 165, 35, 1800)
+    xo = predictor(closes_edge, PRIMARY_L).reindex(oset["origins"])
+    yo = (target(closes_edge, PRIMARY_H) / sigma30(closes_edge)).reindex(oset["origins"])
+    prod_all = (xo - xo.mean()) * (yo - yo.mean())
+    literal = [DIRECTION * prod_all.loc[b_["origins"]].sum() for b_ in struct["blocks"] if b_["is_full"]]
+    assert np.allclose(st["c_b"], literal, rtol=1e-9, atol=1e-12), "block scores must equal the definition, centred on the WHOLE set"
+    x1800, y1800 = xo.iloc[:1800], yo.iloc[:1800]
+    sliced = ((x1800 - x1800.mean()) * (y1800 - y1800.mean())).to_numpy().reshape(20, 90).sum(1)
+    assert not np.allclose(st["c_b"], sliced), "centring over the whole set differs from the reference's slice centring"
+    assert st["block_origin_counts"] == [90] * 20 and len(st["block_starts"]) == 20 and st["block_starts"][0] == oset["origins"][0].date().isoformat()
+    assert st["R"] == 200 and st["seed"] == 1 and st["mean_block_length"] == 20.0 and len(st["s_b"]) == 20
+    assert st["passes"] == (st["p_stab"] < 0.05) and 0 < st["share_blocks_positive"] <= 1
+    assert s1_stability(df_edge, R=200, seed=1) == st, "deterministic given the seed"
+    assert st["p_stab"] < 0.05, f"the injected edge must pass the stability check (p_stab {st['p_stab']:.4f})"
+    noise = s1_stability(pd.DataFrame({"open": closes_noise.shift(-1).bfill(), "close": closes_noise}), R=200, seed=1)
+    assert noise["p_stab"] > 0.01, f"pure noise must not pass (p_stab {noise['p_stab']:.4f})"
+    try:
+        s1_stability(df_gappy, R=50)
+    except ValueError as exc:
+        assert "gap-free" in str(exc)
+    else:
+        raise AssertionError("a series with missing days must be refused, not imputed")
+
+    # ---- INTEGRATION: the primary hooks plug into economic_gate.py with no adapter code.
     first_origin = oset["origins"][0]
-    legacy = stability_check.stability_check(
-        df_edge, first_origin, pre_registered_direction=DIRECTION, block_test=make_primary_block_test(closes_edge)
-    )
-    assert legacy["n_blocks_judged"] >= 3
     econ_result = economic_gate.economic_gate(df_edge, first_origin, primary_signal(df_edge), STRESS_COST_PER_SIDE)
     assert len(econ_result["full_block_returns"]) >= 3
     # The gate tiles the discovery rows from the same first origin: its FULL blocks are the same
@@ -568,6 +706,9 @@ if __name__ == "__main__":
         "block_structure gives 90-calendar-day blocks from the first origin with per-block index sets, "
         "a partial block that is not full, and matches blocks.tile_blocks; the factories select by "
         "date from a full-series precomputation and ignore non-common dates; the injected edge is "
-        "recovered and pure noise is not; the hooks plug into the legacy stability_check.py "
-        "(verdict not asserted: retired) and economic_gate.py."
+        "recovered and pure noise is not; the vectorised x/y equal the pandas predictor/target; the "
+        "S1 stability statistic reproduces the mathematician's reference exactly where the definitions "
+        "coincide (one and several bootstrap chunks), equals the definition applied literally with a "
+        "partial block (global centring), passes an injected edge, does not pass noise, is deterministic "
+        "given the seed, and refuses a gappy series; the hooks plug into economic_gate.py."
     )

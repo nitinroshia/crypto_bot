@@ -23,6 +23,16 @@ summary but matter for not repeating past mistakes.
   ignore non-common dates). `python3 run_s1.py --pair ETH_USDT --origin-facts` is the read-only check (no registry, no
   p-values). `run_s1.py --commit-to-registry` is refused until the legacy stability rule is replaced (step 4,
   `STABILITY_REPLACED`).
+- Stability check (Work Order 1.5 step 4): `stability_check.py` is the generic core (global-centred block scores over
+  the WHOLE common origin set, `combine` -> T and p_stab, the S2 circular-shift null, the stationary bootstrap index
+  generator); `formula_s1.s1_stability` is the S1 pipeline (null = stationary bootstrap of the daily log returns with
+  predictor and target REBUILT from each path at the same origin positions; it refuses a series with missing days and
+  cross-checks the vectorised x/y against the pandas `predictor`/`target` at run time). The old Stouffer + veto rule is
+  gone. `stability_acceptance.py` runs M1's generators (imported from `stability_reference.py`, never copied or
+  edited) and bands through the production code: reduced size is in `selftest_all.sh`; `--full` (about 2.5 minutes)
+  is the real acceptance run; `--compare-reference` also requires identical rates to M1's own `self_test`. Production
+  equals the reference path by path wherever the definitions coincide (no partial block); with a partial block the
+  difference is M1's ruling 1 (centring over the whole set), checked against the definition applied literally.
 - Registry hygiene (Work Order 1.5 step 2): the live `registry.jsonl` is written ONLY with an explicit flag.
   `registry.append_record(record, path, *, commit_to_registry=False)` refuses the live file without it
   (`LiveRegistryWriteRefused`); `registry.DEFAULT_REGISTRY_PATH` is a scratch file

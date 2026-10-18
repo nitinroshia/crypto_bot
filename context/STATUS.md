@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 3. This top section is the current
+Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 4. This top section is the current
 state; everything below the line "Historical status" is the 2026-09-25 text, kept verbatim, and is
 STALE wherever it conflicts with this section (it still calls S1 "built, awaiting a real run").
 
@@ -13,12 +13,14 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
   origins (Work Order 1.5 section 0). Their numbers are void; do not cite them.
   They are void: commit `ac63ff2` (verified on the owner's machine) appended one void marker per family; the 12
   original lines are still in the file, unedited. `ac63ff2` is the void commit to quote in the S1 report.
-- Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. The fix to
-  `formula_s1.py` / `run_s1.py` (common origin set, calendar blocks) is delivery 3, pending the owner's PASS; the new
-  stability statistic is step 4. `registry.py` has voiding and the R1 Holm rule (delivery 1, verified).
+- Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. `formula_s1.py` /
+  `run_s1.py` now have the common origin set and calendar blocks (delivery 3, verified) and the amended stability
+  statistic (delivery 4, pending the owner's PASS). `registry.py` has voiding and the R1 Holm rule (delivery 1, verified).
 - The old stability test (combined Stouffer z plus opposite-block veto) is retired by Work Order 1.5; the new
   statistic is defined in section 3 of the work order and ruled on in `docs/correspondence/answer-04.md` (filed
-  in delivery 1). The `formula_s1.py` self-test no longer asserts the old verdict (delivery 3); the new statistic's acceptance tests come in step 4.
+  in delivery 1). The retired rule is gone from the code (delivery 4); the amended
+  statistic lives in `stability_check.py` and `formula_s1.s1_stability`; its acceptance tests are `stability_acceptance.py`
+  (reduced size wired into `selftest_all.sh`; `--full` is the real acceptance run).
 - Verified by output from the owner's machine (diag run 2026-10-17T14:05:49Z): folder was clean at `1b776f4`, equal to
   `origin/main` at that moment; local `registry.jsonl` had the same 12 lines as GitHub (no local-only lines); no
   stashes; venv Python 3.12.7.
@@ -30,15 +32,24 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
 - Verified by output from the owner's machine (delivery 2, 2026-10-18): `PASS commit bd0c8cb`; 34 self-tests passed;
   the live registry stayed byte-identical; the guard recognised the live file under three spellings from another
   working directory; the default registry is `temp/scratch-registry.jsonl`.
-- Work Order 1.5 progress: steps 0, 1 and 2 done and verified (`deliveries/0/`, `deliveries/1/` = commit `ac63ff2`,
-  `deliveries/2/` = commit `bd0c8cb`). Step 3 delivered (`deliveries/3/`): S1 common origin set, calendar blocks,
-  read-only `--origin-facts`; NOT verified until the owner's PASS output comes back. Steps 4-6 not started. S1 stops after the report;
+- Verified by output from the owner's machine (delivery 3, 2026-10-18): `PASS commit 756f56a`; 34 self-tests passed;
+  live registry byte-identical. Real-data S1 origin facts (`docs/reports/s1-origin-facts-step3.txt`), identical for
+  ETH_USDT and BTC_USDT: first origin 2018-01-24, last origin 2025-08-26, 2,772 origins, 0 gap exclusions, 0 missing
+  calendar days, 30 full 90-day blocks of 90 origins plus a partial block of 72; every cell n = 2772; no discovery
+  row after the cutoff; the economic gate's full blocks equal the origin-based ones (its partial block runs 77 days).
+- Work Order 1.5 progress: steps 0 to 3 done and verified (`deliveries/0/`; `deliveries/1/` = commit `ac63ff2`;
+  `deliveries/2/` = commit `bd0c8cb`; `deliveries/3/` = commit `756f56a`). Step 4 delivered (`deliveries/4/`): amended
+  stability statistic, acceptance tests; NOT verified until the owner's PASS output comes back. Steps 5-6 not started. S1 stops after the report;
   no freeze, no forward test (the holdout unlock is one-shot and unused). S2 only after M1 accepts the S1 report.
-- S1 as of delivery 3 (pending verification): one common origin set for all ten cells on a complete daily calendar
-  (positions 160 .. N-1-5, gap-excluded origins counted); 90-calendar-day blocks tiled from the first origin;
-  `run_s1.py --origin-facts` is read-only; `--commit-to-registry` is refused until step 4 replaces the legacy
-  stability rule. The economic gate is unchanged (R4). Origin facts: `docs/reports/s1-origin-facts-step3.txt`
-  (written by the delivery-3 runner from the owner's real data).
+- S1 as of delivery 4 (stability part pending verification): one common origin set for all ten cells on a complete
+  daily calendar (positions 160 .. N-1-5, gap-excluded origins counted); 90-calendar-day blocks tiled from the first
+  origin; stability = global-centred block scores + stationary-bootstrap null (R 2000, mean block 20, seed 12345),
+  T and p_stab stored in the registry record; `run_s1.py --origin-facts` is read-only; `--commit-to-registry` is allowed
+  again (`STABILITY_REPLACED = True`) but has NOT been used since the void. The economic gate is unchanged (R4).
+- OPEN FOR M1 (not blocking S1 steps 5-6): the `--full` acceptance run's row "S2 null, Gaussian" gave 0.085 (17/200)
+  against the band <= 0.07. M1's own `stability_reference.py` self-test gives the identical 0.085 with the same seeds, and
+  production equals the reference path by path; over 2,000 fresh paths the rate is about 5.3%. See
+  `docs/correspondence/message-17.md` and `docs/reports/stability-acceptance-full-step4.txt`. Bands are not moved.
 - Registry rules after delivery 1 (`registry.py`): a void marker (`void_pre_fix` with `detail.voids_earlier_records`)
   voids every earlier record of that (family, pair); `cumulative_count`, `cumulative_cells` and `holm_at_step` ignore
   voided records; `holm_at_step` keys by (family, step) per ruling R1; a family with a live `frozen` or

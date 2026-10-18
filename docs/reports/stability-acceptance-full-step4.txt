@@ -1,0 +1,19 @@
+Stability acceptance, FULL run, Work Order 1.5 step 4
+produced by deliveries/4/apply.sh on 2026-10-18T18:13:21Z (repo HEAD before this commit: 756f56a)
+python: Python 3.12.7; numpy: 2.5.3
+command: python3 stability_acceptance.py --full --compare-reference   (bands are the work order's section 4; not changed)
+
+stability acceptance: 200 paths per test, R = 1000 replicates (FULL)
+  PASS  S1 null, Gaussian iid            false-pass <= 0.07   observed 0.010   (19s)
+  PASS  S1 null, t3 + volatility cluster false-pass <= 0.07   observed 0.005   (19s)
+  PASS  S1 edge a=0.006 (pooled t ~ 5)   pass >= 0.70   observed 0.850   (19s)
+  PASS  S1 edge a=0.012 (pooled t ~ 11)  pass >= 0.95   observed 1.000   (19s)
+  FAIL  S2 null, Gaussian                false-pass <= 0.07   observed 0.085   (1s)
+  PASS  S2 null, t3 + volatility cluster false-pass <= 0.07   observed 0.045   (1s)
+  PASS  S2 edge a=0.003 (corr ~ -0.16)   pass >= 0.80   observed 1.000   (1s)
+total 79s
+reference's own self_test, same seeds (expect identical observed rates):
+  reference rates : [0.01, 0.005, 0.85, 1.0, 0.085, 0.045, 1.0]
+  production rates: [0.01, 0.005, 0.85, 1.0, 0.085, 0.045, 1.0]
+  IDENTICAL to the reference
+STABILITY ACCEPTANCE TESTS FAILED

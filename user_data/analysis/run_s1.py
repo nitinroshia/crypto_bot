@@ -23,9 +23,10 @@ ORIGIN SET (Work Order 1.5 step 3): all ten cells run on ONE COMMON ORIGIN SET (
 first origin (the 161st daily close when there are no gaps), not at the primary cell's
 own 41st close. `--origin-facts` prints the origin facts (first/last origin, count, gap
 exclusions, full blocks, per-block counts) and the cutoff check, and writes NOTHING.
-THE STABILITY STEP IS STILL THE LEGACY RULE, RETIRED BY WORK ORDER 1.5 (section 3, R3):
-its numbers are not results and `--commit-to-registry` is refused until step 4 replaces it
-(`STABILITY_REPLACED` below).
+STABILITY (Work Order 1.5 step 4): the amended statistic of section 3 (`stability_check.py`,
+`formula_s1.s1_stability`): global-centred block scores on the common origin set, a stationary
+block bootstrap null (R = 2000, mean block 20 days, fixed seed stored in the registry record),
+T and p_stab. The old Stouffer/veto rule is retired and gone.
 
 USAGE (requires "{pair}-1d.feather" to already exist under --data-dir or
 --raw-dir -- this script does not fetch data itself, see fetch_klines.py
@@ -51,15 +52,15 @@ import blocks
 import economic_gate
 import formula_s1
 import registry
-import stability_check
 from cutoff import CUTOFF, truncate_at_cutoff
 from databundle import load_bundle
 from rule_evaluator import STRESS_COST_PER_SIDE
 
 
-# The old stability rule (combined Stouffer z + opposite-block veto) is retired by Work Order 1.5.
-# Until step 4 replaces it, a LIVE write is refused by the CLI. Step 4 sets this True.
-STABILITY_REPLACED = False
+# The old stability rule (combined Stouffer z + opposite-block veto) was retired by Work Order 1.5;
+# step 4 replaced it with the amended statistic, so a LIVE write is allowed again (with the flag).
+# If this is ever False, the CLI refuses --commit-to-registry.
+STABILITY_REPLACED = True
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "user_data" / "data" / "binance"
 
@@ -77,6 +78,8 @@ def run_s1(
     registry_path: Path = registry.DEFAULT_REGISTRY_PATH,
     timeframe: str = "1d",
     commit_to_registry: bool = False,
+    stability_R: int = formula_s1.STABILITY_R,
+    stability_seed: int = formula_s1.STABILITY_SEED,
 ) -> dict:
     """Run S1's discovery, stability check, and economic gate for `pair`
     (e.g. "ETH_USDT" or "BTC_USDT"), appending each step's result to the
@@ -138,12 +141,9 @@ def run_s1(
         commit_to_registry=commit_to_registry,
     )
 
-    # ---- Step 2: stability check. LEGACY RULE, RETIRED (Work Order 1.5 section 3, R3);
-    # replaced in step 4. Tiled from the common origin set's first origin. -----------
-    block_test = formula_s1.make_primary_block_test(closes, origins)
-    stability_result = stability_check.stability_check(
-        discovery_df, first_origin, pre_registered_direction=formula_s1.DIRECTION, block_test=block_test,
-    )
+    # ---- Step 2: stability check -- the amended statistic (Work Order 1.5 section 3), on the common
+    # origin set's full 90-calendar-day blocks; null = stationary block bootstrap, R replicates. ------
+    stability_result = formula_s1.s1_stability(discovery_df, origins, R=stability_R, seed=stability_seed)
     registry.append_record(
         {
             "family": family,
@@ -151,11 +151,19 @@ def run_s1(
             "status": "stability",
             "timestamp_utc": registry.new_timestamp(),
             "detail": {
-                "p_value": float(stability_result["p_value"]),
-                "combined_z": float(stability_result["combined_z"]),
-                "n_blocks_judged": stability_result["n_blocks_judged"],
-                "any_significant_opposite": bool(stability_result["any_significant_opposite"]),
+                "p_value": float(stability_result["p_stab"]),
+                "T": float(stability_result["T"]),
+                "B": stability_result["B"],
+                "R": stability_result["R"],
+                "seed": stability_result["seed"],
+                "mean_block_length": stability_result["mean_block_length"],
+                "n_origins": stability_result["n_origins"],
+                "n_origins_in_blocks": stability_result["n_origins_in_blocks"],
+                "partial_block_origins": stability_result["partial_block_origins"],
+                "share_blocks_positive": stability_result["share_blocks_positive"],
+                "s_b": stability_result["s_b"],
                 "passes": bool(stability_result["passes"]),
+                "statistic": "amended stability check, Work Order 1.5 section 3",
             },
         },
         registry_path,
@@ -209,12 +217,16 @@ def print_report(result: dict) -> None:
     print_origin_facts(result["origins"])
 
     s = result["stability"]
-    print("\n-- Stability check: LEGACY RULE, RETIRED by Work Order 1.5 (replaced in step 4); NOT a result --")
+    print("\n-- Stability check (amended statistic, Work Order 1.5 section 3) --")
     print(
-        f"n_blocks_judged={s['n_blocks_judged']}  combined_z={s['combined_z']:.4f}  "
-        f"p_value={s['p_value']:.6g}  any_significant_opposite={s['any_significant_opposite']}  "
-        f"passes={s['passes']}"
+        f"T={s['T']:.4f}  p_stab={s['p_stab']:.6g}  B={s['B']}  R={s['R']}  seed={s['seed']}  "
+        f"mean_block_length={s['mean_block_length']:g}  share of blocks with s_b>0: {s['share_blocks_positive']:.1%}  "
+        f"passes (p_stab<0.05, before Holm across candidates)={s['passes']}"
     )
+    print(f"origins: {s['n_origins']} (in the {s['B']} full blocks: {s['n_origins_in_blocks']}; partial block: {s['partial_block_origins']})")
+    print("block  start       origins   s_b")
+    for i, (start, cnt, sb) in enumerate(zip(s["block_starts"], s["block_origin_counts"], s["s_b"])):
+        print(f"{i:>5}  {start}  {cnt:>7}  {sb:>8.3f}")
 
     e = result["economic_gate"]
     print("\n-- Economic gate (step 3, stress cost) --")
@@ -359,7 +371,7 @@ def _self_test() -> None:
         )
         df.reset_index(names="date").to_feather(data_dir / "ETH_USDT-1d.feather")
 
-        result = run_s1("ETH_USDT", data_dir, registry_path=registry_path)
+        result = run_s1("ETH_USDT", data_dir, registry_path=registry_path, stability_R=200)
 
         assert result["family"] == "S1-ETHUSDT"
         assert result["n_discovery"] == n - 165, "n is the common origin set: positions 160 .. N-1-5"
@@ -367,8 +379,9 @@ def _self_test() -> None:
         assert result["origins"]["first_origin"] == idx[160] and result["origins"]["last_origin"] == idx[n - 6]
         assert result["origins"]["n_full_blocks"] == (n - 165) // 90
         assert result["discovery_estimate"] > 0, "the injected trend-following edge must recover a positive slope"
-        # (The legacy stability verdict is retired by Work Order 1.5 and is not asserted; step 4 replaces it.)
-        assert result["stability"]["n_blocks_judged"] >= 5
+        st = result["stability"]
+        assert st["B"] == (n - 165) // 90 == 8 and st["R"] == 200 and st["n_origins"] == n - 165
+        assert st["p_stab"] < 0.05 and st["passes"] is True, "the injected edge must pass the amended stability check"
         assert len(result["economic_gate"]["full_block_returns"]) >= 5
 
         records = registry.load_records(registry_path)
@@ -379,6 +392,10 @@ def _self_test() -> None:
         )
         assert len(records[0]["detail"]["all_cells"]) == 10
         assert records[0]["detail"]["origins"]["n_origins"] == n - 165 and records[0]["detail"]["n"] == n - 165
+        stab_rec = records[1]["detail"]
+        assert stab_rec["p_value"] == result["stability"]["p_stab"] and stab_rec["B"] == 8 and stab_rec["R"] == 200
+        assert {"T", "seed", "mean_block_length", "share_blocks_positive", "s_b", "passes"} <= set(stab_rec)
+        assert "combined_z" not in stab_rec and "any_significant_opposite" not in stab_rec, "the retired rule is gone"
 
         # ---- Read-only origin facts: same numbers, no registry, no files written. ----
         before_files = sorted(p.name for p in tmp.rglob("*"))
@@ -392,7 +409,7 @@ def _self_test() -> None:
         # Re-running must not fail or behave as one-shot -- nothing here is
         # one-shot (that's holdout_lock.py's job, not exercised at all by
         # this script).
-        run_s1("ETH_USDT", data_dir, registry_path=registry_path)
+        run_s1("ETH_USDT", data_dir, registry_path=registry_path, stability_R=200)
         records_after = registry.load_records(registry_path)
         assert len(records_after) == 6, "a second run must simply append three more records, not fail"
 
@@ -411,13 +428,13 @@ def _self_test() -> None:
         registry.LIVE_REGISTRY_PATH = fake_live
         try:
             try:
-                run_s1("ETH_USDT", data_dir, registry_path=fake_live)
+                run_s1("ETH_USDT", data_dir, registry_path=fake_live, stability_R=200)
             except registry.LiveRegistryWriteRefused:
                 pass
             else:
                 raise AssertionError("run_s1 without the flag must refuse a live registry path")
             assert fake_live.read_text() == "", "the refused run must leave the live file untouched"
-            run_s1("ETH_USDT", data_dir, registry_path=fake_live, commit_to_registry=True)
+            run_s1("ETH_USDT", data_dir, registry_path=fake_live, commit_to_registry=True, stability_R=200)
             assert len(registry.load_records(fake_live)) == 3, "with the flag, exactly the three steps are written"
         finally:
             registry.LIVE_REGISTRY_PATH = saved_live
@@ -427,7 +444,8 @@ def _self_test() -> None:
     print(
         "Self-test passed: run_s1 loads a synthetic feather file, truncates to the discovery cutoff, "
         "builds ONE common origin set (positions 160..N-1-5) used by all 10 discovery cells with own-family Holm, "
-        "reports the origin facts read-only, runs the (legacy, verdict not asserted) stability step, and the economic gate "
+        "reports the origin facts read-only, runs the amended stability check (global-centred block scores, bootstrap null) "
+        "and records T, p_stab, B, R and the seed, and the economic gate "
         "on the primary cell, and writes exactly discovery/stability/economic_gate to the registry -- "
         "never freeze or holdout_consumed. Confirmed re-runnable (nothing here is one-shot). "
         "A live-registry path without the commit flag is refused and the default registry is scratch."
