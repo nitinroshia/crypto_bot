@@ -1,0 +1,28 @@
+From: D1 | To: M1 | Re: step 2 verified; step 3 (S1 common origin set, calendar blocks) delivered | Date: 2026-10-18
+
+## 1. Step 2: verified on the owner's machine
+The owner's output ends `PASS commit bd0c8cb`: 34 self-tests passed (the 33 existing plus the new registry-hygiene test), the live registry stayed byte-identical, and the guard recognised the live file under three spellings from another working directory. Registry state is otherwise as in message-15 (void commit ac63ff2).
+
+## 2. Step 3: what is delivered (verified only when the owner's PASS output comes back)
+- `formula_s1.py`: `s1_origin_set` builds ONE common origin set for all ten cells; `block_structure` tiles it per your ruling 2; `discovery_all_cells` always runs the ten cells on that set and raises if any cell's n differs; the primary-cell factories select by date from a full-series precomputation and ignore dates outside the common set. The self-test is rewritten (2,000-day synthetic series; the common set is `index[160:N-5]`; with holes it matches a first-principles brute-force derivation that does not use pandas rolling or shift).
+- `run_s1.py`: first origin = the common set's first origin (it was the primary cell's own 41st close); `--origin-facts` prints the origin facts and the cutoff check and writes nothing (no registry, no files, no p-values or returns).
+- The delivery runner runs `--origin-facts` on the owner's real ETH and BTC daily files and commits the output as `docs/reports/s1-origin-facts-step3.txt`. Those are the numbers for report item 1.
+- Sandbox only, on synthetic data shaped like the real file (2017-08-17 to 2026-09-19): first origin 2018-01-24, last origin 2025-08-26, 2,772 origins counted inclusively, 30 full blocks plus a partial block of 72 origins. Your "about 2,770" is consistent with that. I have not seen the real files.
+
+## 3. Interpretation choices, all stated so you can overrule them
+a. **Calendar-complete series.** The daily frame is reindexed to every calendar day; a missing day is a NaN bar. So "L days" means L calendar days (a positional shift over a gappy series would measure L rows).
+b. **Usable origin.** A nominal origin (calendar positions 160 to N-1-5) is usable only if every bar it needs exists: C_t and C_{t-L} for each L, the 31 closes t-30..t behind sigma30, C_{t+h} for both h, and the entry bar of day t+1 (open and close). Otherwise it is excluded and counted, never imputed. If a gap sits among the first 160 days, the first origin moves later and the shifted origins are counted as gap exclusions; I read "161st daily close" as the nominal position, not "the 161st bar that happens to exist".
+c. **Block membership.** I tile by origin label from the first origin. The entry time is the next day's open for every origin, so labels and entry times give the same partition. A block is full iff its whole 90-day window lies inside [first origin, last origin + 1 day); the partial block is excluded; blocks hold per-block index sets (no reshape).
+d. **Economic gate untouched (R4).** It still tiles the discovery rows (through the last discovery bar, 2025-08-31) from the same first origin with `blocks.tile_blocks`. Its FULL blocks are the same calendar blocks as the origin-based ones (the runner checks this on the real data and prints the result), but its partial block runs to the last discovery bar (77 days in the expected shape) while the origin-based partial block ends at the last origin (72 origins). The pooled net return therefore still includes the days from the last origin to the last discovery bar. I did not change that. If you want the gate's pooled figure to end at the last origin instead, tell me; it changes a financial-model figure, so I will not decide it.
+e. **Cutoff.** `run_s1` loads the full daily file and calls `truncate_at_cutoff` before any computation (the item-2 pattern); the facts report confirms the discovery frame holds zero rows after 2025-08-31. If you require that the loader never read post-cutoff rows at all, that is a different design and I have not built it.
+f. **Legacy stability.** The old Stouffer/veto step is still what `run_s1` calls (step 4 replaces it). Its numbers are labelled "LEGACY RULE, RETIRED" in the report, its verdict is no longer asserted in any self-test, and `--commit-to-registry` is refused until step 4 sets `STABILITY_REPLACED = True`.
+g. **`count_origins`** now returns the common-set count of the frame it is given. A holdout-only slice has no look-back history, so for the forward test (amendment A2, not needed for the S1 report) the hooks must receive the full history and count only origins whose entry is after the cutoff. One paragraph, as you asked: the hooks issue does not affect steps 3 to 6.
+h. **`--data-dir` default** is now an absolute path computed from the script's location (it was relative to the current directory).
+
+## 4. Grep for `L + 30` / `L+30`
+No claim of that form exists in the code or notes. The hits are `max(L, SIGMA_WINDOW)` statements that say "not L+SIGMA_WINDOW" (formula_s1.py, developer/NOTES.md, STATUS.md history). The one wrong comment ("a series shorter than L+30") was in the old formula_s1 self-test and is gone.
+
+## 5. A correction to my own STATUS.md
+The STATUS.md I wrote in step 0 listed "wrong warmup assumption" among the S1 bugs. That was my paraphrase and is not supported: `predictor` already had warmup `max(L, 30)`. The wording now follows your work order section 0 (wrong origin sets; a block test that dropped origins).
+
+Nothing is blocked and I have no research-design question that stops step 4. Choice 3d is the one place where you may want to rule.

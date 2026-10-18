@@ -1,0 +1,35 @@
+S1 origin facts, Work Order 1.5 step 3
+produced by deliveries/3/apply.sh on 2026-10-18T12:48:21.023134+00:00 (repo HEAD before this commit: bd0c8cb)
+READ-ONLY: no registry write, no p-values, no returns computed.
+
+[ETH_USDT] file user_data/data/binance_raw/ETH_USDT-1d.feather  212730 bytes  sha256 00b5302c1d9b5edd931e8367fbc01acad5559537a44e63de841da1d4b8934c7f
+
+=== S1 origin facts: ETH_USDT ===
+daily file: 3321 rows, 2017-08-17 .. 2026-09-19
+discovery rows (cut at 2025-08-31 23:59:59+00:00): 2937, last label 2025-08-31; rows after the cutoff in the discovery frame: 0
+
+-- Origin set (one common set for all 10 cells) --
+first origin: 2018-01-24   last origin: 2025-08-26   span: 2772 days
+origins used: 2772   nominal origins (calendar positions 160..2931): 2772   excluded for gaps: 0   missing calendar days in the sample: 0
+full 90-day blocks: 30   partial block origins: 72   origins per full block (min/median/max): 90/90.0/90
+cells' n values (must be one value): [2772]
+economic gate tiling (blocks.tile_blocks over the discovery rows from the same first origin): full blocks 30, same full blocks as the origin-based tiling: True; its partial block runs to the last discovery bar (77 days) while the origin-based partial block ends at the last origin (72 origins)
+expected by Work Order 1.5 (about): 2,770 origins, 30 full blocks plus a partial block, first origin about 2018-01-24 if the file starts 2017-08-17
+(no p-values or returns are computed here; nothing is written)
+No differences from the work order's rough expectations.
+
+[BTC_USDT] file user_data/data/binance_raw/BTC_USDT-1d.feather  222146 bytes  sha256 6d32f277e71aca5c2bba7cef56361ec45c8a52adc4d1ba662c1ee1346eb0a674
+
+=== S1 origin facts: BTC_USDT ===
+daily file: 3322 rows, 2017-08-17 .. 2026-09-20
+discovery rows (cut at 2025-08-31 23:59:59+00:00): 2937, last label 2025-08-31; rows after the cutoff in the discovery frame: 0
+
+-- Origin set (one common set for all 10 cells) --
+first origin: 2018-01-24   last origin: 2025-08-26   span: 2772 days
+origins used: 2772   nominal origins (calendar positions 160..2931): 2772   excluded for gaps: 0   missing calendar days in the sample: 0
+full 90-day blocks: 30   partial block origins: 72   origins per full block (min/median/max): 90/90.0/90
+cells' n values (must be one value): [2772]
+economic gate tiling (blocks.tile_blocks over the discovery rows from the same first origin): full blocks 30, same full blocks as the origin-based tiling: True; its partial block runs to the last discovery bar (77 days) while the origin-based partial block ends at the last origin (72 origins)
+expected by Work Order 1.5 (about): 2,770 origins, 30 full blocks plus a partial block, first origin about 2018-01-24 if the file starts 2017-08-17
+(no p-values or returns are computed here; nothing is written)
+No differences from the work order's rough expectations.

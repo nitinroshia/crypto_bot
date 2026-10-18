@@ -15,6 +15,14 @@ summary but matter for not repeating past mistakes.
   owner (2026-10): nothing is ever written outside the project root; `temp/` is gitignored; never open, copy
   or back up `temp/secret_keys.txt`. This REVERSES the 2026-09-22 convention (system temp dir, `temp/`
   discontinued), which is why the old note is gone.
+- S1 origins (Work Order 1.5 step 3): all ten cells run on ONE common origin set built on a COMPLETE DAILY CALENDAR
+  (`formula_s1.s1_origin_set`): calendar positions 160 .. N-1-5, minus origins whose needed bars (C_t, C_{t-L}, the 31
+  closes behind sigma30, C_{t+h}, the entry bar t+1) include a missing day -- excluded and counted, never imputed. Blocks
+  are 90 CALENDAR days tiled from the first origin with per-block index sets (`formula_s1.block_structure`): never a
+  reshape, never recompute x or y inside a slice (the factories select by date from a full-series precomputation and
+  ignore non-common dates). `python3 run_s1.py --pair ETH_USDT --origin-facts` is the read-only check (no registry, no
+  p-values). `run_s1.py --commit-to-registry` is refused until the legacy stability rule is replaced (step 4,
+  `STABILITY_REPLACED`).
 - Registry hygiene (Work Order 1.5 step 2): the live `registry.jsonl` is written ONLY with an explicit flag.
   `registry.append_record(record, path, *, commit_to_registry=False)` refuses the live file without it
   (`LiveRegistryWriteRefused`); `registry.DEFAULT_REGISTRY_PATH` is a scratch file
