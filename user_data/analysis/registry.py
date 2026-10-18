@@ -60,12 +60,28 @@ so they stay uncounted exactly as before and void nothing.
 voiding twice writes nothing the second time, and it REFUSES to void a family
 with a live `holdout_consumed` or `frozen` record (the one-shot locks cannot be
 reset by voiding; that needs the mathematician).
+
+REGISTRY HYGIENE (Work Order 1.5 step 2). No self-test, debug run or exploratory run
+may write to the live registry. Mechanism: `append_record` (the only function that
+writes a line) REFUSES to write to the live registry file unless it is called with
+`commit_to_registry=True`; it raises `LiveRegistryWriteRefused` otherwise. The live
+file is `LIVE_REGISTRY_PATH`, an ABSOLUTE path computed from this module's own
+location (never from the current directory) and recognised by file identity
+(`os.path.samefile`), so a relative path, a differently spelled path, a symlink or
+another working directory cannot slip past. `DEFAULT_REGISTRY_PATH` is now a SCRATCH
+registry (`temp/scratch-registry.jsonl`, gitignored): any tool called with its default
+registry path writes scratch, not live. Reading or writing the live file needs
+`registry.LIVE_REGISTRY_PATH` named explicitly, and writing it needs the flag as well.
+Callers that can write live today: `run_s1` and the void CLI below
+(`--commit-to-registry`). `freeze_manifest`, `holdout_lock` and `forward_test` do not
+pass the flag, so they cannot write live until a later work order threads it through.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -73,7 +89,28 @@ from pathlib import Path
 
 from multitest import bonferroni_adjust, holm_adjust
 
-DEFAULT_REGISTRY_PATH = Path("user_data/analysis/results/registry.jsonl")
+_REPO_ROOT = Path(__file__).resolve().parents[2]  # <repo>/user_data/analysis/registry.py -> <repo>
+LIVE_REGISTRY_PATH = _REPO_ROOT / "user_data" / "analysis" / "results" / "registry.jsonl"
+SCRATCH_REGISTRY_PATH = _REPO_ROOT / "temp" / "scratch-registry.jsonl"
+# Default for every function that takes a registry path: SCRATCH, never live (see REGISTRY HYGIENE).
+DEFAULT_REGISTRY_PATH = SCRATCH_REGISTRY_PATH
+
+
+class LiveRegistryWriteRefused(RuntimeError):
+    """Raised when something tries to append to the live registry without
+    `commit_to_registry=True` (Work Order 1.5 step 2)."""
+
+
+def is_live_registry(path: Path) -> bool:
+    """True if `path` is the live registry file (by file identity when both exist,
+    else by resolved absolute path). Reads the module global at call time."""
+    p, live = Path(path), Path(LIVE_REGISTRY_PATH)
+    try:
+        if p.exists() and live.exists():
+            return os.path.samefile(p, live)
+    except OSError:
+        pass
+    return p.resolve() == live.resolve()
 
 PAIR_SUFFIXES = ("ETHUSDT", "BTCUSDT")
 _FAMILY_RE = re.compile(rf"^[A-Za-z0-9]+-(?:{'|'.join(PAIR_SUFFIXES)})$")
@@ -136,12 +173,19 @@ def new_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def append_record(record: dict, path: Path = DEFAULT_REGISTRY_PATH) -> dict:
+def append_record(record: dict, path: Path, *, commit_to_registry: bool = False) -> dict:
     """Validate and append ONE record as one JSON line. Opens in append mode
-    only -- this function cannot overwrite or edit an existing line. Returns
-    the record unchanged (after validation) for convenience."""
+    only -- this function cannot overwrite or edit an existing line. `path` is
+    required (no default). Writing to the LIVE registry additionally needs
+    `commit_to_registry=True`, else LiveRegistryWriteRefused is raised and nothing
+    is written. Returns the record unchanged (after validation)."""
     _validate_record(record)
     path = Path(path)
+    if is_live_registry(path) and not commit_to_registry:
+        raise LiveRegistryWriteRefused(
+            f"refusing to write to the live registry {path} without commit_to_registry=True "
+            "(Work Order 1.5 step 2: self-tests, debug and exploratory runs must use a scratch registry)"
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as f:
         f.write(json.dumps(record, default=str) + "\n")
@@ -149,7 +193,12 @@ def append_record(record: dict, path: Path = DEFAULT_REGISTRY_PATH) -> dict:
 
 
 def import_legacy_run(
-    family: str, detail: dict, void: bool = False, path: Path = DEFAULT_REGISTRY_PATH
+    family: str,
+    detail: dict,
+    void: bool = False,
+    path: Path = DEFAULT_REGISTRY_PATH,
+    *,
+    commit_to_registry: bool = False,
 ) -> dict:
     """Import one pre-existing ETH/FDUSD-era run as history (or void_pre_fix
     if it predates the strict-alignment fix -- section 4/6). `detail` is
@@ -162,7 +211,7 @@ def import_legacy_run(
         "timestamp_utc": new_timestamp(),
         "detail": dict(detail),
     }
-    return append_record(record, path)
+    return append_record(record, path, commit_to_registry=commit_to_registry)
 
 
 def load_records(path: Path = DEFAULT_REGISTRY_PATH) -> list[dict]:
@@ -311,6 +360,7 @@ def void_family(
     *,
     work_order: str = "1.5",
     code_commit: str | None = None,
+    commit_to_registry: bool = False,
 ) -> dict | None:
     """Void every live record of (family, pair) by appending ONE void marker
     (status `void_pre_fix`). Appends only; edits and deletes nothing. Returns the
@@ -338,7 +388,7 @@ def void_family(
             "code_commit": code_commit,
         },
     }
-    return append_record(record, path)
+    return append_record(record, path, commit_to_registry=commit_to_registry)
 
 
 def _cli(argv: list[str]) -> int:
@@ -349,7 +399,7 @@ def _cli(argv: list[str]) -> int:
     p.add_argument("--void-family", required=True, metavar="FAMILY", help="e.g. S1-ETHUSDT")
     p.add_argument("--pair", required=True, choices=PAIR_SUFFIXES)
     p.add_argument("--reason", required=True)
-    p.add_argument("--registry-path", type=Path, default=DEFAULT_REGISTRY_PATH)
+    p.add_argument("--registry-path", type=Path, default=LIVE_REGISTRY_PATH)
     p.add_argument("--code-commit", default=None, help="git commit of the code at void time")
     p.add_argument("--commit-to-registry", action="store_true", help="actually append (default: dry run)")
     a = p.parse_args(argv)
@@ -365,7 +415,9 @@ def _cli(argv: list[str]) -> int:
     if not a.commit_to_registry:
         print("DRY RUN: nothing written (add --commit-to-registry to append the void marker)")
         return 0
-    rec = void_family(a.void_family, a.pair, a.reason, a.registry_path, code_commit=a.code_commit)
+    rec = void_family(
+        a.void_family, a.pair, a.reason, a.registry_path, code_commit=a.code_commit, commit_to_registry=True
+    )
     print("appended void marker at", rec["timestamp_utc"])
     return 0
 
@@ -570,6 +622,57 @@ def _self_test() -> None:
             b1 = cli.read_bytes()
             assert _cli(base + ["--commit-to-registry"]) == 0 and cli.read_bytes() == b1, "second void is a no-op"
 
+        # ---- Registry hygiene (Work Order 1.5 step 2) ------------------------
+        # "Live" is faked as a temp file so a broken guard could never touch the real registry.
+        global LIVE_REGISTRY_PATH
+        saved_live = LIVE_REGISTRY_PATH
+        fake_live = Path(tmp) / "fake_live" / "registry.jsonl"
+        fake_live.parent.mkdir(parents=True)
+        fake_live.write_text("")
+        LIVE_REGISTRY_PATH = fake_live
+        try:
+            assert not is_live_registry(Path(tmp) / "registry.jsonl") and is_live_registry(fake_live)
+            assert is_live_registry(fake_live.parent / ".." / "fake_live" / "registry.jsonl"), "another spelling"
+            link = Path(tmp) / "link.jsonl"
+            os.symlink(fake_live, link)
+            assert is_live_registry(link), "a symlink to the live file is the live file"
+            cwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                assert is_live_registry(Path("fake_live/registry.jsonl")), "relative path, other cwd"
+            finally:
+                os.chdir(cwd)
+            for writer in (
+                lambda: append_record(_rec("S1-ETHUSDT", "discovery", 0.01), fake_live),
+                lambda: append_record(_rec("S1-ETHUSDT", "discovery", 0.01), link),
+                lambda: import_legacy_run("x", {"p_value": 0.5}, path=fake_live),
+            ):
+                try:
+                    writer()
+                except LiveRegistryWriteRefused:
+                    pass
+                else:
+                    raise AssertionError("a live-registry write without the flag must be refused")
+            assert fake_live.read_text() == "", "a refused write must leave the live file untouched"
+            append_record(_rec("S1-ETHUSDT", "discovery", 0.01), fake_live, commit_to_registry=True)
+            assert len(fake_live.read_text().splitlines()) == 1, "with the flag the write lands"
+            try:
+                void_family("S1-ETHUSDT", "ETHUSDT", "no flag", fake_live)
+            except LiveRegistryWriteRefused:
+                pass
+            else:
+                raise AssertionError("void_family on the live registry needs the flag")
+            assert len(fake_live.read_text().splitlines()) == 1
+            with contextlib.redirect_stdout(io.StringIO()):
+                cli_live = ["--void-family", "S1-ETHUSDT", "--pair", "ETHUSDT", "--reason", "t", "--registry-path", str(fake_live)]
+                assert _cli(cli_live) == 0 and len(fake_live.read_text().splitlines()) == 1, "CLI dry run on live writes nothing"
+                assert _cli(cli_live + ["--commit-to-registry"]) == 0 and len(fake_live.read_text().splitlines()) == 2
+        finally:
+            LIVE_REGISTRY_PATH = saved_live
+        assert not is_live_registry(DEFAULT_REGISTRY_PATH), "the default registry must be scratch, not live"
+        assert DEFAULT_REGISTRY_PATH.is_absolute() and DEFAULT_REGISTRY_PATH.parent.name == "temp"
+        assert LIVE_REGISTRY_PATH.is_absolute() and LIVE_REGISTRY_PATH.name == "registry.jsonl"
+
     print(
         "Self-test passed: family-name validation; append-only (rejected records write nothing); "
         "cumulative_count/cumulative_cells exclude history, legacy void_pre_fix and voided records; "
@@ -577,7 +680,8 @@ def _self_test() -> None:
         "and matches multitest.py's worked Holm example; void_family appends one marker, original lines stay "
         "byte-identical, counts revert, voiding twice is a no-op, a partial re-run does not resurrect voided "
         "records, frozen/holdout_consumed families cannot be voided, bad arguments write nothing; the CLI is a "
-        "dry run unless --commit-to-registry is given."
+        "dry run unless --commit-to-registry is given; live-registry hygiene: a write to the live file "
+        "(any spelling, symlink or cwd) is refused without commit_to_registry=True and the default registry is scratch."
     )
 
 

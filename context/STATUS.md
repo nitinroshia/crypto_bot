@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 1. This top section is the current
+Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 2. This top section is the current
 state; everything below the line "Historical status" is the 2026-09-25 text, kept verbatim, and is
 STALE wherever it conflicts with this section (it still calls S1 "built, awaiting a real run").
 
@@ -10,31 +10,36 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
 - **No valid S1 result exists.** The S1 records in `registry.jsonl` (12 lines: two identical runs, 2026-09-28 and
   2026-09-30, for S1-ETHUSDT and S1-BTCUSDT) came from code with three bugs (wrong warmup assumption, block test
   recomputed from slices, section 6 common origin set not implemented). Their numbers are void; do not cite them.
-  They stay live in the registry until delivery 1 passes on the owner's machine (it appends one void marker per
-  family; the 12 original lines are never edited).
+  They are void: commit `ac63ff2` (verified on the owner's machine) appended one void marker per family; the 12
+  original lines are still in the file, unedited. `ac63ff2` is the void commit to quote in the S1 report.
 - Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. The fix to
-  `formula_s1.py` / `run_s1.py` is not yet in the repo (steps 3-4). `registry.py` gets voiding and the R1 Holm
-  rule in delivery 1.
+  `formula_s1.py` / `run_s1.py` is not yet in the repo (steps 3-4). `registry.py` has voiding and the R1 Holm
+  rule (delivery 1, verified).
 - The old stability test (combined Stouffer z plus opposite-block veto) is retired by Work Order 1.5; the new
-  statistic is defined in section 3 of the work order and ruled on in `docs/correspondence/answer-04.md` (arrives
-  with delivery 1). The self-test `formula_s1.py` asserts the old rule and will be rewritten.
+  statistic is defined in section 3 of the work order and ruled on in `docs/correspondence/answer-04.md` (filed
+  in delivery 1). The self-test `formula_s1.py` asserts the old rule and will be rewritten.
 - Verified by output from the owner's machine (diag run 2026-10-17T14:05:49Z): folder was clean at `1b776f4`, equal to
   `origin/main` at that moment; local `registry.jsonl` had the same 12 lines as GitHub (no local-only lines); no
   stashes; venv Python 3.12.7.
 - Verified by output from the owner's machine (delivery 0, 2026-10-17): `PASS commit cd0a0a1`; the folder was already
   at `7aa4c99`; all 33 self-tests passed; `registry.jsonl` byte-identical before and after (12 lines).
-- Work Order 1.5 progress: step 0 done and verified (`deliveries/0/`). Step 1 delivered (`deliveries/1/`): registry
-  void markers, R1 Holm, void CLI, answer-04 filed; NOT verified until the owner's PASS output comes back. Steps 2-6 not
-  started. S1 stops after the report;
+- Verified by output from the owner's machine (delivery 1, 2026-10-18): `PASS commit ac63ff2`; 33 self-tests passed;
+  `registry.jsonl` 12 -> 14 lines, first 12 byte-identical to the backup; `cumulative_count` 0 for ETHUSDT and BTCUSDT;
+  no record at discovery, stability or economic_gate enters any Holm family.
+- Work Order 1.5 progress: steps 0 and 1 done and verified (`deliveries/0/`, `deliveries/1/` = commit `ac63ff2`).
+  Step 2 delivered (`deliveries/2/`): registry hygiene, scratch registry by default, `--commit-to-registry` for live
+  writes; NOT verified until the owner's PASS output comes back. Steps 3-6 not started. S1 stops after the report;
   no freeze, no forward test (the holdout unlock is one-shot and unused). S2 only after M1 accepts the S1 report.
 - Registry rules after delivery 1 (`registry.py`): a void marker (`void_pre_fix` with `detail.voids_earlier_records`)
   voids every earlier record of that (family, pair); `cumulative_count`, `cumulative_cells` and `holm_at_step` ignore
   voided records; `holm_at_step` keys by (family, step) per ruling R1; a family with a live `frozen` or
-  `holdout_consumed` record cannot be voided. Live registry writes need an explicit flag (the void CLI has
-  `--commit-to-registry`; the general rule for every writer is step 2).
+  `holdout_consumed` record cannot be voided. Hygiene (step 2): `append_record` refuses the live registry file
+  unless `commit_to_registry=True`; the default registry of every tool is scratch (`temp/scratch-registry.jsonl`);
+  live writers today: `run_s1.py --commit-to-registry` and the void CLI. `freeze_manifest`, `holdout_lock` and
+  `forward_test` fail closed against the live file (not given the flag; not needed in WO 1.5).
 - Scratch and backups go in `<repo>/temp/` (gitignored), never outside the project root; this reverses the
-  `developer/NOTES.md` convention of using the system temp directory. `temp/secret_keys.txt` is never opened, copied
-  or backed up.
+  old convention of using the system temp directory (NOTES.md corrected). `selftest_all.sh` enforces it (TMPDIR) and
+  fails if the live registry's hash changes. `temp/secret_keys.txt` is never opened, copied or backed up.
 
 ---
 

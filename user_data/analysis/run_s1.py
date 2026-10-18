@@ -14,12 +14,17 @@ so it is safe to re-run as many times as needed while under review (each
 run appends fresh discovery/stability/economic_gate records; it never
 freezes or touches the holdout).
 
+REGISTRY HYGIENE (Work Order 1.5 step 2): by default this script writes to a
+SCRATCH registry (temp/scratch-registry.jsonl) and touches nothing live. It writes
+to the LIVE registry only with `--commit-to-registry`.
+
 USAGE (requires "{pair}-1d.feather" to already exist under --data-dir or
 --raw-dir -- this script does not fetch data itself, see fetch_klines.py
 for that):
-    python3 run_s1.py --pair ETH_USDT
+    python3 run_s1.py --pair ETH_USDT                          # scratch registry, live untouched
     python3 run_s1.py --pair BTC_USDT
     python3 run_s1.py --pair ETH_USDT --data-dir /custom/path --registry-path /custom/registry.jsonl
+    python3 run_s1.py --pair ETH_USDT --commit-to-registry     # LIVE registry (explicit flag)
 
     python3 run_s1.py --self-test   # offline, synthetic data, no real files needed
 """
@@ -53,6 +58,7 @@ def run_s1(
     raw_dir: Path | None = None,
     registry_path: Path = registry.DEFAULT_REGISTRY_PATH,
     timeframe: str = "1d",
+    commit_to_registry: bool = False,
 ) -> dict:
     """Run S1's discovery, stability check, and economic gate for `pair`
     (e.g. "ETH_USDT" or "BTC_USDT"), appending each step's result to the
@@ -92,6 +98,7 @@ def run_s1(
             },
         },
         registry_path,
+        commit_to_registry=commit_to_registry,
     )
 
     # ---- Step 2: stability check (90-day tiles, Stouffer, primary cell). -
@@ -121,6 +128,7 @@ def run_s1(
             },
         },
         registry_path,
+        commit_to_registry=commit_to_registry,
     )
 
     # ---- Step 3: economic gate (STRESS cost, same tiling). ----------------
@@ -141,6 +149,7 @@ def run_s1(
             },
         },
         registry_path,
+        commit_to_registry=commit_to_registry,
     )
 
     return {
@@ -188,7 +197,15 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--pair", type=str, help="e.g. ETH_USDT or BTC_USDT")
     p.add_argument("--data-dir", type=Path, default=Path("user_data/data/binance"))
     p.add_argument("--raw-dir", type=Path, default=None)
-    p.add_argument("--registry-path", type=Path, default=registry.DEFAULT_REGISTRY_PATH)
+    p.add_argument(
+        "--registry-path", type=Path, default=None,
+        help="registry file to write (default: scratch registry temp/scratch-registry.jsonl; "
+        "with --commit-to-registry: the LIVE registry)",
+    )
+    p.add_argument(
+        "--commit-to-registry", action="store_true",
+        help="write to the LIVE registry (required for any live write; default is the scratch registry)",
+    )
     p.add_argument("--self-test", action="store_true", help="run the offline self-test (no real data needed) and exit")
     return p
 
@@ -252,13 +269,40 @@ def _self_test() -> None:
         records_after = registry.load_records(registry_path)
         assert len(records_after) == 6, "a second run must simply append three more records, not fail"
 
+        # Registry hygiene (Work Order 1.5 step 2). "Live" is faked as a temp file, so a broken
+        # guard could not touch the real registry. Defaults must be scratch, never live.
+        import inspect
+
+        assert (
+            inspect.signature(run_s1).parameters["registry_path"].default == registry.SCRATCH_REGISTRY_PATH
+            and not registry.is_live_registry(registry.DEFAULT_REGISTRY_PATH)
+        ), "run_s1's default registry must be scratch"
+        fake_live = tmp / "fake_live" / "registry.jsonl"
+        fake_live.parent.mkdir(parents=True)
+        fake_live.write_text("")
+        saved_live = registry.LIVE_REGISTRY_PATH
+        registry.LIVE_REGISTRY_PATH = fake_live
+        try:
+            try:
+                run_s1("ETH_USDT", data_dir, registry_path=fake_live)
+            except registry.LiveRegistryWriteRefused:
+                pass
+            else:
+                raise AssertionError("run_s1 without the flag must refuse a live registry path")
+            assert fake_live.read_text() == "", "the refused run must leave the live file untouched"
+            run_s1("ETH_USDT", data_dir, registry_path=fake_live, commit_to_registry=True)
+            assert len(registry.load_records(fake_live)) == 3, "with the flag, exactly the three steps are written"
+        finally:
+            registry.LIVE_REGISTRY_PATH = saved_live
+
         print_report(result)  # smoke-test the report formatting itself
 
     print(
         "Self-test passed: run_s1 loads a synthetic feather file, truncates to the discovery cutoff, "
         "runs all 10 discovery cells with own-family Holm, the stability check, and the economic gate "
         "on the primary cell, and writes exactly discovery/stability/economic_gate to the registry -- "
-        "never freeze or holdout_consumed. Confirmed re-runnable (nothing here is one-shot)."
+        "never freeze or holdout_consumed. Confirmed re-runnable (nothing here is one-shot). "
+        "A live-registry path without the commit flag is refused and the default registry is scratch."
     )
 
 
@@ -267,7 +311,25 @@ def main() -> None:
     if not args.pair:
         print("error: --pair is required (e.g. --pair ETH_USDT), or pass --self-test", file=sys.stderr)
         raise SystemExit(2)
-    result = run_s1(args.pair, args.data_dir, raw_dir=args.raw_dir, registry_path=args.registry_path)
+    if args.registry_path is not None:
+        registry_path = args.registry_path
+    elif args.commit_to_registry:
+        registry_path = registry.LIVE_REGISTRY_PATH
+    else:
+        registry_path = registry.SCRATCH_REGISTRY_PATH
+    live = registry.is_live_registry(registry_path)
+    print(
+        f"REGISTRY: {'LIVE' if live else 'scratch (live registry untouched)'} -> {registry_path}"
+        + ("" if (live or not args.commit_to_registry) else "   [--commit-to-registry given, but this is not the live file]"),
+        file=sys.stderr,
+    )
+    if live and not args.commit_to_registry:
+        print("error: the live registry needs --commit-to-registry", file=sys.stderr)
+        raise SystemExit(2)
+    result = run_s1(
+        args.pair, args.data_dir, raw_dir=args.raw_dir, registry_path=registry_path,
+        commit_to_registry=args.commit_to_registry,
+    )
     print_report(result)
 
 

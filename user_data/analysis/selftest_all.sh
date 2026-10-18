@@ -4,8 +4,20 @@
 # Paste the whole output back if anything fails.
 set -u
 cd "$(dirname "$0")"
-# Self-tests use the system temp dir (tempfile's default) -- project-local temp/ was
-# discontinued in the 2026-09-22 repo restructuring.
+# Scratch rule (owner, 2026-10): nothing is written outside the project root. All self-test
+# scratch therefore goes to <repo>/temp/tmp-selftest (temp/ is gitignored); this reverses the
+# 2026-09-22 convention of using the system temp dir. GIT_CEILING_DIRECTORIES makes git treat
+# directories under temp/ as non-repos (freeze_manifest.py's self-test needs a non-repo dir).
+REPO_ROOT="$(cd ../.. && pwd -P)"
+mkdir -p "$REPO_ROOT/temp/tmp-selftest"
+export TMPDIR="$REPO_ROOT/temp/tmp-selftest"
+export GIT_CEILING_DIRECTORIES="$REPO_ROOT/temp"
+# Registry hygiene (Work Order 1.5 step 2): no self-test may change the LIVE registry.
+LIVE_REG="results/registry.jsonl"
+reg_hash() {
+  if [ -f "$LIVE_REG" ]; then (shasum -a 256 "$LIVE_REG" 2>/dev/null || sha256sum "$LIVE_REG") | awk '{print $1}'; else echo none; fi
+}
+REG_BEFORE="$(reg_hash)"
 fail=0
 run() {
   echo "=================== $*"
@@ -35,6 +47,7 @@ run freeze_manifest.py
 run forward_test.py
 run formula_s1.py
 run run_s1.py --self-test
+run selftest_registry_hygiene.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test
 run task0_report.py --self-test
@@ -46,6 +59,11 @@ run liquidity_table.py --self-test
 run build_derived_raw.py --self-test
 run volatility_report.py --self-test
 run breakeven_table.py --self-test
+REG_AFTER="$(reg_hash)"
+if [ "$REG_BEFORE" != "$REG_AFTER" ]; then
+  echo "*** FAILED: the LIVE registry changed during the self-tests (before $REG_BEFORE, after $REG_AFTER)"
+  fail=1
+fi
 echo
 if [ "$fail" -eq 0 ]; then echo "ALL SELF-TESTS PASSED"; else echo "SOME SELF-TESTS FAILED (see *** lines above)"; fi
 exit $fail

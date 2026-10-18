@@ -9,9 +9,19 @@ summary but matter for not repeating past mistakes.
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
   `selftest_all.sh`. 21 tools pass as of this writing. Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
-- Self-test scratch uses the system temp dir (`tempfile.TemporaryDirectory()`, no `dir=`
-  override). Project-local `temp/` is discontinued; don't reintroduce a `_selftest_tmp()`-style
-  helper that points back at it.
+- Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
+  (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
+  (git then treats scratch dirs as non-repos, which `freeze_manifest.py`'s self-test needs). Rule from the
+  owner (2026-10): nothing is ever written outside the project root; `temp/` is gitignored; never open, copy
+  or back up `temp/secret_keys.txt`. This REVERSES the 2026-09-22 convention (system temp dir, `temp/`
+  discontinued), which is why the old note is gone.
+- Registry hygiene (Work Order 1.5 step 2): the live `registry.jsonl` is written ONLY with an explicit flag.
+  `registry.append_record(record, path, *, commit_to_registry=False)` refuses the live file without it
+  (`LiveRegistryWriteRefused`); `registry.DEFAULT_REGISTRY_PATH` is a scratch file
+  (`temp/scratch-registry.jsonl`); `run_s1.py --commit-to-registry` and `registry.py --void-family ...
+  --commit-to-registry` are the only live writers today. `freeze_manifest`, `holdout_lock`, `forward_test` do
+  not pass the flag yet (fail closed). `selftest_all.sh` hashes the live registry before and after and fails if
+  it changed; `selftest_registry_hygiene.py` checks every writer against a fake "live" file.
 - State every interpretive choice explicitly in the docstring, run both readings and label them
   when a spec genuinely allows two, never silently pick one. This project's culture rewards
   showing your work over being fast.
