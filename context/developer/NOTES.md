@@ -33,6 +33,12 @@ summary but matter for not repeating past mistakes.
   is the real acceptance run; `--compare-reference` also requires identical rates to M1's own `self_test`. Production
   equals the reference path by path wherever the definitions coincide (no partial block); with a partial block the
   difference is M1's ruling 1 (centring over the whole set), checked against the definition applied literally.
+- S1 report (Work Order 1.5 step 6): `s1_report.py` is READ-ONLY. It reads the data and the LIVE registry (explicit
+  `registry.LIVE_REGISTRY_PATH`, never written), recomputes every figure with the production code and raises
+  `ReportConsistencyError` unless it reproduces the recorded figure (discovery cells, stability T/p/s_b, gate pooled
+  return and pass rate), then writes the one markdown file given by `--out`. Its self-test is in `selftest_all.sh`.
+  It reports what the registry recorded and makes no recommendation. Buy-and-hold uses the gate's own evaluator,
+  segment, blocks and stress cost with the signal fixed at 1.
 - Registry hygiene (Work Order 1.5 step 2): the live `registry.jsonl` is written ONLY with an explicit flag.
   `registry.append_record(record, path, *, commit_to_registry=False)` refuses the live file without it
   (`LiveRegistryWriteRefused`); `registry.DEFAULT_REGISTRY_PATH` is a scratch file

@@ -1,18 +1,18 @@
 # Project status
 
-Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 5. This top section is the current
+Last updated: 2026-10-18, by D1 (developer), Work Order 1.5 step 6. This top section is the current
 state; everything below the line "Historical status" is the 2026-09-25 text, kept verbatim, and is
 STALE wherever it conflicts with this section (it still calls S1 "built, awaiting a real run").
 
 ## Current state (D1, 2026-10-18)
 - Rules: `docs/PROTOCOL.md` (owner's three hard limits and the delivery contract). Task: `docs/work-orders/1.5.md`
   (steps 0-6; section 8 amendments win). Agents: M1 (mathematician), D1 (developer, this role).
-- **No valid S1 result exists.** The S1 records in `registry.jsonl` (12 lines: two identical runs, 2026-09-28 and
-  2026-09-30, for S1-ETHUSDT and S1-BTCUSDT) came from code that did not implement the section 6 common origin set (each
+- **The first valid S1 results are in the live registry (delivery 5, records 15-20).** The OLD S1 records in
+  `registry.jsonl` (lines 1-12: two identical runs, 2026-09-28 and 2026-09-30, for S1-ETHUSDT and S1-BTCUSDT) came from code that did not implement the section 6 common origin set (each
   cell ran on its own sample; tiling started at the primary cell's own first origin) and used a block test that dropped
   origins (Work Order 1.5 section 0). Their numbers are void; do not cite them.
   They are void: commit `ac63ff2` (verified on the owner's machine) appended one void marker per family; the 12
-  original lines are still in the file, unedited. `ac63ff2` is the void commit to quote in the S1 report.
+  original lines are still in the file, unedited. `ac63ff2` is the void commit to quote in the S1 report. The live run is commit `4487f1e`.
 - Commit `92d9986` ("Fix S1 common-origin-set bug") contains no code fix; see `docs/handoffs/v2.3.md`. `formula_s1.py` /
   `run_s1.py` now have the common origin set and calendar blocks (delivery 3, verified) and the amended stability
   statistic (delivery 4, verified). `registry.py` has voiding and the R1 Holm rule (delivery 1, verified).
@@ -42,17 +42,26 @@ STALE wherever it conflicts with this section (it still calls S1 "built, awaitin
   my sandbox: S1 null 0.010, S1 t3+SV null 0.005, S1 edge 0.850, S1 strong edge 1.000, S2 null t3+SV 0.045, S2 edge 1.000
   all within band; S2 null Gaussian 0.085 outside its band (<= 0.07); production equals M1's reference in all seven rows.
   Output committed as `docs/reports/stability-acceptance-full-step4.txt`.
-- Work Order 1.5 progress: steps 0 to 4 done and verified (`deliveries/0/`; `deliveries/1/` = commit `ac63ff2`;
-  `deliveries/2/` = commit `bd0c8cb`; `deliveries/3/` = commit `756f56a`; `deliveries/4/` = commit `f5a883a`). Step 5
-  delivered (`deliveries/5/`): the first live S1 run, ETH_USDT and BTC_USDT once each with `--commit-to-registry`
-  (scratch dry run first, then live; exactly three records per pair expected); NOT verified until the owner's PASS
-  output comes back. Step 6 (the report) not started. S1 stops after the report;
+- Verified by output from the owner's machine (delivery 5, 2026-10-18): `PASS commit 4487f1e`; 35 self-tests passed; a
+  scratch dry run of each pair preceded the live run; the live registry went from 14 to 20 lines (first 14 byte-identical),
+  records 15-17 = S1-ETHUSDT (discovery, stability, economic_gate), 18-20 = S1-BTCUSDT; each live record equals its dry-run
+  record; no frozen or holdout record. RECORDED OUTCOMES as printed by the runner (the report has the full tables):
+  ETHUSDT primary cell slope 0.000715415, n 2772, one-sided p 0.128192, Holm-in-family 0.769151; stability T 0.7082,
+  p_stab 0.230385, passes False, 56.7% of blocks s_b>0; economic gate pooled net 4.92255, 40.0% non-negative full
+  blocks, passes False. BTCUSDT slope 0.0010087, p 0.0145107, Holm-in-family 0.145107; stability T 1.6966, p_stab
+  0.0554723, passes False, 50.0%; gate pooled net 34.5543, 50.0%, passes False. No interpretation here; see the report.
+- Work Order 1.5 progress: steps 0 to 5 done and verified (`deliveries/0/`; `deliveries/1/` = commit `ac63ff2`;
+  `deliveries/2/` = commit `bd0c8cb`; `deliveries/3/` = commit `756f56a`; `deliveries/4/` = commit `f5a883a`;
+  `deliveries/5/` = commit `4487f1e`). Step 6 delivered (`deliveries/6/`): the S1 report
+  `docs/reports/s1-report-step6.md`, generated read-only by `s1_report.py` and cross-checked against the registry;
+  NOT verified until the owner's PASS output comes back. Then the owner forwards the report to M1. S1 stops here: no
+  freeze, no forward test; S2 only after M1 accepts the S1 report. S1 stops after the report;
   no freeze, no forward test (the holdout unlock is one-shot and unused). S2 only after M1 accepts the S1 report.
 - S1 as of delivery 4 (verified): one common origin set for all ten cells on a complete
   daily calendar (positions 160 .. N-1-5, gap-excluded origins counted); 90-calendar-day blocks tiled from the first
   origin; stability = global-centred block scores + stationary-bootstrap null (R 2000, mean block 20, seed 12345),
   T and p_stab stored in the registry record; `run_s1.py --origin-facts` is read-only; `--commit-to-registry` is allowed
-  again (`STABILITY_REPLACED = True`); its first use is delivery 5 (pending verification). The economic gate is unchanged (R4).
+  again (`STABILITY_REPLACED = True`); used once per pair in delivery 5 (verified). The economic gate is unchanged (R4).
 - OPEN FOR M1 (not blocking S1 steps 5-6): the `--full` acceptance run's row "S2 null, Gaussian" gave 0.085 (17/200)
   against the band <= 0.07 (on the owner's machine too, delivery 4). M1's own `stability_reference.py` self-test gives the identical 0.085 with the same seeds, and
   production equals the reference path by path; over 2,000 fresh paths the rate is about 5.3%. See

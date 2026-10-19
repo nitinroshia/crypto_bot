@@ -42,6 +42,7 @@ run nonstationarity.py
 run blocks.py
 run stability_check.py
 run stability_acceptance.py
+run s1_report.py --self-test
 run rule_evaluator.py
 run economic_gate.py
 run freeze_manifest.py
