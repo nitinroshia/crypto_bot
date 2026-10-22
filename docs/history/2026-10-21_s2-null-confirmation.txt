@@ -1,0 +1,8 @@
+S2 false-pass confirmation run (answer-to-message-19 section 3a), produced by deliveries/7/apply.sh on 2026-10-22T04:47:31Z (repo HEAD before this commit: a787d41)
+python: Python 3.12.7; numpy: 2.5.3
+command: python3 stability_acceptance.py --confirm-s2-null   (rule: a false-pass row passes at <= 7% at 200 paths OR <= 7% in a confirmation of >= 1000 paths)
+
+S2 false-pass confirmation run: 1000 fresh null paths per row, R = 2000 (production), generator seed 777 + row, path seeds 0..999
+  PASS  S2 null, Gaussian                    false-pass 56/1000 = 0.056 (binomial se 0.007; band <= 0.07)   (7s)
+  PASS  S2 null, t3 + volatility cluster     false-pass 53/1000 = 0.053 (binomial se 0.007; band <= 0.07)   (7s)
+S2 FALSE-PASS CONFIRMATION PASSED

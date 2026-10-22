@@ -13,7 +13,14 @@ reported to the mathematician; the bands are not moved and no different statisti
   python3 stability_acceptance.py --compare-reference  also run the reference's own self_test with the
                                                        same seeds and require IDENTICAL observed rates
                                                        (the production code reproduces the reference path by path)
+  python3 stability_acceptance.py --confirm-s2-null    only the two S2 false-pass rows, 1000 fresh paths each, R = 2000
+                                                       (the confirmation run of answer-to-message-19 section 3a)
 Exit status 0 only if every band is met.
+
+FALSE-PASS RULE (answer-to-message-19 section 3a, replacing the false-pass bands of Work Order 1.5 section 4): a
+false-pass row passes if the observed rate is at most 7% at the run's path count, OR at most 7% in a confirmation run
+of at least 1,000 paths. The confirmation runs automatically for a false-pass row that misses its band (fresh generator
+stream, path seeds 0..999, same R as the run); both observed rates are printed. Power rows are unchanged.
 
 Production vs reference: the acceptance origins are exactly B*n per path (no partial block), the case
 where the production definition and the reference coincide; the partial-block case (global centring
@@ -40,6 +47,26 @@ def _bounds(B: int, n: int) -> list[tuple[int, int]]:
     return [(b * n, (b + 1) * n) for b in range(B)]
 
 
+CONFIRM_PATHS = 1000
+CONFIRM_SEED = 777  # generator stream of the confirmation runs (independent of the main run's stream)
+FALSE_PASS_BAND = 0.07
+
+
+def confirm_false_pass(kind_s: str, kind: str, R: int, P: int = CONFIRM_PATHS, stream: int = 0) -> float:
+    """Confirmation run of one false-pass row: P fresh null paths (generator `CONFIRM_SEED + stream`, per-path seeds
+    0..P-1), same production statistic. kind_s is 'S1' or 'S2'; kind is 'gauss' or 't3sv'. Returns the observed rate."""
+    rng = np.random.default_rng(CONFIRM_SEED + stream)
+    if kind_s == "S1":
+        r, idx = ref.sim_s1(rng, P, B1, N1, kind, 0.0)
+        bounds = _bounds(B1, N1)
+        passes = [s1_stability_from_returns(np.concatenate([[0.0], r[i]]), idx + 1, bounds, R=R, seed=i)["p_stab"] < 0.05 for i in range(P)]
+    else:
+        x, y = ref.sim_s2(rng, P, B2, N2, kind, 0.0)
+        bounds = _bounds(B2, N2)
+        passes = [stability_check.stability_s2(x[i], y[i], bounds, -1, R=R, seed=i)["p_stab"] < 0.05 for i in range(P)]
+    return float(np.mean(passes))
+
+
 def run(P: int = 60, R: int = 500, full: bool = False, compare_reference: bool = False) -> bool:
     """Run the seven acceptance tests; returns True iff every band is met. The generator RNG
     (seed 12345) and the per-path seeds (the path index) match the reference's own `self_test`,
@@ -64,24 +91,29 @@ def run(P: int = 60, R: int = 500, full: bool = False, compare_reference: bool =
         return float(np.mean(passes))
 
     tests = [
-        ("S1 null, Gaussian iid            false-pass <= 0.07", lambda: s1_rate("gauss", 0.0), lambda v: v <= 0.07),
-        ("S1 null, t3 + volatility cluster false-pass <= 0.07", lambda: s1_rate("t3sv", 0.0), lambda v: v <= 0.07),
-        ("S1 edge a=0.006 (pooled t ~ 5)   pass >= 0.70", lambda: s1_rate("gauss", 0.006), lambda v: v >= 0.70),
-        ("S1 edge a=0.012 (pooled t ~ 11)  pass >= 0.95", lambda: s1_rate("gauss", 0.012), lambda v: v >= 0.95),
-        ("S2 null, Gaussian                false-pass <= 0.07", lambda: s2_rate("gauss", 0.0), lambda v: v <= 0.07),
-        ("S2 null, t3 + volatility cluster false-pass <= 0.07", lambda: s2_rate("t3sv", 0.0), lambda v: v <= 0.07),
-        ("S2 edge a=0.003 (corr ~ -0.16)   pass >= 0.80", lambda: s2_rate("gauss", 0.003), lambda v: v >= 0.80),
+        ("S1 null, Gaussian iid            false-pass <= 0.07", lambda: s1_rate("gauss", 0.0), lambda v: v <= 0.07, ("S1", "gauss")),
+        ("S1 null, t3 + volatility cluster false-pass <= 0.07", lambda: s1_rate("t3sv", 0.0), lambda v: v <= 0.07, ("S1", "t3sv")),
+        ("S1 edge a=0.006 (pooled t ~ 5)   pass >= 0.70", lambda: s1_rate("gauss", 0.006), lambda v: v >= 0.70, None),
+        ("S1 edge a=0.012 (pooled t ~ 11)  pass >= 0.95", lambda: s1_rate("gauss", 0.012), lambda v: v >= 0.95, None),
+        ("S2 null, Gaussian                false-pass <= 0.07", lambda: s2_rate("gauss", 0.0), lambda v: v <= 0.07, ("S2", "gauss")),
+        ("S2 null, t3 + volatility cluster false-pass <= 0.07", lambda: s2_rate("t3sv", 0.0), lambda v: v <= 0.07, ("S2", "t3sv")),
+        ("S2 edge a=0.003 (corr ~ -0.16)   pass >= 0.80", lambda: s2_rate("gauss", 0.003), lambda v: v >= 0.80, None),
     ]
     print(f"stability acceptance: {P} paths per test, R = {R} replicates{' (FULL)' if full else ' (reduced)'}", flush=True)
     ok = True
     t_start = time.time()
-    for name, runner, check in tests:
+    for test_no, (name, runner, check, conf) in enumerate(tests):
         t0 = time.time()
         v = runner()
         observed.append(v)
         good = bool(check(v))
+        note = ""
+        if not good and conf is not None:  # false-pass row missed its band: the confirmation run decides (section 3a)
+            vc = confirm_false_pass(conf[0], conf[1], R, stream=test_no)
+            good = vc <= FALSE_PASS_BAND
+            note = f"   [{P}-path rate above the band; confirmation run {CONFIRM_PATHS} paths, R = {R}: observed {vc:.3f} -> {'accepted' if good else 'REJECTED'}]"
         ok &= good
-        print(f"  {'PASS' if good else 'FAIL'}  {name}   observed {v:.3f}   ({time.time() - t0:.0f}s)", flush=True)
+        print(f"  {'PASS' if good else 'FAIL'}  {name}   observed {v:.3f}   ({time.time() - t0:.0f}s){note}", flush=True)
     print(f"total {time.time() - t_start:.0f}s")
     if compare_reference:
         print("reference's own self_test, same seeds (expect identical observed rates):", flush=True)
@@ -101,5 +133,25 @@ def run(P: int = 60, R: int = 500, full: bool = False, compare_reference: bool =
     return ok
 
 
+def confirm_s2_null(R: int = 2000) -> bool:
+    """The confirmation run asked for in answer-to-message-19 section 3a: both S2 false-pass rows, 1000 fresh paths each,
+    at the production R. Exit 0 iff both observed rates are <= 7%."""
+    print(f"S2 false-pass confirmation run: {CONFIRM_PATHS} fresh null paths per row, R = {R} (production), "
+          f"generator seed {CONFIRM_SEED} + row, path seeds 0..{CONFIRM_PATHS - 1}", flush=True)
+    ok = True
+    for stream, (label, kind) in enumerate((("S2 null, Gaussian", "gauss"), ("S2 null, t3 + volatility cluster", "t3sv"))):
+        t0 = time.time()
+        v = confirm_false_pass("S2", kind, R, stream=stream)
+        n_pass = int(round(v * CONFIRM_PATHS))
+        good = v <= FALSE_PASS_BAND
+        ok &= good
+        se = (v * (1 - v) / CONFIRM_PATHS) ** 0.5
+        print(f"  {'PASS' if good else 'FAIL'}  {label:36s} false-pass {n_pass}/{CONFIRM_PATHS} = {v:.3f} (binomial se {se:.3f}; band <= 0.07)   ({time.time() - t0:.0f}s)", flush=True)
+    print("S2 FALSE-PASS CONFIRMATION PASSED" if ok else "S2 FALSE-PASS CONFIRMATION FAILED")
+    return ok
+
+
 if __name__ == "__main__":
+    if "--confirm-s2-null" in sys.argv:
+        sys.exit(0 if confirm_s2_null() else 1)
     sys.exit(0 if run(full="--full" in sys.argv, compare_reference="--compare-reference" in sys.argv) else 1)

@@ -48,6 +48,7 @@ run economic_gate.py
 run freeze_manifest.py
 run forward_test.py
 run formula_s1.py
+run formula_s2.py
 run run_s1.py --self-test
 run selftest_registry_hygiene.py
 run selftest_research_cli.py

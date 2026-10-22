@@ -54,6 +54,26 @@ summary but matter for not repeating past mistakes.
   fact, or a return spanning the boundary can leak in.
 - Cost assumptions (from `costs.py`): base round trip 0.24%, stress round trip 0.30%.
 
+- S2 (Work Order 1.6, D2): `formula_s2.py` is the S2 twin of `formula_s1.py`; it reuses `funding.funding_observations`,
+  `formula_s1.block_structure`/`sigma30`/`_calendar`, `stability_check.stability_s2`, `nonstationarity`,
+  `multitest.annotate_family`, `economic_gate`, `rule_evaluator` and `registry` unchanged. Read its docstring first: it lists
+  the five interpretation choices. Points worth remembering: (1) a missing NATIVE funding row masks two observations (the
+  one it belongs to and the next, whose window needs a settlement at s-8h), so one hole costs 272 origins through R2;
+  (2) `ranks()` uses only slots <= i, rounds to 12 decimals before comparing (ties are exact), and returns NaN unless all
+  270 previous slots and the current one are finite; (3) the registry's discovery `p_value` is the RAW primary-cell p
+  (S1 did the same), `family_p_holm` is the within-2 Holm; `registry.holm_at_step` keys on `detail.p_value`;
+  (4) the gate places a decision on the last 1h row with label <= s, so rule_evaluator's `shift(1)` executes it at the
+  open of s+1h, or at the next available bar when that bar is missing (counted as `late_executions`); (5) gate mode "A" is
+  the order's literal reading and is the one recorded; mode "B" is a labeled variant, never recorded; (6) sigma30 for
+  the stability target is computed from the daily file with the previous day's close for all three settlements of a day.
+- `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
+  path count OR at <= 7% in an automatic 1000-path confirmation (fresh generator stream 777 + row, same R); the
+  confirmation never changes the main run's random stream, so reduced and full outputs are unchanged otherwise.
+  `--confirm-s2-null` runs just the two S2 false-pass rows at 1000 paths, R 2000 (about 75 s).
+- Sandbox (D2): the agent sandbox can `git clone` the public repo and run the self-tests (pip: numpy, pandas, statsmodels,
+  scipy, pyarrow) but has no market data, so anything touching real data is run only on the owner's machine. A single
+  sandbox command is limited to 300 s: run long jobs detached (`setsid nohup ... &`) and poll.
+
 ## Gotchas actually hit (don't re-discover these)
 - **`stats_fingerprint.get_nonoverlapping_returns`'s returned Series index is a raw row
   *position* from the source dataframe (`df[col].iloc[::k]` preserves original positional

@@ -10,11 +10,11 @@
 #
 # Usage:   bash diag_state.sh                      (assumes ~/apps/crypto_bot)
 #          bash diag_state.sh /path/to/crypto_bot
-# Output:  printed on screen AND saved to ~/Desktop/crypto_bot_diag.txt
+# Output:  printed on screen AND saved to <repo>/temp/crypto_bot_diag.txt (inside the project root, gitignored;
+#          nothing is ever written outside the project root).
 #          Paste the output into the chat (it is plain text, about 100-250 lines).
 
 REPO="${1:-$HOME/apps/crypto_bot}"
-OUT="$HOME/Desktop/crypto_bot_diag.txt"
 REG="user_data/analysis/results/registry.jsonl"
 
 if [ ! -d "$REPO/.git" ]; then
@@ -22,6 +22,8 @@ if [ ! -d "$REPO/.git" ]; then
   exit 1
 fi
 cd "$REPO" || exit 1
+mkdir -p temp
+OUT="$(pwd -P)/temp/crypto_bot_diag.txt"
 
 TMP_ORIGIN_REG="$(mktemp)"
 trap 'rm -f "$TMP_ORIGIN_REG"' EXIT
