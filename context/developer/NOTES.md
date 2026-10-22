@@ -66,6 +66,13 @@ summary but matter for not repeating past mistakes.
   open of s+1h, or at the next available bar when that bar is missing (counted as `late_executions`); (5) gate mode "A" is
   the order's literal reading and is the one recorded; mode "B" is a labeled variant, never recorded; (6) sigma30 for
   the stability target is computed from the daily file with the previous day's close for all three settlements of a day.
+- `run_s2.py` (Work Order 1.6 step 2): `--origin-facts` is read-only (no registry, no p-values, no returns; it needs only which bars
+  exist); the run writes exactly three records per pair to a scratch registry (or `--registry-path` any non-live file) unless
+  `--commit-to-registry`. The discovery record holds the raw primary p (72h) in `p_value`, the within-2 Holm in `family_p_holm`,
+  both cells in `all_cells`, the origin facts, funding facts (first settlement, masked count, tie share) and the post-cutoff row
+  counts; the stability record holds p_stab, T, B, R, seed, min_shift, horizon_h and s_b; the gate record is mode A plus
+  `late_executions`. Labeled variants (gate mode B, 24h stability, rank robustness, extremes, by-year) are returned, never
+  recorded. Its self-test writes synthetic feather files (world runs past the cutoff on purpose).
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
   path count OR at <= 7% in an automatic 1000-path confirmation (fresh generator stream 777 + row, same R); the
   confirmation never changes the main run's random stream, so reduced and full outputs are unchanged otherwise.

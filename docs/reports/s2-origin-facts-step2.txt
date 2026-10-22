@@ -1,0 +1,35 @@
+S2 origin facts (read-only), Work Order 1.6 step 2, produced by deliveries/8/apply.sh on 2026-10-22T05:09:59Z (repo HEAD before this commit: 11a5fbb)
+python: Python 3.12.7; numpy: 2.5.3
+command: python3 run_s2.py --pair <PAIR> --origin-facts
+
+=== S2 origin facts: ETH_USDT ===
+funding native file: 6314 rows up to the cutoff, first settlement 2019-11-27 08:00:00+00:00, last 2025-08-31 16:00:00+00:00; interval hours (counts): {'8.0': 6313}; interval changes: 0
+8h observations: 6314 (complete 6313, masked 1, touched by an interval change 0); tie share at the modal value 0.0001: 0.3963 of 6313 (expect about 0.396 ETH, 0.401 BTC)
+rows dropped by the cutoff (funding / 1h / 1d): 1157 / 9216 / 384; rows after the cutoff left in the discovery frames: {'funding': 0, '1h': 0, '1d': 0} (must all be 0)
+settlement grid: 6314 slots, 2019-11-27 08:00:00+00:00 .. 2025-08-31 16:00:00+00:00; slot 272 = 2020-02-25 16:00:00+00:00
+1h file (discovery): 70356 rows 2017-08-17 04:00:00+00:00 .. 2025-08-31 23:00:00+00:00, missing hours inside: 128
+1d file (discovery): 2937 rows 2017-08-17 00:00:00+00:00 .. 2025-08-31 00:00:00+00:00, missing days inside: 0
+first origin: 2020-02-25 16:00:00+00:00   (= first settlement + 271 x 8h: True)
+last origin: 2025-08-28 16:00:00+00:00   (last settlement with s+1h+72h <= last 1h bar 2025-08-31 23:00:00+00:00, i.e. s <= 2025-08-28 22:00:00+00:00; expected 2025-08-28 16:00)
+nominal origins: 6034   usable: 6031   excluded: 3   by reason: {'rank_invalid': 0, 'entry_bar_missing': 1, 'exit24_bar_missing': 1, 'exit72_bar_missing': 1}
+span 2012 days; full 90-day blocks: 22 (stricter cross-check: 22); partial block origins: 94; origins per full block (min/median/max): 267/270.0/270
+expected by Work Order 1.6 before gap exclusions: about 6,269 origins and 23 full blocks (BTC), about 6,035 and 22 (ETH); 270 per full block
+gate segment: 6043 settlements from the first origin; long decisions mode A 3357, mode B 3357; settlements where A and B differ: 0
+economic gate tiling (blocks.tile_blocks over the 1h discovery rows from the first origin): full blocks 22, same full blocks as the origin-based tiling: True; its partial block runs 34 days
+(no p-values or returns are computed here; nothing is written)
+
+=== S2 origin facts: BTC_USDT ===
+funding native file: 6548 rows up to the cutoff, first settlement 2019-09-10 08:00:00+00:00, last 2025-08-31 16:00:00+00:00; interval hours (counts): {'8.0': 6547}; interval changes: 0
+8h observations: 6548 (complete 6547, masked 1, touched by an interval change 0); tie share at the modal value 0.0001: 0.4005 of 6547 (expect about 0.396 ETH, 0.401 BTC)
+rows dropped by the cutoff (funding / 1h / 1d): 1157 / 9246 / 385; rows after the cutoff left in the discovery frames: {'funding': 0, '1h': 0, '1d': 0} (must all be 0)
+settlement grid: 6548 slots, 2019-09-10 08:00:00+00:00 .. 2025-08-31 16:00:00+00:00; slot 272 = 2019-12-09 16:00:00+00:00
+1h file (discovery): 70356 rows 2017-08-17 04:00:00+00:00 .. 2025-08-31 23:00:00+00:00, missing hours inside: 128
+1d file (discovery): 2937 rows 2017-08-17 00:00:00+00:00 .. 2025-08-31 00:00:00+00:00, missing days inside: 0
+first origin: 2019-12-09 16:00:00+00:00   (= first settlement + 271 x 8h: True)
+last origin: 2025-08-28 16:00:00+00:00   (last settlement with s+1h+72h <= last 1h bar 2025-08-31 23:00:00+00:00, i.e. s <= 2025-08-28 22:00:00+00:00; expected 2025-08-28 16:00)
+nominal origins: 6268   usable: 6265   excluded: 3   by reason: {'rank_invalid': 0, 'entry_bar_missing': 1, 'exit24_bar_missing': 1, 'exit72_bar_missing': 1}
+span 2090 days; full 90-day blocks: 23 (stricter cross-check: 23); partial block origins: 58; origins per full block (min/median/max): 267/270.0/270
+expected by Work Order 1.6 before gap exclusions: about 6,269 origins and 23 full blocks (BTC), about 6,035 and 22 (ETH); 270 per full block
+gate segment: 6277 settlements from the first origin; long decisions mode A 3129, mode B 3129; settlements where A and B differ: 0
+economic gate tiling (blocks.tile_blocks over the 1h discovery rows from the first origin): full blocks 23, same full blocks as the origin-based tiling: True; its partial block runs 22 days
+(no p-values or returns are computed here; nothing is written)

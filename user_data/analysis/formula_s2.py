@@ -316,13 +316,15 @@ def extremes_table(xy: pd.DataFrame, lo: float = 0.10, hi: float = 0.90) -> pd.D
 
 
 # ----------------------------------------------------------------------------- stability and by-year
-def s2_stability(xy: pd.DataFrame, origins: pd.DatetimeIndex, R: int = STABILITY_R, seed: int = STABILITY_SEED, min_shift: int = MIN_SHIFT) -> dict:
-    """The amended stability check, S2 variant, on the primary cell (72h): blocks from `formula_s1.block_structure`,
-    x = mid-rank, y = 72h forward return / sigma30 (past-only), d = -1, circular time-shift null."""
+def s2_stability(xy: pd.DataFrame, origins: pd.DatetimeIndex, R: int = STABILITY_R, seed: int = STABILITY_SEED, min_shift: int = MIN_SHIFT,
+                 horizon: int = PRIMARY_H) -> dict:
+    """The amended stability check, S2 variant, on the primary cell (72h, `horizon` only for the labeled 24h variant):
+    blocks from `formula_s1.block_structure`, x = mid-rank, y = forward return / sigma30 (past-only), d = -1,
+    circular time-shift null."""
     struct = formula_s1.block_structure(origins, BLOCK_DAYS)
     bounds = stability_check.full_block_bounds(origins, struct)
     x = xy["rank"].to_numpy(float)
-    y = (xy[f"y{PRIMARY_H}"] / xy["sigma30"]).to_numpy(float)
+    y = (xy[f"y{horizon}"] / xy["sigma30"]).to_numpy(float)
     if not (np.isfinite(x).all() and np.isfinite(y).all()):
         raise ValueError("non-finite stability vectors")
     out = stability_check.stability_s2(x, y, bounds, DIRECTION, R, min_shift, seed)
@@ -333,7 +335,7 @@ def s2_stability(xy: pd.DataFrame, origins: pd.DatetimeIndex, R: int = STABILITY
             "partial_block_origins": struct["partial_origins"],
             "block_starts": [b["start"].date().isoformat() for b in full],
             "block_origin_counts": [len(b["origins"]) for b in full],
-            "horizon_h": PRIMARY_H,
+            "horizon_h": horizon,
         }
     )
     return out

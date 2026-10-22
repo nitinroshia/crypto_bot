@@ -1,11 +1,11 @@
 # Project status
 
-Last updated: 2026-10-21, by D2 (developer), Work Order 1.6 step 1 (delivery 7). The first section below is the
+Last updated: 2026-10-22, by D2 (developer), Work Order 1.6 step 2 (delivery 8, dry run). The first section below is the
 current state. "Current state (D1, 2026-10-18)" is D1's text, kept verbatim as history (S1 is now closed; see
 below). Everything under "Historical status" is the 2026-09-25 text, also verbatim, and is STALE wherever it
 conflicts with the sections above it.
 
-## Current state (D2, 2026-10-21)
+## Current state (D2, 2026-10-22)
 - Rules: `docs/PROTOCOL.md` (the owner's three hard limits and the delivery contract). Task: `docs/work-orders/1.6.md`
   (S2 `funding_extreme` for both pairs, through the economic gate; stop after the S2 report is committed). Work Order
   1.5 (R1-R4, A1-A6), `docs/correspondence/answer-04.md` and `answer-to-message-19.md` stay in force. Agents: M2
@@ -13,29 +13,34 @@ conflicts with the sections above it.
 - S1 is closed without advancing on either pair (`docs/reports/s1-report-step6.md`, accepted by M1). Nothing is frozen,
   nothing is forward-tested, the holdout unlock (one-shot) has never been used; S2 must not change that.
 - Verified by output from the owner's machine (diag run 2026-10-20T14:18:59Z, Step 0): folder clean at `a787d41`,
-  equal to `origin/main` (0 commits either way), no stashes, `registry.jsonl` 20 lines equal to GitHub, venv Python 3.12.7.
-  Raw data present for both pairs: `*-1h`, `*-1d` and `*-funding` feather files (the 5m/15m/1m files are not used by S2).
-- Delivery 7 (Work Order 1.6 step 1) is prepared in `deliveries/7/`: `formula_s2.py` (S2 predictor, target, common origin
-  set, two cells, stability, by-year hooks, economic-gate hooks, and its self-test), `selftest_all.sh` (runs it),
-  `stability_acceptance.py` (the false-pass rule of answer-to-message-19 section 3a, a `--confirm-s2-null` mode),
-  `scripts/diag_state.sh` (writes its copy to `temp/`, no longer to the Desktop), the D2 row in `docs/PROTOCOL.md`, the
-  confirmation run's output in `docs/history/2026-10-21_s2-null-confirmation.txt`, and `message-20.md` to M2.
-  NOT VERIFIED until the owner's PASS output for delivery 7 comes back. Sandbox only (Python 3.12.3, numpy 2.4.4,
-  pandas 3.0.2): the formula_s2 self-test passes in about 20 s; `stability_acceptance.py --full` reproduces D1's seven
-  observed rates exactly (S2 Gaussian 0.085 at 200 paths, then accepted by a 1000-path confirmation at 0.048); the
-  `--confirm-s2-null` run gives 56/1000 (Gaussian) and 53/1000 (t3 + volatility cluster) at R 2000.
-- No shared module was changed except `stability_acceptance.py` (not used by the S1 report generator) and
-  `selftest_all.sh` (one added line). The S1 report generator is re-run by delivery 7 as a regression check: it refuses
-  unless every recomputed S1 figure reproduces the registry.
-- Design of S2 (all in `formula_s2.py`'s docstring; every interpretation choice is repeated in message-20): one common
-  origin set per pair on the 8h settlement grid (slot 272 on; last settlement with s+1h+72h <= the last 1h bar);
-  mid-rank over the 270 previous slots with R2 masking; target = ln(open[s+1h+H]/open[s+1h]), H 24h and 72h; two cells,
-  primary 72h; stability on the 72h cell with the existing `stability_check.stability_s2`; the gate is the existing
-  `economic_gate` on the 1h frame with the rule "long while the latest valid rank <= 0.5", recorded in mode A (literal
-  reading of the order), mode B (only an invalid rank forces cash) as a labeled variant.
-- NEXT (Work Order 1.6 step 2): `run_s2.py` (dry run on a scratch registry, then, only after the owner's explicit flag,
-  the live run once per pair: three records per pair, `S2-ETHUSDT` and `S2-BTCUSDT`), then step 3 (the S2 report).
-  The live registry is untouched so far (20 lines).
+  equal to `origin/main`, no stashes, `registry.jsonl` 20 lines equal to GitHub, venv Python 3.12.7. Raw data present for
+  both pairs: `*-1h`, `*-1d`, `*-funding` feather files.
+- Verified by output from the owner's machine (delivery 7, 2026-10-22): `PASS commit 11a5fbb`; 37 self-tests passed (including
+  `formula_s2.py`); the live registry stayed byte-identical (20 lines); the S1 report generator, regenerated read-only,
+  reproduced every recorded S1 figure and its summary table equals the committed one (the regression check: no shared
+  module changed except `stability_acceptance.py`, not used by the S1 report); the S2 false-pass confirmation (1000 fresh null
+  paths per row, R 2000, Python 3.12.7, numpy 2.5.3) gave Gaussian 56/1000 = 0.056 and t3 + volatility cluster 53/1000 = 0.053,
+  both within the 7% band; output committed as `docs/history/2026-10-21_s2-null-confirmation.txt`. `scripts/diag_state.sh` now writes
+  its copy to `temp/crypto_bot_diag.txt`. The D2 row is in `docs/PROTOCOL.md`; `message-20.md` (D2 to M2) lists the
+  interpretation choices.
+- Delivery 8 (Work Order 1.6 step 2, dry run) is prepared in `deliveries/8/`: `run_s2.py` (read-only `--origin-facts`; the run
+  writes exactly three records per pair, discovery / stability / economic_gate, to a SCRATCH registry unless
+  `--commit-to-registry`), `formula_s2.py` (adds a `horizon` parameter to `s2_stability` for the labeled 24h variant),
+  `selftest_all.sh` (runs `run_s2.py --self-test`, 38 tests). Its apply script prints and commits the origin facts of both
+  pairs (`docs/reports/s2-origin-facts-step2.txt`), then a dry run of both pairs on a fresh scratch registry
+  (`docs/reports/s2-dry-run-step2.txt` and `docs/reports/s2-dry-run-records-step2.jsonl`). NOT VERIFIED until the owner's
+  PASS output comes back. It never touches the live registry.
+- RULE for the dry run and the live run: after the dry-run numbers are seen, code changes are bug fixes only; no reading of the
+  order is changed because of an outcome. The live run (delivery 9) happens only after the owner's explicit flag, once per
+  pair, and its records must equal the dry-run records (timestamps aside) with the first 20 registry lines byte-identical.
+- Design of S2 (all in `formula_s2.py`'s docstring; every interpretation choice is repeated in message-20): one common origin
+  set per pair on the 8h settlement grid (slot 272 on; last settlement with s+1h+72h <= the last 1h bar); mid-rank over the 270
+  previous slots with R2 masking; target = ln(open[s+1h+H]/open[s+1h]), H 24h and 72h; two cells, primary 72h; stability on the
+  72h cell with `stability_check.stability_s2`; the gate is the existing `economic_gate` on the 1h frame with the rule "long while the
+  latest valid rank <= 0.5", recorded in mode A (literal reading of the order), mode B (only an invalid rank forces cash) as a
+  labeled variant, never recorded.
+- NEXT: delivery 9 = the live run (after the owner's flag), then delivery 10 = the S2 report (`s2_report.py`, read-only,
+  refuses unless every recomputed figure reproduces the registry).
 
 ## Current state (D1, 2026-10-18)
 - Rules: `docs/PROTOCOL.md` (owner's three hard limits and the delivery contract). Task: `docs/work-orders/1.5.md`

@@ -1,0 +1,122 @@
+S2 dry run on a scratch registry (not live), Work Order 1.6 step 2, produced by deliveries/8/apply.sh on 2026-10-22T05:10:00Z (repo HEAD before this commit: 11a5fbb)
+python: Python 3.12.7; numpy: 2.5.3
+command: python3 run_s2.py --pair <PAIR> --registry-path <scratch file>; labeled variants are not recorded
+REGISTRY: scratch (live registry untouched) -> /Users/apple/apps/crypto_bot/temp/s2-dryrun-20261022T050903Z.jsonl
+
+=== S2 run: S2-ETHUSDT (ETHUSDT) ===
+
+-- Discovery (2 cells, one common origin set, Holm within the 2; one-sided p in the NEGATIVE direction) --
+ H  hac_lags     slope       se      corr    t_stat  p_value   p_holm  p_bonferroni    n
+24         3 -0.001505 0.002725 -0.010197 -0.552311 0.290368 0.580735      0.580735 6031
+72         9 -0.000662 0.006835 -0.002609 -0.096834 0.461429 0.580735      0.922858 6031
+Primary cell (H = 72h): slope=-0.000661852  HAC SE=0.00683491  n=6031
+
+-- Rank robustness, primary cell (labeled, never recorded) --
+           variant     slope       se      corr    t_stat  p_value
+mid-rank (primary) -0.000662 0.006835 -0.002609 -0.096834 0.461429
+      strict-below -0.001543 0.006633 -0.006505 -0.232661 0.408012
+       at-or-below  0.000361 0.005790  0.001573  0.062357 0.524861
+
+-- Descriptive extremes (exploratory only) --
+ H        group   n  mean_fwd_return  unconditional_mean   excess
+24 rank <= 0.10 686         0.003894            0.001436 0.002457
+24 rank >= 0.90 627         0.003139            0.001436 0.001703
+72 rank <= 0.10 686         0.009541            0.004422 0.005120
+72 rank >= 0.90 627         0.007495            0.004422 0.003073
+
+-- Origins -- first 2020-02-25 16:00:00+00:00  last 2025-08-28 16:00:00+00:00  n 6031 (nominal 6034, excluded 3 {'rank_invalid': 0, 'entry_bar_missing': 1, 'exit24_bar_missing': 1, 'exit72_bar_missing': 1})  full blocks 22  partial block origins 94
+
+-- Stability (amended statistic, S2 time-shift variant, primary cell) --
+T=0.2713  p_stab=0.384308  B=22  R=2000  seed=12345  min_shift=300  share of blocks with s_b>0: 54.5%  passes (p_stab<0.05, before Holm across candidates)=False
+block  start       origins   s_b
+    0  2020-02-25      270     1.171
+    1  2020-05-25      270    -1.758
+    2  2020-08-23      270    -0.311
+    3  2020-11-21      267    -0.361
+    4  2021-02-19      270     1.270
+    5  2021-05-20      270     0.053
+    6  2021-08-18      270     0.154
+    7  2021-11-16      270    -0.719
+    8  2022-02-14      270     0.841
+    9  2022-05-15      270     0.005
+   10  2022-08-13      270    -0.256
+   11  2022-11-11      270    -0.391
+   12  2023-02-09      270     1.534
+   13  2023-05-10      270     1.414
+   14  2023-08-08      270     0.588
+   15  2023-11-06      270    -0.329
+   16  2024-02-04      270     0.009
+   17  2024-05-04      270     1.742
+   18  2024-08-02      270     0.020
+   19  2024-10-31      270    -1.224
+   20  2025-01-29      270    -1.759
+   21  2025-04-29      270    -0.418
+labeled variant, stability on the 24h target (not recorded): T=0.6955 p_stab=0.230385
+
+-- Economic gate (stress cost, mode A = the order's literal reading; recorded) --
+pooled_net_return=0.431909  pass_rate=63.64%  passes_pooled=True  passes_block_rate=False  passes=False
+trades 1036  hit rate 0.494  exposure 0.555  late executions 0  buy-and-hold pooled 16.7209 (non-negative blocks 59.1%)
+labeled variant, gate mode B (not recorded): pooled 0.431909  pass_rate 63.64%  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+
+REGISTRY: scratch (live registry untouched) -> /Users/apple/apps/crypto_bot/temp/s2-dryrun-20261022T050903Z.jsonl
+
+=== S2 run: S2-BTCUSDT (BTCUSDT) ===
+
+-- Discovery (2 cells, one common origin set, Holm within the 2; one-sided p in the NEGATIVE direction) --
+ H  hac_lags     slope       se      corr    t_stat  p_value   p_holm  p_bonferroni    n
+24         3 -0.003788 0.001961 -0.034046 -1.931716 0.026697 0.053395      0.053395 6265
+72         9 -0.005402 0.004943 -0.028662 -1.092780 0.137245 0.137245      0.274490 6265
+Primary cell (H = 72h): slope=-0.00540211  HAC SE=0.00494346  n=6265
+
+-- Rank robustness, primary cell (labeled, never recorded) --
+           variant     slope       se      corr    t_stat  p_value
+mid-rank (primary) -0.005402 0.004943 -0.028662 -1.092780 0.137245
+      strict-below -0.004398 0.005170 -0.023351 -0.850665 0.197478
+       at-or-below -0.004913 0.004110 -0.029752 -1.195326 0.115980
+
+-- Descriptive extremes (exploratory only) --
+ H        group   n  mean_fwd_return  unconditional_mean   excess
+24 rank <= 0.10 745         0.006375            0.001289 0.005086
+24 rank >= 0.90 627         0.002351            0.001289 0.001061
+72 rank <= 0.10 745         0.013197            0.003896 0.009302
+72 rank >= 0.90 627         0.009424            0.003896 0.005529
+
+-- Origins -- first 2019-12-09 16:00:00+00:00  last 2025-08-28 16:00:00+00:00  n 6265 (nominal 6268, excluded 3 {'rank_invalid': 0, 'entry_bar_missing': 1, 'exit24_bar_missing': 1, 'exit72_bar_missing': 1})  full blocks 23  partial block origins 58
+
+-- Stability (amended statistic, S2 time-shift variant, primary cell) --
+T=1.1411  p_stab=0.0994503  B=23  R=2000  seed=12345  min_shift=300  share of blocks with s_b>0: 60.9%  passes (p_stab<0.05, before Holm across candidates)=False
+block  start       origins   s_b
+    0  2019-12-09      270     0.551
+    1  2020-03-08      270     0.176
+    2  2020-06-06      270    -0.099
+    3  2020-09-04      270     1.344
+    4  2020-12-03      267    -1.277
+    5  2021-03-03      270     0.410
+    6  2021-06-01      270     0.198
+    7  2021-08-30      270     0.210
+    8  2021-11-28      270    -0.338
+    9  2022-02-26      270     1.879
+   10  2022-05-27      270    -0.720
+   11  2022-08-25      270     1.597
+   12  2022-11-23      270    -0.379
+   13  2023-02-21      270     0.834
+   14  2023-05-22      270     2.264
+   15  2023-08-20      270     0.229
+   16  2023-11-18      270     0.230
+   17  2024-02-16      270    -0.985
+   18  2024-05-16      270     0.935
+   19  2024-08-14      270    -0.847
+   20  2024-11-12      270    -0.346
+   21  2025-02-10      270    -1.070
+   22  2025-05-11      270     0.677
+labeled variant, stability on the 24h target (not recorded): T=1.6003 p_stab=0.0389805
+
+-- Economic gate (stress cost, mode A = the order's literal reading; recorded) --
+pooled_net_return=0.262307  pass_rate=47.83%  passes_pooled=True  passes_block_rate=False  passes=False
+trades 1020  hit rate 0.429  exposure 0.499  late executions 0  buy-and-hold pooled 13.5584 (non-negative blocks 69.6%)
+labeled variant, gate mode B (not recorded): pooled 0.262307  pass_rate 47.83%  passes=False
+
+NOT frozen, NOT forward-tested -- results above are for review before proceeding.
+
