@@ -67,6 +67,7 @@ Never edit another role's NOTES file.
 |---|---|---|---|---|
 | M0 | mathematician | before 2026-10-14 | ended | sessions before this protocol |
 | D0 | developer | before 2026-10-14 | ended | sessions before this protocol |
-| M1 | mathematician | 2026-10-14 | active | wrote this protocol |
-| D1 | developer | 2026-10-17 | ended | built the S1 pipeline and report; last message `message-19` |
-| D2 | developer | 2026-10-20 | active | took Work Order 1.6 (S2) from the repo |
+| M1 | mathematician | 2026-10-14 | ended | wrote this protocol; handoff `docs/handoffs/M1-handoff.md` (2026-10-19) |
+| D1 | developer | by 2026-10-17 | ended | completed Work Order 1.5 (S1), 2026-10-19 |
+| M2 | mathematician | 2026-10-20 | active | after M1; `context/mathematician/NOTES.md` refreshed 2026-10-23 |
+| D2 | developer | 2026-10-20 | active | Work Order 1.6 (S2); Work Order 1.7 (Task 3) next |
