@@ -13,8 +13,10 @@ SPEC (Work Order 1.6 section 1 and 2), in one place
                 Ties are exact after rounding to 12 decimals (the same rounding funding.tie_share uses).
                 Strict-below and at-or-below ranks are computed too, as labeled robustness columns only.
   target        ln(open[s+1h+H] / open[s+1h]) on the 1h file, H in {24h, 72h} in clock time.
-  cells         two: H=24h (HAC 3 lags) and H=72h (HAC 9 lags, PRIMARY). OLS slope with intercept,
-                Newey-West HAC, direction NEGATIVE, one-sided p in the negative direction, Holm within the 2.
+  cells         two: H=24h (HAC 12 lags) and H=72h (HAC 36 lags, PRIMARY): 4 x H/8h, M2's ruling of 2026-10-23 which
+                replaces the 3 and 9 lags of Work Order 1.6 (the superseded lags are kept only as a labeled sensitivity
+                column, never used for a decision). OLS slope with intercept, Newey-West (Bartlett) HAC, direction
+                NEGATIVE, one-sided p in the negative direction, Holm within the 2, MDE = 2.486 x HAC SE.
   origins       one COMMON set per pair: settlements from slot 272 (first settlement + 271 x 8h) to the
                 last settlement s with s + 1h + 72h <= the last 1h bar of the discovery frame; an origin
                 whose rank is invalid (R2), entry bar (s+1h) or either exit bar is missing from the 1h file
@@ -29,10 +31,12 @@ SPEC (Work Order 1.6 section 1 and 2), in one place
 
 INTERPRETATION CHOICES (every one is listed in the S2 report)
   1. Stability horizon: the work order does not say which horizon y uses; the PRIMARY cell (72h) is used.
-  2. Gate validity, literal reading (mode "A", the one recorded): a settlement has a valid rank for the gate when
-     its rank is valid (R2) AND its entry bar exists AND, for settlements that are nominal origins, the origin is
-     not gap-excluded (so a missing EXIT bar up to 73h later forces cash). Mode "B" (labeled variant, never
-     recorded): only an invalid rank forces cash; a missing entry bar just delays execution to the next bar.
+  2. Gate validity (M2's ruling of 2026-10-23). Mode "primary" (the one recorded): the position at settlement s is
+     cash exactly when rank_s is not valid (R2: the current observation or any of the 270 previous slots masked),
+     otherwise long if rank_s <= 0.5; whether the entry or exit bars of the targets exist decides only whether s
+     belongs to the regression and stability origin set, never the strategy. Mode "literal" (labeled variant, never
+     recorded): the order's literal reading, a settlement is also cash when its entry bar is missing or, for a nominal
+     origin, when it is gap-excluded (a missing EXIT bar up to 73h later forces cash).
   3. Gate segment: it starts flat at the first origin and acts on every settlement up to the last discovery bar
      (the rule needs no forward window), as S1's gate did; it is forced out at the last discovery bar's close.
   4. A decision made at settlement s is placed on the last 1h row with label <= s, so it executes at the next
@@ -66,7 +70,9 @@ SETTLEMENT_HOURS = 8
 ENTRY_LAG_HOURS = 1
 HORIZONS_H = [24, 72]
 PRIMARY_H = 72
-HAC_LAGS = {24: 3, 72: 9}
+HAC_LAGS = {24: 12, 72: 36}  # 4 x H/8h (M2, 2026-10-23); see hac_lags() for other settlement intervals
+SUPERSEDED_HAC_LAGS = {24: 3, 72: 9}  # Work Order 1.6's lags: labeled sensitivity column only
+MDE_MULTIPLIER = 2.486
 DIRECTION = -1  # negative: higher funding, lower forward return
 BLOCK_DAYS = 90
 SIGMA_WINDOW = formula_s1.SIGMA_WINDOW  # 30
@@ -81,6 +87,13 @@ REASONS = ("rank_invalid", "entry_bar_missing", "exit24_bar_missing", "exit72_ba
 
 def _norm_sf(z: float) -> float:
     return 0.5 * (1 - erf(z / sqrt(2)))
+
+
+def hac_lags(H: int, interval_hours: float = SETTLEMENT_HOURS) -> int:
+    """4 x ceil(H / shortest settlement interval): 12 for 24h and 36 for 72h at 8h (M2's ruling of 2026-10-23)."""
+    from math import ceil
+
+    return 4 * int(ceil(H / interval_hours))
 
 
 def family_name(pair: str) -> str:
@@ -283,21 +296,32 @@ def _regress(x, y, hac_lags: int) -> dict:
     }
 
 
-def discovery_cells(xy: pd.DataFrame) -> pd.DataFrame:
-    """Both cells (H = 24h, 72h) on the ONE common set, Holm and Bonferroni within the 2 (annotate_family).
-    The primary cell is the row with H == PRIMARY_H. Every cell's n must equal len(xy)."""
-    rows = [{"H": H, "hac_lags": HAC_LAGS[H], **_regress(xy["rank"], xy[f"y{H}"], HAC_LAGS[H])} for H in HORIZONS_H]
+def discovery_cells(xy: pd.DataFrame, interval_hours: float = SETTLEMENT_HOURS) -> pd.DataFrame:
+    """Both cells (H = 24h, 72h) on the ONE common set, HAC lags 4 x H/8h, Holm and Bonferroni within the 2
+    (annotate_family), MDE = 2.486 x HAC SE. The primary cell is the row with H == PRIMARY_H. Every cell's n must equal len(xy)."""
+    rows = []
+    for H in HORIZONS_H:
+        L = hac_lags(H, interval_hours)
+        rows.append({"H": H, "hac_lags": L, **_regress(xy["rank"], xy[f"y{H}"], L)})
     frame = pd.DataFrame(rows)
     if not (frame["n"] == len(xy)).all():
         raise ValueError("cells are not on one common origin set")
+    frame["mde"] = MDE_MULTIPLIER * frame["se"]
     return annotate_family(frame)
+
+
+def sensitivity_superseded_lags(xy: pd.DataFrame) -> pd.DataFrame:
+    """LABELED SENSITIVITY, not used for any decision: HAC t and one-sided p with Work Order 1.6's superseded lags
+    (3 for 24h, 9 for 72h), i.e. delivery 8's figures."""
+    rows = [{"H": H, "hac_lags": SUPERSEDED_HAC_LAGS[H], **{k: v for k, v in _regress(xy["rank"], xy[f"y{H}"], SUPERSEDED_HAC_LAGS[H]).items() if k in ("se", "t_stat", "p_value")}} for H in HORIZONS_H]
+    return pd.DataFrame(rows)
 
 
 def rank_variants_primary(xy: pd.DataFrame) -> pd.DataFrame:
     """Robustness columns on the primary cell only: mid-rank (primary), strict-below, at-or-below."""
     rows = []
     for name, col in (("mid-rank (primary)", "rank"), ("strict-below", "rank_strict"), ("at-or-below", "rank_atmost")):
-        rows.append({"variant": name, **_regress(xy[col], xy[f"y{PRIMARY_H}"], HAC_LAGS[PRIMARY_H])})
+        rows.append({"variant": name, **_regress(xy[col], xy[f"y{PRIMARY_H}"], hac_lags(PRIMARY_H))})
     return pd.DataFrame(rows)
 
 
@@ -346,24 +370,24 @@ def make_primary_estimator(xy_full: pd.DataFrame):
 
     def estimator(subset_df: pd.DataFrame) -> float:
         dates = subset_df.index.intersection(xy_full.index)
-        return _regress(xy_full.loc[dates, "rank"], xy_full.loc[dates, f"y{PRIMARY_H}"], HAC_LAGS[PRIMARY_H])["slope"]
+        return _regress(xy_full.loc[dates, "rank"], xy_full.loc[dates, f"y{PRIMARY_H}"], hac_lags(PRIMARY_H))["slope"]  # slope: lags irrelevant
 
     return estimator
 
 
 # ----------------------------------------------------------------------------- economic gate hooks
-def gate_decisions(oset: dict, df1h: pd.DataFrame, mode: str = "A", threshold: float = RANK_THRESHOLD):
+def gate_decisions(oset: dict, df1h: pd.DataFrame, mode: str = "primary", threshold: float = RANK_THRESHOLD):
     """(settlement times, 0/1 decisions) for every settlement from the first origin on. 1 = long (valid rank <=
-    threshold), 0 = cash. Mode "A" (recorded): valid = rank valid AND entry bar exists AND, for nominal origins,
-    the origin is not gap-excluded. Mode "B" (labeled variant): valid = rank valid only."""
-    if mode not in ("A", "B"):
-        raise ValueError("mode must be 'A' or 'B'")
+    threshold), 0 = cash. Mode "primary" (recorded, M2's ruling): valid = rank valid only. Mode "literal" (labeled
+    variant): valid = rank valid AND entry bar exists AND, for nominal origins, the origin is not gap-excluded."""
+    if mode not in ("primary", "literal"):
+        raise ValueError("mode must be 'primary' or 'literal'")
     first = oset["origins"][0]
     m = np.asarray(oset["grid"] >= first)
     t = oset["grid"][m]
     r = oset["rank_mid"][m]
     valid_rank = np.isfinite(r)
-    if mode == "B":
+    if mode == "primary":
         valid = valid_rank
     else:
         entry_ok = df1h.index.get_indexer(t + pd.Timedelta(hours=ENTRY_LAG_HOURS)) >= 0
@@ -406,10 +430,12 @@ def signal_from_decisions(index: pd.DatetimeIndex, settle_times: pd.DatetimeInde
     return sig, info
 
 
-def s2_signal(oset: dict, df1h: pd.DataFrame, mode: str = "A"):
+def s2_signal(oset: dict, df1h: pd.DataFrame, mode: str = "primary"):
     t, v = gate_decisions(oset, df1h, mode)
+    n_masked = int((~np.isfinite(oset["rank_mid"][np.asarray(oset["grid"] >= oset["origins"][0])])).sum())
     sig, info = signal_from_decisions(df1h.index, t, v, oset["origins"][0])
     info["mode"] = mode
+    info["cash_masked_rank_settlements"] = n_masked  # settlements in the segment held in cash because rank_s is invalid (R2)
     info["n_settlements_in_segment"] = int(len(t))
     info["n_long_decisions"] = int(v.sum())
     return sig, info
@@ -482,6 +508,35 @@ def _brute_ranks(v, window):
         tied = sum(1 for p in prev if p == r[i])
         mid[i], st[i], am[i] = (below + 0.5 * tied) / window, below / window, (below + tied) / window
     return mid, st, am
+
+
+def _persistent_null(n_paths: int = 1000, n_settle: int = 6000, phi: float = 0.98, tie_share: float = 0.4, seed: int = 20261023) -> dict:
+    """M2's ruling of 2026-10-23: a persistent null through the PRODUCTION rank and regression code. Funding-like AR(1) with
+    phi = 0.98 per settlement, `tie_share` of the values exactly tied at the low end (floor), mid-rank by `ranks()`, 24h and
+    72h returns = sums of overlapping iid hourly shocks over [s+1h, s+1h+H] (no relation to funding). Returns the share of
+    paths with one-sided negative-direction p < 0.05 for each cell with the ruled lags (and, for information, the superseded)."""
+    from scipy.signal import lfilter
+
+    rng = np.random.default_rng(seed)
+    n_hours = 8 * n_settle + 80
+    last = min(n_settle - 1, (n_hours - 1 - (ENTRY_LAG_HOURS + 72) - 1) // 8)
+    idx = np.arange(RANK_WINDOW + 1, last + 1)
+    hits = {"r24": 0, "r72": 0, "r24_old": 0, "r72_old": 0}
+    for _ in range(n_paths):
+        z = lfilter([1.0], [1.0, -phi], rng.normal(0.0, 1.0, n_settle + 500))[500:]
+        floor = np.quantile(z, tie_share)
+        rates = np.where(z <= floor, 1e-4, 1e-4 + (z - floor) * 1e-4)
+        rates[0] = np.nan
+        rk = ranks(rates)["mid"][idx]
+        C = np.concatenate([[0.0], np.cumsum(rng.normal(0.0, 1.0, n_hours))])
+        for H, key in ((24, "24"), (72, "72")):
+            y = C[8 * idx + ENTRY_LAG_HOURS + H] - C[8 * idx + ENTRY_LAG_HOURS]
+            hits["r" + key] += _regress(rk, y, hac_lags(H))["p_value"] < 0.05
+            hits["r" + key + "_old"] += _regress(rk, y, SUPERSEDED_HAC_LAGS[H])["p_value"] < 0.05
+    out = {"paths": n_paths, **{k: v / n_paths for k, v in hits.items()}}
+    out["rate24"], out["rate72"], out["rate24_old"], out["rate72_old"] = out["r24"], out["r72"], out["r24_old"], out["r72_old"]
+    out["se72"] = float(np.sqrt(out["rate72"] * (1 - out["rate72"]) / n_paths))
+    return out
 
 
 def _self_test() -> None:
@@ -594,23 +649,26 @@ def _self_test() -> None:
     assert np.allclose(funding.funding_observations(t["native"])["rate"], funding.funding_observations(t2["native"])["rate"], equal_nan=True)
     print("  cutoff: post-cutoff rows after truncation = 0 (funding, 1h, 1d); last settlement <= 2025-08-31 16:00, last bar 2025-08-31 23:00, last origin 2025-08-28 16:00; post-cutoff values cannot matter")
 
-    # ---- 6. injected negative relation is recovered; null p-values roughly uniform
+    # ---- 6. injected negative relation is recovered; the PERSISTENT null keeps the 72h test at or below 8% (M2's ruling)
     c = 0.00167  # true slope -7c = -0.0117, true correlation about -0.10
     slopes, corrs, ps = [], [], []
     for s in range(40):
         wi = _make_world(600, 100 + s, c=c)
         _, _, xyi = _pipeline(wi)
-        cell = _regress(xyi["rank"], xyi["y72"], HAC_LAGS[72])
+        cell = _regress(xyi["rank"], xyi["y72"], hac_lags(72))
         slopes.append(cell["slope"]); corrs.append(cell["corr"]); ps.append(cell["p_value"])
     m, se = float(np.mean(slopes)), float(np.std(slopes, ddof=1) / np.sqrt(len(slopes)))
     assert abs(m - (-7 * c)) < max(4 * se, 0.15 * 7 * c), f"mean slope {m:.5f} vs true {-7 * c:.5f} (se {se:.5f})"
     assert -0.13 < float(np.mean(corrs)) < -0.07, f"mean corr {np.mean(corrs):.3f}"
     assert float(np.mean(np.array(slopes) < 0)) > 0.85 and float(np.mean(np.array(ps) < 0.05)) > 0.2
-    pn = np.array([_regress(*(lambda xy_: (xy_["rank"], xy_["y72"]))(_pipeline(_make_world(300, 1000 + s))[2]), HAC_LAGS[72])["p_value"] for s in range(300)])
-    frac = [float(np.mean(pn < q)) for q in (0.05, 0.25, 0.5, 0.75)]
-    assert 0.02 <= frac[0] <= 0.12 and abs(frac[1] - 0.25) < 0.08 and abs(frac[2] - 0.5) < 0.09 and abs(frac[3] - 0.75) < 0.08, f"null p-values not roughly uniform: {frac}"
-    print(f"  injected relation (true slope {-7 * c:.4f}, corr about -0.10): mean slope {m:.4f} (se {se:.4f}), mean corr {np.mean(corrs):.3f}, share of negative slopes {np.mean(np.array(slopes) < 0):.0%}; "
-          f"null one-sided p below 0.05/0.25/0.5/0.75 in {frac[0]:.3f}/{frac[1]:.3f}/{frac[2]:.3f}/{frac[3]:.3f} of 300 worlds")
+    print(f"  injected relation (true slope {-7 * c:.4f}, corr about -0.10): mean slope {m:.4f} (se {se:.4f}), mean corr {np.mean(corrs):.3f}, share of negative slopes {np.mean(np.array(slopes) < 0):.0%}, "
+          f"one-sided p below 0.05 in {np.mean(np.array(ps) < 0.05):.0%} of 40 worlds")
+    assert hac_lags(24) == 12 and hac_lags(72) == 36 and hac_lags(72, 4.0) == 72 and HAC_LAGS == {24: 12, 72: 36}, "4 x ceil(H / shortest interval)"
+    nul = _persistent_null()
+    print(f"  persistent null, {nul['paths']} paths (AR(1) phi 0.98 funding-like, 40% tied at the low end, production mid-rank, overlapping iid shocks): "
+          f"one-sided p < 0.05 in {nul['rate72']:.3f} of paths for the primary 72h cell with {hac_lags(72)} lags (band <= 0.08; binomial se {nul['se72']:.3f}), "
+          f"{nul['rate24']:.3f} for the 24h cell with {hac_lags(24)} lags (no band; expect 0.06-0.07); superseded lags 3/9 read {nul['rate24_old']:.3f}/{nul['rate72_old']:.3f} (information only)")
+    assert nul["rate72"] <= 0.08, f"the 72h cell's persistent-null rejection rate {nul['rate72']:.3f} exceeds 8%: STOP and report to M2 as a file; do not change the lags or the statistic"
 
     # ---- 7. stability on a synthetic world (S2 variant wired through production code)
     wi = _make_world(1500, 7, c=0.006)
@@ -651,7 +709,7 @@ def _self_test() -> None:
     assert ev["n_trades"] == 4 and abs(ev["net_return"] - ((1 - cost) ** 4 - 1)) < 1e-12, "cost is charged once per position change (2 round trips)"
     # flat when there is no valid rank: a settlement with an invalid rank is cash even if the previous one was long
     o_t = s2_origin_set(funding.funding_observations(_make_world(500, 3, drop_native=[600])["native"]), _make_world(500, 3)["df1h"])
-    tA, vA = gate_decisions(o_t, _make_world(500, 3)["df1h"], "A")
+    tA, vA = gate_decisions(o_t, _make_world(500, 3)["df1h"], "primary")
     bad = ~np.isfinite(o_t["rank_mid"][np.asarray(o_t["grid"] >= o_t["origins"][0])])
     assert bad.any() and (vA[bad] == 0).all(), "no valid rank means cash"
     # a missing bar: the change executes at the next available open, counted and reported
@@ -664,19 +722,23 @@ def _self_test() -> None:
     sig3, info3 = signal_from_decisions(idx3, sett, vals, sett[0])
     held3 = rule_evaluator.held_positions(sig3)
     assert held3.index[held3.diff().fillna(held3.iloc[0]).ne(0)][0] == sett[1] + pd.Timedelta(hours=1) and info3["late_executions"] == 0, "missing settlement bar: still the open of s+1h"
-    # mode A vs B differ only where a missing exit bar excludes an origin
+    # primary vs literal differ only where a missing bar excludes an origin (and the primary never goes to cash for a bar)
     wg = _make_world(500, 3, drop_bars=[grid[300] + pd.Timedelta(hours=73)])
     og = s2_origin_set(funding.funding_observations(wg["native"]), wg["df1h"])
-    tA, vA = gate_decisions(og, wg["df1h"], "A")
-    tB, vB = gate_decisions(og, wg["df1h"], "B")
-    diff = tA[vA != vB]
-    assert (vB >= vA).all() and set(diff) <= set().union(*[set(v) for v in og["excluded"].values()]), "mode A differs from mode B only at gap-excluded origins"
-    print("  economic rule: positions change only at the open of s+1h; cost once per change ((1-c)^n); cash when there is no valid rank; missing bar executes at the next open and is counted; mode A vs B differ only at gap-excluded origins")
+    tL, vL = gate_decisions(og, wg["df1h"], "literal")
+    tP, vP = gate_decisions(og, wg["df1h"], "primary")
+    diff = tL[vL != vP]
+    assert (vP >= vL).all() and set(diff) <= set().union(*[set(v) for v in og["excluded"].values()]), "literal differs from primary only at gap-excluded origins"
+    wm = _make_world(500, 3, drop_native=[600])
+    om = s2_origin_set(funding.funding_observations(wm["native"]), wm["df1h"])
+    _, infoM = s2_signal(om, wm["df1h"], "primary")
+    assert infoM["cash_masked_rank_settlements"] == int((~np.isfinite(om["rank_mid"][np.asarray(om["grid"] >= om["origins"][0])])).sum()) > 0, "masked-rank cash settlements are counted"
+    print("  economic rule: positions change only at the open of s+1h; cost once per change ((1-c)^n); cash when there is no valid rank; missing bar executes at the next open and is counted; literal vs primary gate differ only at gap-excluded origins; masked-rank cash settlements are counted")
 
     # ---- 10. gate end to end on a synthetic world (buy-and-hold comparator, forced exit)
     wgt = _make_world(1500, 9, c=0.0002)
     _, ogt, _ = _pipeline(wgt)
-    sigA, infoA = s2_signal(ogt, wgt["df1h"], "A")
+    sigA, infoA = s2_signal(ogt, wgt["df1h"], "primary")
     g = run_gate(wgt["df1h"], ogt["origins"][0], sigA)
     assert g["gate"]["pass_rate"] >= 0 and len(g["forced_exit"]) <= 1 and 0.0 <= g["exposure"] <= 1.0
     assert np.isclose(np.prod([1 + v for v in g["gate"]["block_returns"].values()]), 1 + g["gate"]["pooled_net_return"], rtol=1e-9, atol=0.0)

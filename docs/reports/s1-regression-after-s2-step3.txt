@@ -1,0 +1,20 @@
+S1 report regenerated after the S2 live records (registry 26 lines) against the committed S1 report (registry 20 lines): lines that differ.
+The summary table (slopes, p, T, p_stab, gate returns) is identical. Allowed by design (R1, two candidates per step): the across-candidate Holm rows, the cumulative counts, the generation stamp.
+< Generated 2026-10-19 04:28:56Z by `s1_report.py` (read-only) at repo commit 4487f1e. Registry records are from the step-5 live run, commit 4487f1e; the pre-fix S1 records were voided by commit ac63ff2. Every figure below was recomputed from the discovery data and reproduces the registry's recorded figure (the generator refuses to run otherwise). Freeze and forward-test were not run; the holdout is untouched. This report states recorded outcomes and makes no recommendation.
+> Generated 2026-10-25 06:44:56Z by `s1_report.py` (read-only) at repo commit ca98fb2. Registry records are from the step-5 live run, commit 4487f1e; the pre-fix S1 records were voided by commit ac63ff2. Every figure below was recomputed from the discovery data and reproduces the registry's recorded figure (the generator refuses to run otherwise). Freeze and forward-test were not run; the holdout is untouched. This report states recorded outcomes and makes no recommendation.
+< `cumulative_count` for ETHUSDT: **1**; `cumulative_cells`: **10**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined):
+> `cumulative_count` for ETHUSDT: **2**; `cumulative_cells`: **12**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined):
+< | discovery | 1 | 0.128192 | 0.128192 |
+< | stability | 1 | 0.230385 | 0.230385 |
+< | economic_gate | 1 | NaN | NaN |
+> | discovery | 2 | 0.128192 | 0.256384 |
+> | stability | 2 | 0.230385 | 0.46077 |
+> | economic_gate | 2 | NaN | NaN |
+< `cumulative_count` for BTCUSDT: **1**; `cumulative_cells`: **10**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined):
+> `cumulative_count` for BTCUSDT: **2**; `cumulative_cells`: **12**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined):
+< | discovery | 1 | 0.0145107 | 0.0145107 |
+< | stability | 1 | 0.0554723 | 0.0554723 |
+< | economic_gate | 1 | NaN | NaN |
+> | discovery | 2 | 0.0145107 | 0.0290213 |
+> | stability | 2 | 0.0554723 | 0.110945 |
+> | economic_gate | 2 | NaN | NaN |

@@ -1,0 +1,4 @@
+Equality check, delivery 8 dry-run records against the ruled dry run (lagsafe), produced by deliveries/9/apply.sh
+  S2-ETHUSDT/economic_gate: old rule_mode 'A', new rule_mode 'primary'; settlements held in cash because of an invalid rank: 0
+  S2-BTCUSDT/economic_gate: old rule_mode 'A', new rule_mode 'primary'; settlements held in cash because of an invalid rank: 0
+EQUALITY CHECK PASSED (lagsafe): 30 comparisons over 6 records; allowed to differ in lagsafe mode: se, t, p, Holm, Bonferroni, MDE, hac_lags, new gate fields

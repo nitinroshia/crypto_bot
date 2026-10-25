@@ -1,0 +1,288 @@
+# Developer notes
+
+Working scratch for the developer role. Never authoritative on its own -- if anything here
+conflicts with `docs/` or `context/STATUS.md`, those win. This file exists for technical
+continuity across sessions: conventions, gotchas, and decisions that don't belong in a status
+summary but matter for not repeating past mistakes.
+
+## Engineering conventions (apply to every new tool)
+- Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
+  `selftest_all.sh` (38 self-tests as of delivery 9). Never skip the self-test to save time --
+  it's caught real bugs every single time it's been taken seriously (see gotchas below).
+- Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
+  (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
+  (git then treats scratch dirs as non-repos, which `freeze_manifest.py`'s self-test needs). Rule from the
+  owner (2026-10): nothing is ever written outside the project root; `temp/` is gitignored; never open, copy
+  or back up `temp/secret_keys.txt`. This REVERSES the 2026-09-22 convention (system temp dir, `temp/`
+  discontinued), which is why the old note is gone.
+- S1 origins (Work Order 1.5 step 3): all ten cells run on ONE common origin set built on a COMPLETE DAILY CALENDAR
+  (`formula_s1.s1_origin_set`): calendar positions 160 .. N-1-5, minus origins whose needed bars (C_t, C_{t-L}, the 31
+  closes behind sigma30, C_{t+h}, the entry bar t+1) include a missing day -- excluded and counted, never imputed. Blocks
+  are 90 CALENDAR days tiled from the first origin with per-block index sets (`formula_s1.block_structure`): never a
+  reshape, never recompute x or y inside a slice (the factories select by date from a full-series precomputation and
+  ignore non-common dates). `python3 run_s1.py --pair ETH_USDT --origin-facts` is the read-only check (no registry, no
+  p-values). `run_s1.py --commit-to-registry` is refused until the legacy stability rule is replaced (step 4,
+  `STABILITY_REPLACED`).
+- Stability check (Work Order 1.5 step 4): `stability_check.py` is the generic core (global-centred block scores over
+  the WHOLE common origin set, `combine` -> T and p_stab, the S2 circular-shift null, the stationary bootstrap index
+  generator); `formula_s1.s1_stability` is the S1 pipeline (null = stationary bootstrap of the daily log returns with
+  predictor and target REBUILT from each path at the same origin positions; it refuses a series with missing days and
+  cross-checks the vectorised x/y against the pandas `predictor`/`target` at run time). The old Stouffer + veto rule is
+  gone. `stability_acceptance.py` runs M1's generators (imported from `stability_reference.py`, never copied or
+  edited) and bands through the production code: reduced size is in `selftest_all.sh`; `--full` (about 2.5 minutes)
+  is the real acceptance run; `--compare-reference` also requires identical rates to M1's own `self_test`. Production
+  equals the reference path by path wherever the definitions coincide (no partial block); with a partial block the
+  difference is M1's ruling 1 (centring over the whole set), checked against the definition applied literally.
+- S1 report (Work Order 1.5 step 6): `s1_report.py` is READ-ONLY. It reads the data and the LIVE registry (explicit
+  `registry.LIVE_REGISTRY_PATH`, never written), recomputes every figure with the production code and raises
+  `ReportConsistencyError` unless it reproduces the recorded figure (discovery cells, stability T/p/s_b, gate pooled
+  return and pass rate), then writes the one markdown file given by `--out`. Its self-test is in `selftest_all.sh`.
+  It reports what the registry recorded and makes no recommendation. Buy-and-hold uses the gate's own evaluator,
+  segment, blocks and stress cost with the signal fixed at 1.
+- Registry hygiene (Work Order 1.5 step 2): the live `registry.jsonl` is written ONLY with an explicit flag.
+  `registry.append_record(record, path, *, commit_to_registry=False)` refuses the live file without it
+  (`LiveRegistryWriteRefused`); `registry.DEFAULT_REGISTRY_PATH` is a scratch file
+  (`temp/scratch-registry.jsonl`); `run_s1.py --commit-to-registry` and `registry.py --void-family ...
+  --commit-to-registry` are the only live writers today. `freeze_manifest`, `holdout_lock`, `forward_test` do
+  not pass the flag yet (fail closed). `selftest_all.sh` hashes the live registry before and after and fails if
+  it changed; `selftest_registry_hygiene.py` checks every writer against a fake "live" file.
+- State every interpretive choice explicitly in the docstring, run both readings and label them
+  when a spec genuinely allows two, never silently pick one. This project's culture rewards
+  showing your work over being fast.
+- Discovery cutoff is `2025-08-31 23:59:59 UTC`, everywhere. Always filter the base series to
+  `<= cutoff` *before* computing any derived return -- never filter the return series after the
+  fact, or a return spanning the boundary can leak in.
+- Cost assumptions (from `costs.py`): base round trip 0.24%, stress round trip 0.30%.
+
+- S2 (Work Order 1.6, D2): `formula_s2.py` is the S2 twin of `formula_s1.py`; it reuses `funding.funding_observations`,
+  `formula_s1.block_structure`/`sigma30`/`_calendar`, `stability_check.stability_s2`, `nonstationarity`,
+  `multitest.annotate_family`, `economic_gate`, `rule_evaluator` and `registry` unchanged. Read its docstring first: it lists
+  the five interpretation choices. Points worth remembering: (1) a missing NATIVE funding row masks two observations (the
+  one it belongs to and the next, whose window needs a settlement at s-8h), so one hole costs 272 origins through R2;
+  (2) `ranks()` uses only slots <= i, rounds to 12 decimals before comparing (ties are exact), and returns NaN unless all
+  270 previous slots and the current one are finite; (3) the registry's discovery `p_value` is the RAW primary-cell p
+  (S1 did the same), `family_p_holm` is the within-2 Holm; `registry.holm_at_step` keys on `detail.p_value`;
+  (4) the gate places a decision on the last 1h row with label <= s, so rule_evaluator's `shift(1)` executes it at the
+  open of s+1h, or at the next available bar when that bar is missing (counted as `late_executions`); (5) gate mode "primary" (M2's ruling of
+  2026-10-23: cash only when rank_s is invalid) is the one recorded; mode "literal" (missing entry/exit bars also force cash) is a labeled
+  variant, never recorded; HAC lags are 4 x H/8h = 12 and 36 (the superseded 3 and 9 survive as a sensitivity column only); (6) sigma30 for
+  the stability target is computed from the daily file with the previous day's close for all three settlements of a day.
+- `formula_s2.py` self-test includes M2's persistent null (AR(1) phi 0.98, 40% ties at the low end, production mid-rank, overlapping iid shocks, 1000 paths): the 72h
+  rate must be <= 8% (sandbox: 0.078 at seed 20261023, 0.061 at seed 777; the 24h rate and the superseded lags are printed for information). If the band is missed,
+  stop and report to M2 as a file; never change the lags or the statistic.
+- Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
+  (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
+- `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
+  path count OR at <= 7% in an automatic 1000-path confirmation (fresh generator stream 777 + row, same R); the
+  confirmation never changes the main run's random stream, so reduced and full outputs are unchanged otherwise.
+  `--confirm-s2-null` runs just the two S2 false-pass rows at 1000 paths, R 2000 (about 75 s).
+- Sandbox (D2): the agent sandbox can `git clone` the public repo and run the self-tests (pip: numpy, pandas, statsmodels,
+  scipy, pyarrow) but has no market data, so anything touching real data is run only on the owner's machine. A single
+  sandbox command is limited to 300 s: run long jobs detached (`setsid nohup ... &`) and poll.
+
+## Gotchas actually hit (don't re-discover these)
+- **`stats_fingerprint.get_nonoverlapping_returns`'s returned Series index is a raw row
+  *position* from the source dataframe (`df[col].iloc[::k]` preserves original positional
+  labels), not a date.** Printing it directly as if it were a date is a real bug I made and
+  fixed in `breakeven_table.py` -- map back through the source dataframe (`df.loc[idx, "date"]`)
+  to get an actual calendar date. If you see a suspiciously large or small integer where a date
+  should be, this is almost certainly why.
+- `resample.resample_ohlcv_traded`'s parameter is named `df_1m` but the function has no actual
+  1-minute assumption in it -- confirmed on synthetic data that it generalizes correctly to any
+  finer-than-target source (used for BTC/USDT 15m, derived from its native 5m, since nothing in
+  the queue needs BTC/USDT 1m). Don't assume a tool's parameter name is a hard constraint;
+  check the actual logic.
+- `walkforward.py` is explicitly "structure only" (its own module docstring) -- a generic
+  splitter with no fit/validate values wired in. Its self-test uses 270/90 days as a round-number
+  demo ("9-month fit / 3-month validate"), which is NOT the production 365/90. Item 2 is what
+  wires in the real values; don't assume they're already there.
+- `_mk_1d`-style synthetic-price helpers that build `close = 100 * exp(cumsum(returns))` are
+  compounding LOG returns, but `get_nonoverlapping_returns` measures SIMPLE returns
+  (`.pct_change()`). Negligible difference for small returns, NOT negligible for a deliberately
+  large injected test value (e.g. a synthetic outlier) -- convert with `exp(x) - 1` when asserting
+  an exact match.
+- `sample-bot`, `handover-2026-09-20`, and the other four legacy repos are gone from GitHub
+  (owner removed them once migrated). Don't reference them as a source for anything going
+  forward; everything that mattered is under `docs/` in this repo now.
+
+## Naming conventions worth knowing
+- `docs/handoffs/HANDOFF_developer-*.md` (now `v2.1.md`, `v2.2.md`) are **mathematician-authored**
+  documents addressed to the developer -- the developer does not add a "v2.3" to this sequence.
+  Developer-authored replies go in `docs/correspondence/` instead.
+- `docs/correspondence/message-NN.md` is the developer's own numbered sequence (currently
+  01 through 21; D2 writes message-20 onward); the mathematician's own outgoing messages use their own "vN" numbering
+  (seen up to v6) and sometimes land as `answer-NN`/`question-NN`. These are two different
+  counters -- don't try to unify them.
+- `context/mathematician/NOTES.md` is the mathematician's actively-maintained working file.
+  The developer reads it when needed (e.g. it was the actual source of the "section 3" break-even
+  table the mathematician referenced) but never edits it directly -- respond via
+  `docs/correspondence/` instead and let the mathematician fold it in on their end.
+
+## Decided but not yet built
+- The after-tax layer (the owner's roadmap, M2's item 9): taxes are computed from dated trades, so every evaluator must leave a trade list (CSV: pair, entry_time_utc,
+  exit_time_utc, entry_price, exit_price, gross_log_return, net_return_stress, exit_reason); S2's report is labeled "pre-tax" and ships its trade lists.
+- Work Order 1.7 (Task 3, shock_response): filed, NOT started; waits for M2's acceptance of the S2 report and the owner's word. The forward-test command (not yet
+  used) must report step 5's statistical criteria and step 3's holdout requirement as two separate labeled results and log the ETH/FDUSD disclosure note unconditionally.
+
+## Item 2 pieces already built (2026-09-26) -- read before touching either module
+- `cutoff.py`: the `--end-date` guard. One rule -- "keep a bar iff its label (open time) <= the
+  cutoff" -- reproduces all four of section 6's worked last-usable-bar examples (1d/1h/15m/5m)
+  without a per-timeframe table; see its self-test if a fifth timeframe ever needs checking.
+  `origin_window_side(entry_time, window_end_label, ...)` takes bar LABELS for both arguments,
+  never close timestamps -- passing a close time will wrongly reject legitimate discovery windows
+  ending on the last usable bar (see the module docstring's "INTERPRETIVE CHOICE" note). Wired
+  into `research_cli.py` as `load_all_dataframes(..., end_date=...)` and the CLI's `--end-date`
+  flag; `--end-date` takes any UTC date/timestamp (it's not hardcoded to 2025-08-31), so pass
+  `cutoff.CUTOFF`'s value explicitly for a real discovery run.
+- `registry.py`: append-only JSONL (`user_data/analysis/results/registry.jsonl`: 20 live lines from the S1 live run, 26 after the S2 live run).
+  Family names must be `<TASK>-ETHUSDT`/`<TASK>-BTCUSDT` for every status except `history` and
+  `void_pre_fix` (the two used to import pre-existing ETH/FDUSD-era runs, which predate the
+  naming scheme -- `validate_family` exempts them on purpose, don't "fix" this later). Gotcha:
+  `holm_at_step(records, pair, step)` reads each family's SINGLE MOST RECENT record overall (not
+  its most recent record among only-that-step records) -- a family that has moved on to a later
+  step no longer counts at an earlier one, so querying an earlier step naturally empties out as
+  candidates graduate. This was a real bug caught by the self-test (naive "most recent among
+  matching-status records" logic double-counted a family at both its old and new step) --
+  don't revert to that simpler-looking version if refactoring this function.
+- `run_s1.py` and `run_s2.py` are the only live writers (explicit `--commit-to-registry`); neither is imported by `research_cli.py`.
+- `holdout_lock.py`: the actual one-shot enforcement (not just an audit log). Gotcha:
+  `unlock_holdout_for_forward_test` checks the registry for a PRIOR `holdout_consumed` record for
+  the same (family, pair) and refuses with `HoldoutAlreadyConsumedError` if one exists -- this is
+  what makes "once per candidate" real rather than a comment. It deliberately calls
+  `databundle.load_bundle` directly (bypassing `cutoff.py`'s guard entirely, on purpose) since the
+  whole point is that this is the one place allowed to return the untruncated series. The
+  ETH/FDUSD 2026-exposure disclosure note (`DISCLOSURE_NOTE_ETHUSDT`, verbatim from mathematician
+  NOTES.md section 6 -- don't paraphrase it if it's ever touched) is logged only for
+  `pair="ETHUSDT"`; a BTCUSDT call still gets a `holdout_consumed` audit record, just with
+  `detail["note"] = None`. `log_descriptive_access` is unrelated -- it's for the OTHER kind of
+  post-cutoff read section 6 allows (purely descriptive tools, no returns computed) and gates
+  nothing; it just appends the fixed "descriptive, no returns computed" note. Two-step pattern
+  worth knowing before the forward-test command is built: `unlock_holdout_for_forward_test`'s own
+  record has `detail["p_value"] = None` (it only gates access, it doesn't compute anything) --
+  the forward-test command must append a SECOND `holdout_consumed` record once it has the real
+  verdict; `registry.holm_at_step` already picks up each family's most-recent record, so this
+  resolves correctly on its own, no special-casing needed. Not yet wired into any data-batch tool
+  or into research_cli.py.
+- `nonstationarity.py`: by-year/leave-one-year-out. Gotcha worth remembering: a period below the
+  120-day threshold is excluded from BEING DROPPED in leave-one-out (it's shown in `by_year_table`
+  but `leave_one_out`/`year_driven`/`sign_agreement` never key on it) -- but its rows are NEVER
+  removed from any other period's leave-one-out subset, or from the pooled estimate. Don't
+  "simplify" this later into filtering sub-threshold rows out of the data entirely; that would
+  silently change the pooled estimate itself, which section 6 explicitly says must not happen.
+  "days_covered" is distinct calendar dates present, not `n` (row count) and not a period-length
+  constant -- the two self-test datasets both use daily-frequency synthetic data specifically so
+  n and days_covered happen to be equal there; don't assume that equality holds for intraday data.
+  `estimator` takes a DataFrame slice and returns a float; nothing in this module computes an
+  actual candidate's estimate itself -- that's every individual formula's own job. Used by the
+  S1 report and by `run_s2.py` (by-year, leave-one-year-out).
+- `blocks.py`: `tile_blocks` is shared by the stability check and the economic gate (both built, used by S1 and S2) -- reuse it, don't reimplement it. Gotcha that cost
+  a real bug during development: `is_final_partial` must compare against the data's inferred
+  CALENDAR COVERAGE (last label + inferred bar-width), not the last label itself -- otherwise an
+  exact multiple of block_days (e.g. 270 daily rows = 3 full 90-day blocks) gets its last block
+  wrongly flagged partial, since bar labels understate coverage by one bar-width. Bar width is
+  inferred from the data's own median spacing (works for any timeframe), not assumed to be 1 day.
+- `stability_check.py`: the generic core of the amended stability statistic (Work Order 1.5 section 3): global-centred block scores over the whole common origin set,
+  `combine` -> T and p_stab, the circular time-shift null for S2 and the stationary-bootstrap index generator for S1. The old Stouffer + veto rule is retired (its
+  gotchas are obsolete). `evaluate_fixed_lag` in research_cli.py is unrelated (Item 1's lag-replication check); don't wire the two together.
+- `rule_evaluator.py` + `economic_gate.py`: read `rule_evaluator.py`'s module docstring in full
+  before touching either -- it documents a real interpretive fork in section 6's own text (the
+  "starts flat / forced exit" language for "a discovery block" vs. "a position may carry across a
+  block boundary at no cost"), now CONFIRMED by the mathematician (`docs/correspondence/answer-03.md`):
+  an evaluation segment is whatever spans one continuous, unchanging rule -- the economic gate's
+  tiles are reporting slices of one rule, not separate segments; Task 3's walk-forward validate
+  windows ARE separate segments (fresh fit each split). Concrete, confirmed guidance for whoever
+  builds the forward-test command: the holdout evaluation follows the SAME logic as the discovery
+  sample -- one continuous flat-start/forced-exit run over the whole holdout window via
+  `evaluate_rule`, called ONCE, no internal 90-day tiling (there's no 70%-of-blocks statistic at
+  the holdout, just a single pooled pass/fail) -- don't reach for `blocks.tile_blocks` there.
+
+  Two gotchas that cost a real bug during development, each: (1) `held_position[0]`
+  must be 0 by construction (`signal.shift(1).fillna(0)`) -- the segment "starts flat" and there is
+  no bar before it to have supplied a signal, so the FIRST interval of any segment always earns
+  zero regardless of what `signal[0]` says; a test that assumes "always-long over n bars compounds
+  n-1 intervals" is off by one for exactly this reason (it's n-2 contributing intervals -- see
+  `rule_evaluator.py`'s drift self-test for the corrected arithmetic). (2) when building MULTI-BLOCK
+  synthetic test data, never concatenate independently-generated per-block price paths that each
+  restart at the same base price (e.g. 100) -- that injects a fake, huge discontinuity at every
+  seam that swamps any real drift signal. Build ONE continuous price path across all blocks (a
+  single cumulative random walk, with per-block DRIFT REGIME allowed to vary) -- see
+  `economic_gate.py`'s self-test `make_continuous_path` helper. `economic_gate`'s return dict casts
+  every value to native Python `bool`/`float` explicitly -- comparisons on pandas/numpy values
+  produce `numpy.bool_`, and `numpy.bool_(True) is True` is `False` in Python; an `is True`
+  assertion against an uncast value will silently fail even when the underlying logic is correct
+  (this bit the self-test once already). Both modules are used by S1 and S2 (the gate on daily bars for S1, on 1h bars for S2).
+- `freeze_manifest.py`: one-shot like `holdout_lock.py` -- `freeze_candidate` refuses a second
+  freeze of the same (family, pair) via `AlreadyFrozenError`, checked the same way (a prior
+  `status="frozen"` record for that family+pair in the registry). `_current_commit` must degrade to
+  `"unknown"` rather than raise if git isn't available or `repo_dir` isn't a repo -- freezing must
+  never fail just because commit info couldn't be captured. Gotcha in the self-test itself: don't
+  assert a hardcoded `"unknown"` for `_current_commit(None)` -- `cwd=None` in `subprocess.run` means
+  "use the current working directory," which usually IS inside a git repo during development, so
+  that call succeeds; test the "unknown" fallback with an explicit, genuinely non-repo temp
+  directory instead.
+- `forward_test.py`: read the module docstring before touching it -- it ties together
+  `holdout_lock.py`, `freeze_manifest.py`, and `rule_evaluator.py`. Two gotchas from building it:
+  (1) SE_holdout = SE_discovery * sqrt(n_discovery/n_holdout) only SHRINKS when n_holdout exceeds
+  n_discovery -- if a self-test's n_discovery is set too high relative to the holdout data actually
+  available, SE_holdout comes out LARGER than SE_discovery and the readiness check never passes;
+  keep n_discovery comfortably below the holdout sample size in any test data. (2) don't assume a
+  churning, no-edge signal will fail the economic check against ANY underlying series with positive
+  drift -- a strong enough trend can still leave a random/alternating signal net-positive even after
+  costs, since it still captures roughly half the move. To robustly test "step5 passes but step3
+  fails" (proving the two are independent, not the same number twice), use a near-ZERO-drift series
+  and derive `dispersion`/`n_discovery`/`discovery_estimate` from the ACTUAL realized holdout mean
+  for that fixed seed (computed once, then hardcoded) rather than from an assumed drift value --
+  this decouples "statistically significant" from "economically real," which is exactly the
+  scenario an independent economic check exists to catch. `check_holdout_readiness` is a
+  DESCRIPTIVE read (logs via `holdout_lock.log_descriptive_access`, not the one-shot gate) -- it can
+  and should be called repeatedly while waiting for more holdout data; only `run_forward_test`'s
+  Phase 2 touches `unlock_holdout_for_forward_test`. `m_threshold=None` (S1/S2) gives a binary
+  pass/dead classification; a given `m_threshold` (event-type cells) gives the three-way
+  pass/dead/inconclusive classification. Never run for a candidate.
+- `formula_s1.py` + `run_s1.py`: the first real candidate wired through item 2. Two real gotchas
+  worth internalizing before touching either module again:
+  (1) `predictor`'s warmup is `max(L, SIGMA_WINDOW)`, NOT `L + SIGMA_WINDOW` -- the L-day lookback
+  and the 30-day sigma window are independent requirements on the SAME history, they don't stack.
+  For L=40 (primary) this happens not to matter (40>30), but it very much matters for L=10/20.
+  (2) THE BIG ONE: never hand `stability_check.py` (or `nonstationarity.py`, if S1 ever gets wired
+  into by-year/LOYO) a `block_test`/`estimator` that recomputes `predictor`/`target` fresh from the
+  narrow date-range slice those modules pass in. `tile_blocks`/`by_year_table` slice the ORIGINAL
+  price series by date range and hand back ONLY that slice -- recomputing x_L/y_h from just the
+  slice starves the first `max(L, SIGMA_WINDOW)` rows of real lookback (there's no earlier data in
+  the slice to look back into) and silently drops ~40-45% of a 90-day block's origins, corrupting
+  the regression on what's left. This flipped an injected, unambiguous positive edge into apparent
+  per-block NEGATIVE signs during development -- looked exactly like a stability_check.py bug at
+  first, and wasn't. Fix: `make_primary_estimator`/`make_primary_block_test` are FACTORIES --
+  precompute x_40/y_5 ONCE on the FULL series, return a closure that selects by DATE from those
+  precomputed series. Same principle as `economic_gate.py`'s "one continuous run, then slice for
+  reporting"; if a future S2/Task-3 formula needs a `block_test` or by-year `estimator`, use this
+  same factory pattern, don't write a plain function that recomputes from `subset_df` directly.
+  Separately: constructing a synthetic "known edge" test series by injecting a nudge tied to
+  `sign(x_L)` recursively (nudge today based on yesterday's x, cumulatively) produced wildly
+  inconsistent per-block signs despite a strongly significant POOLED result -- likely some
+  interaction between the recursive feedback and the window-averaging, never fully diagnosed since
+  a cleaner fix existed. The reliable way to inject a known relationship: compute x_L on a BASE
+  series first (no injection), then add `true_slope * x_L` as a return effect distributed across the
+  FOLLOWING h days directly -- no circularity, and it produces consistent per-block signs. `run_s1.py`
+  deliberately stops after the economic gate (no freeze, no forward-test) per explicit instruction --
+  nothing in it is one-shot, safe to re-run freely. Run live on real data once per pair in commit `4487f1e`
+  (see `docs/reports/s1-report-step6.md`); no freeze, no forward test.
+
+## Loose ends, not blocking anything
+- Three files moved during the 2026-09-22 migration were never read/classified:
+  `docs/archive/owner-notes/grep_stale.txt`, `dev-README_workorder01.md`,
+  `dev-README_workorder12.md`, `phd-README_workorder01.md` (the last one has a different size
+  than the `dev-` copy of the same filename, unexplained). Low priority; ask the owner if it
+  ever becomes relevant.
+- Funding first-settlement dates (already answered, in case asked again): ETHUSDT 2019-11-27,
+  BTCUSDT 2019-09-10.
+
+## Working relationship notes
+- The owner runs every terminal command themselves and wants exact copy-pasteable commands, not
+  descriptions of what to run. They've asked for this explicitly and repeatedly -- always give
+  the literal command block.
+- The developer has git/network read access (can clone the public repo directly to verify state)
+  but no push credentials -- the owner does all `git add`/`commit`/`push` themselves. Prepare
+  files and a suggested commit message; never assume something is live until the owner confirms
+  it's pushed.
+- Python: 3.12.7, pinned in `README.md`.

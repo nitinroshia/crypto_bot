@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh`. 21 tools pass as of this writing. Never skip the self-test to save time --
+  `selftest_all.sh` (38 self-tests as of delivery 9). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -63,16 +63,15 @@ summary but matter for not repeating past mistakes.
   270 previous slots and the current one are finite; (3) the registry's discovery `p_value` is the RAW primary-cell p
   (S1 did the same), `family_p_holm` is the within-2 Holm; `registry.holm_at_step` keys on `detail.p_value`;
   (4) the gate places a decision on the last 1h row with label <= s, so rule_evaluator's `shift(1)` executes it at the
-  open of s+1h, or at the next available bar when that bar is missing (counted as `late_executions`); (5) gate mode "A" is
-  the order's literal reading and is the one recorded; mode "B" is a labeled variant, never recorded; (6) sigma30 for
+  open of s+1h, or at the next available bar when that bar is missing (counted as `late_executions`); (5) gate mode "primary" (M2's ruling of
+  2026-10-23: cash only when rank_s is invalid) is the one recorded; mode "literal" (missing entry/exit bars also force cash) is a labeled
+  variant, never recorded; HAC lags are 4 x H/8h = 12 and 36 (the superseded 3 and 9 survive as a sensitivity column only); (6) sigma30 for
   the stability target is computed from the daily file with the previous day's close for all three settlements of a day.
-- `run_s2.py` (Work Order 1.6 step 2): `--origin-facts` is read-only (no registry, no p-values, no returns; it needs only which bars
-  exist); the run writes exactly three records per pair to a scratch registry (or `--registry-path` any non-live file) unless
-  `--commit-to-registry`. The discovery record holds the raw primary p (72h) in `p_value`, the within-2 Holm in `family_p_holm`,
-  both cells in `all_cells`, the origin facts, funding facts (first settlement, masked count, tie share) and the post-cutoff row
-  counts; the stability record holds p_stab, T, B, R, seed, min_shift, horizon_h and s_b; the gate record is mode A plus
-  `late_executions`. Labeled variants (gate mode B, 24h stability, rank robustness, extremes, by-year) are returned, never
-  recorded. Its self-test writes synthetic feather files (world runs past the cutoff on purpose).
+- `formula_s2.py` self-test includes M2's persistent null (AR(1) phi 0.98, 40% ties at the low end, production mid-rank, overlapping iid shocks, 1000 paths): the 72h
+  rate must be <= 8% (sandbox: 0.078 at seed 20261023, 0.061 at seed 777; the 24h rate and the superseded lags are printed for information). If the band is missed,
+  stop and report to M2 as a file; never change the lags or the statistic.
+- Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
+  (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
   path count OR at <= 7% in an automatic 1000-path confirmation (fresh generator stream 777 + row, same R); the
   confirmation never changes the main run's random stream, so reduced and full outputs are unchanged otherwise.
@@ -111,7 +110,7 @@ summary but matter for not repeating past mistakes.
   documents addressed to the developer -- the developer does not add a "v2.3" to this sequence.
   Developer-authored replies go in `docs/correspondence/` instead.
 - `docs/correspondence/message-NN.md` is the developer's own numbered sequence (currently
-  01 through 07); the mathematician's own outgoing messages use their own "vN" numbering
+  01 through 21; D2 writes message-20 onward); the mathematician's own outgoing messages use their own "vN" numbering
   (seen up to v6) and sometimes land as `answer-NN`/`question-NN`. These are two different
   counters -- don't try to unify them.
 - `context/mathematician/NOTES.md` is the mathematician's actively-maintained working file.
@@ -120,12 +119,10 @@ summary but matter for not repeating past mistakes.
   `docs/correspondence/` instead and let the mathematician fold it in on their end.
 
 ## Decided but not yet built
-- Forward-test command must report step 5's statistical criteria (one-sided p<0.05, estimate
-  >= half the discovery estimate) and step 3's holdout requirement (frozen rule net-positive at
-  stress cost) as two separate labeled results, and must auto-log the ETH/FDUSD holdout-exposure
-  disclosure note on every run, unconditionally.
-- The actual holdout lock is now built (`holdout_lock.py`, see below) -- this bullet used to flag
-  it as open; it isn't anymore, but nothing has called it for a real candidate yet.
+- The after-tax layer (the owner's roadmap, M2's item 9): taxes are computed from dated trades, so every evaluator must leave a trade list (CSV: pair, entry_time_utc,
+  exit_time_utc, entry_price, exit_price, gross_log_return, net_return_stress, exit_reason); S2's report is labeled "pre-tax" and ships its trade lists.
+- Work Order 1.7 (Task 3, shock_response): filed, NOT started; waits for M2's acceptance of the S2 report and the owner's word. The forward-test command (not yet
+  used) must report step 5's statistical criteria and step 3's holdout requirement as two separate labeled results and log the ETH/FDUSD disclosure note unconditionally.
 
 ## Item 2 pieces already built (2026-09-26) -- read before touching either module
 - `cutoff.py`: the `--end-date` guard. One rule -- "keep a bar iff its label (open time) <= the
@@ -137,8 +134,7 @@ summary but matter for not repeating past mistakes.
   into `research_cli.py` as `load_all_dataframes(..., end_date=...)` and the CLI's `--end-date`
   flag; `--end-date` takes any UTC date/timestamp (it's not hardcoded to 2025-08-31), so pass
   `cutoff.CUTOFF`'s value explicitly for a real discovery run.
-- `registry.py`: append-only JSONL (`user_data/analysis/results/registry.jsonl`, not yet created
-  for real -- nothing has actually been appended to it outside this module's own self-test).
+- `registry.py`: append-only JSONL (`user_data/analysis/results/registry.jsonl`: 20 live lines from the S1 live run, 26 after the S2 live run).
   Family names must be `<TASK>-ETHUSDT`/`<TASK>-BTCUSDT` for every status except `history` and
   `void_pre_fix` (the two used to import pre-existing ETH/FDUSD-era runs, which predate the
   naming scheme -- `validate_family` exempts them on purpose, don't "fix" this later). Gotcha:
@@ -148,9 +144,7 @@ summary but matter for not repeating past mistakes.
   candidates graduate. This was a real bug caught by the self-test (naive "most recent among
   matching-status records" logic double-counted a family at both its old and new step) --
   don't revert to that simpler-looking version if refactoring this function.
-- Neither module has been imported into `research_cli.py`'s formula-running path for actual
-  registry writes yet (no formula run currently appends anything) -- that wiring is stability
-  check / freeze-manifest work, still ahead.
+- `run_s1.py` and `run_s2.py` are the only live writers (explicit `--commit-to-registry`); neither is imported by `research_cli.py`.
 - `holdout_lock.py`: the actual one-shot enforcement (not just an audit log). Gotcha:
   `unlock_holdout_for_forward_test` checks the registry for a PRIOR `holdout_consumed` record for
   the same (family, pair) and refuses with `HoldoutAlreadyConsumedError` if one exists -- this is
@@ -179,26 +173,17 @@ summary but matter for not repeating past mistakes.
   constant -- the two self-test datasets both use daily-frequency synthetic data specifically so
   n and days_covered happen to be equal there; don't assume that equality holds for intraday data.
   `estimator` takes a DataFrame slice and returns a float; nothing in this module computes an
-  actual candidate's estimate itself -- that's every individual formula's own job. Not yet wired
-  into any candidate's actual reporting.
-- `blocks.py`: `tile_blocks` is shared by the stability check (built) and the economic gate (not
-  yet built) -- if step 3 needs its own tiling, reuse this, don't reimplement it. Gotcha that cost
+  actual candidate's estimate itself -- that's every individual formula's own job. Used by the
+  S1 report and by `run_s2.py` (by-year, leave-one-year-out).
+- `blocks.py`: `tile_blocks` is shared by the stability check and the economic gate (both built, used by S1 and S2) -- reuse it, don't reimplement it. Gotcha that cost
   a real bug during development: `is_final_partial` must compare against the data's inferred
   CALENDAR COVERAGE (last label + inferred bar-width), not the last label itself -- otherwise an
   exact multiple of block_days (e.g. 270 daily rows = 3 full 90-day blocks) gets its last block
   wrongly flagged partial, since bar labels understate coverage by one bar-width. Bar width is
   inferred from the data's own median spacing (works for any timeframe), not assumed to be 1 day.
-- `stability_check.py`: built on `blocks.py`. Gotchas: `block_test(subset) -> (z, p_two_sided)`
-  must return a genuine standard-normal z (not just any signed magnitude) or the Stouffer
-  combination (`sum(oriented_z) / sqrt(k)`) is not statistically valid -- this module can't verify
-  that property, it's on whoever writes the real S1/S2 `block_test`. The veto
-  (`any_significant_opposite`) is checked independently of the combined result -- it can fail a
-  candidate that would otherwise pass, don't merge the two checks into one condition. The final
-  partial block never enters either the combination or the veto, however extreme its value.
-  `evaluate_fixed_lag` in research_cli.py is UNRELATED to this and was not modified -- it's Item
-  1's own single fit/validate lag-replication check for the leadlag formula, not an S1/S2
-  stability mechanism; nothing currently routes S1/S2 through it since no S1/S2 formula exists yet.
-  Don't wire the two together later on the assumption they're doing the same job.
+- `stability_check.py`: the generic core of the amended stability statistic (Work Order 1.5 section 3): global-centred block scores over the whole common origin set,
+  `combine` -> T and p_stab, the circular time-shift null for S2 and the stationary-bootstrap index generator for S1. The old Stouffer + veto rule is retired (its
+  gotchas are obsolete). `evaluate_fixed_lag` in research_cli.py is unrelated (Item 1's lag-replication check); don't wire the two together.
 - `rule_evaluator.py` + `economic_gate.py`: read `rule_evaluator.py`'s module docstring in full
   before touching either -- it documents a real interpretive fork in section 6's own text (the
   "starts flat / forced exit" language for "a discovery block" vs. "a position may carry across a
@@ -225,9 +210,7 @@ summary but matter for not repeating past mistakes.
   every value to native Python `bool`/`float` explicitly -- comparisons on pandas/numpy values
   produce `numpy.bool_`, and `numpy.bool_(True) is True` is `False` in Python; an `is True`
   assertion against an uncast value will silently fail even when the underlying logic is correct
-  (this bit the self-test once already). Neither module is wired into research_cli.py, the
-  registry, or an actual S1/S2 formula yet -- no such formula exists, so nothing calls either of
-  these for a real candidate.
+  (this bit the self-test once already). Both modules are used by S1 and S2 (the gate on daily bars for S1, on 1h bars for S2).
 - `freeze_manifest.py`: one-shot like `holdout_lock.py` -- `freeze_candidate` refuses a second
   freeze of the same (family, pair) via `AlreadyFrozenError`, checked the same way (a prior
   `status="frozen"` record for that family+pair in the registry). `_current_commit` must degrade to
@@ -255,7 +238,7 @@ summary but matter for not repeating past mistakes.
   and should be called repeatedly while waiting for more holdout data; only `run_forward_test`'s
   Phase 2 touches `unlock_holdout_for_forward_test`. `m_threshold=None` (S1/S2) gives a binary
   pass/dead classification; a given `m_threshold` (event-type cells) gives the three-way
-  pass/dead/inconclusive classification. Not yet wired into research_cli.py or a real S1/S2 formula.
+  pass/dead/inconclusive classification. Never run for a candidate.
 - `formula_s1.py` + `run_s1.py`: the first real candidate wired through item 2. Two real gotchas
   worth internalizing before touching either module again:
   (1) `predictor`'s warmup is `max(L, SIGMA_WINDOW)`, NOT `L + SIGMA_WINDOW` -- the L-day lookback
@@ -282,9 +265,8 @@ summary but matter for not repeating past mistakes.
   series first (no injection), then add `true_slope * x_L` as a return effect distributed across the
   FOLLOWING h days directly -- no circularity, and it produces consistent per-block signs. `run_s1.py`
   deliberately stops after the economic gate (no freeze, no forward-test) per explicit instruction --
-  nothing in it is one-shot, safe to re-run freely. Not yet run against real market data (no network
-  access in this environment) -- self-tested offline only; the owner needs to run it against real
-  local data for both pairs and report results back before freeze/forward-test proceed.
+  nothing in it is one-shot, safe to re-run freely. Run live on real data once per pair in commit `4487f1e`
+  (see `docs/reports/s1-report-step6.md`); no freeze, no forward test.
 
 ## Loose ends, not blocking anything
 - Three files moved during the 2026-09-22 migration were never read/classified:

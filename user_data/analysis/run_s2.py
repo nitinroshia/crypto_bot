@@ -8,7 +8,7 @@ here. The holdout unlock is one-shot and has never been used.
 
 REGISTRY HYGIENE (Work Order 1.5 step 2): by default this script writes to a SCRATCH registry (temp/scratch-registry.jsonl)
 or to the file given with --registry-path (any non-live file). It writes the LIVE registry only with --commit-to-registry.
-Exactly three records per run: S2-<PAIR> at discovery, stability, economic_gate. Labeled variants (gate mode B, the 24h
+Exactly three records per run: S2-<PAIR> at discovery, stability, economic_gate. Labeled variants (gate literal reading, the 24h
 stability, rank robustness, extremes, by-year) are computed and returned for the report but NEVER recorded.
 
 USAGE (needs {pair}-1h, {pair}-1d and {pair}-funding feather files under --data-dir or --raw-dir):
@@ -108,8 +108,10 @@ def run_s2(
     xy = formula_s2.s2_xy(oset, df1h, df1d)
     ffacts = _funding_facts(inp["native"], obs)
 
-    # ---- Step 1: discovery, both cells on one common origin set, Holm within the 2. ----
-    cells = formula_s2.discovery_cells(xy)
+    # ---- Step 1: discovery, both cells on one common origin set, HAC lags 4 x H/8h, Holm within the 2. ----
+    interval_h = min(float(k) for k in (ffacts["interval_hours_counts"] or {"8.0": 1}))
+    cells = formula_s2.discovery_cells(xy, interval_h)
+    sensitivity = formula_s2.sensitivity_superseded_lags(xy)  # labeled, never recorded, never used for a decision
     primary = cells[cells["H"] == formula_s2.PRIMARY_H].iloc[0]
     registry.append_record(
         {
@@ -142,8 +144,9 @@ def run_s2(
         registry_path, commit_to_registry=commit_to_registry,
     )
 
-    # ---- Step 3: economic gate at stress cost, mode A (the order's literal reading); mode B is a labeled variant. ----
-    sigA, infoA = formula_s2.s2_signal(oset, df1h, "A")
+    # ---- Step 3: economic gate at stress cost, PRIMARY rule (M2's ruling of 2026-10-23: cash only for an invalid rank);
+    # the order's literal reading is a labeled variant, never recorded. ----
+    sigA, infoA = formula_s2.s2_signal(oset, df1h, "primary")
     gA = formula_s2.run_gate(df1h, first_origin, sigA, STRESS_COST_PER_SIDE)
     econ = gA["gate"]
     registry.append_record(
@@ -152,23 +155,23 @@ def run_s2(
             "detail": {
                 "pooled_net_return": econ["pooled_net_return"], "pass_rate": econ["pass_rate"],
                 "passes_pooled": econ["passes_pooled"], "passes_block_rate": econ["passes_block_rate"], "passes": econ["passes"],
-                "rule_mode": "A", "late_executions": int(infoA["late_executions"]), "signal_changes": int(infoA["signal_changes"]),
-                "n_trades": int(gA["strategy"]["n_trades"]),
+                "rule_mode": "primary", "late_executions": int(infoA["late_executions"]), "signal_changes": int(infoA["signal_changes"]),
+                "n_trades": int(gA["strategy"]["n_trades"]), "cash_masked_rank_settlements": int(infoA["cash_masked_rank_settlements"]),
             },
         },
         registry_path, commit_to_registry=commit_to_registry,
     )
 
     # ---- Labeled variants: computed for the report, never recorded. ----
-    sigB, infoB = formula_s2.s2_signal(oset, df1h, "B")
+    sigB, infoB = formula_s2.s2_signal(oset, df1h, "literal")
     gB = formula_s2.run_gate(df1h, first_origin, sigB, STRESS_COST_PER_SIDE)
     st24 = formula_s2.s2_stability(xy, origins, R=stability_R, seed=stability_seed, horizon=24)
     ns = nonstationarity.non_stationarity_report(xy, formula_s2.make_primary_estimator(xy))
     return {
         "family": family, "pair": registry_pair, "n_discovery": int(primary["n"]),
         "discovery_estimate": float(primary["slope"]), "dispersion": float(primary["se"]),
-        "cells": cells, "origins": rep, "funding": ffacts, "stability": st, "economic_gate": econ, "gate_detail": gA, "gate_info": infoA,
-        "variants": {"gate_mode_B": gB, "gate_info_B": infoB, "stability_24h": st24},
+        "cells": cells, "sensitivity": sensitivity, "origins": rep, "funding": ffacts, "stability": st, "economic_gate": econ, "gate_detail": gA, "gate_info": infoA,
+        "variants": {"gate_literal": gB, "gate_info_literal": infoB, "stability_24h": st24},
         "rank_variants": formula_s2.rank_variants_primary(xy), "extremes": formula_s2.extremes_table(xy), "by_year": ns,
         "post_cutoff_rows": inp["post_cutoff_rows"],
     }
@@ -187,8 +190,8 @@ def origin_facts_for(pair: str, data_dir: Path, raw_dir: Path | None = None, inp
     first_pos = oset["first_position"]
     hours = pd.date_range(df1h.index[0], df1h.index[-1], freq="1h")
     days = pd.date_range(df1d.index[0], df1d.index[-1], freq="1D")
-    tA, vA = formula_s2.gate_decisions(oset, df1h, "A")
-    tB, vB = formula_s2.gate_decisions(oset, df1h, "B")
+    tA, vA = formula_s2.gate_decisions(oset, df1h, "primary")
+    tB, vB = formula_s2.gate_decisions(oset, df1h, "literal")
     gate_tiles = blocks.tile_blocks(df1h, origins[0])
     gate_full = [t for t in gate_tiles if not t["is_final_partial"]]
     struct_full = [bl for bl in rep["structure"]["blocks"] if bl["is_full"]]
@@ -200,7 +203,8 @@ def origin_facts_for(pair: str, data_dir: Path, raw_dir: Path | None = None, inp
         "last_bar_1h": oset["last_bar"], "last_origin_limit": oset["limit"],
         "file_1h": {"rows": int(len(df1h)), "first": df1h.index[0], "last": df1h.index[-1], "missing_hours": int(len(hours) - len(df1h))},
         "file_1d": {"rows": int(len(df1d)), "first": df1d.index[0], "last": df1d.index[-1], "missing_days": int(len(days) - len(df1d))},
-        "origins": rep, "gate_decisions": {"settlements_in_segment": int(len(tA)), "long_A": int(vA.sum()), "long_B": int(vB.sum()), "differ_A_vs_B": int((vA != vB).sum())},
+        "origins": rep, "gate_decisions": {"settlements_in_segment": int(len(tA)), "long_primary": int(vA.sum()), "long_literal": int(vB.sum()), "differ_primary_vs_literal": int((vA != vB).sum()),
+                           "cash_masked_rank": int((~np.isfinite(oset["rank_mid"][np.asarray(oset["grid"] >= origins[0])])).sum())},
         "gate_full_blocks": len(gate_full), "gate_blocks_same_as_origin_blocks": bool(gate_same),
         "gate_partial_days": int((df1h.index[-1] + pd.Timedelta(hours=1) - gate_tiles[-1]["start"]).days) if gate_tiles and gate_tiles[-1]["is_final_partial"] else 0,
     }
@@ -226,7 +230,8 @@ def print_origin_facts_report(f: dict) -> None:
           f"{r['block_origins_min']}/{r['block_origins_median']}/{r['block_origins_max']}")
     print("expected by Work Order 1.6 before gap exclusions: about 6,269 origins and 23 full blocks (BTC), about 6,035 and 22 (ETH); 270 per full block")
     g = f["gate_decisions"]
-    print(f"gate segment: {g['settlements_in_segment']} settlements from the first origin; long decisions mode A {g['long_A']}, mode B {g['long_B']}; settlements where A and B differ: {g['differ_A_vs_B']}")
+    print(f"gate segment: {g['settlements_in_segment']} settlements from the first origin; long decisions primary {g['long_primary']}, literal {g['long_literal']}; settlements where they differ: {g['differ_primary_vs_literal']}; "
+          f"settlements held in cash because rank_s is invalid: {g['cash_masked_rank']}")
     print(f"economic gate tiling (blocks.tile_blocks over the 1h discovery rows from the first origin): full blocks {f['gate_full_blocks']}, "
           f"same full blocks as the origin-based tiling: {f['gate_blocks_same_as_origin_blocks']}; its partial block runs {f['gate_partial_days']} days")
     print("(no p-values or returns are computed here; nothing is written)")
@@ -235,9 +240,11 @@ def print_origin_facts_report(f: dict) -> None:
 # ----------------------------------------------------------------------------- report printing
 def print_report(res: dict) -> None:
     print(f"\n=== S2 run: {res['family']} ({res['pair']}) ===")
-    print("\n-- Discovery (2 cells, one common origin set, Holm within the 2; one-sided p in the NEGATIVE direction) --")
-    cols = ["H", "hac_lags", "slope", "se", "corr", "t_stat", "p_value", "p_holm", "p_bonferroni", "n"]
+    print("\n-- Discovery (2 cells, one common origin set, HAC lags 4 x H/8h = 12 and 36, Holm within the 2; one-sided p in the NEGATIVE direction) --")
+    cols = ["H", "hac_lags", "slope", "se", "corr", "t_stat", "p_value", "p_holm", "p_bonferroni", "mde", "n"]
     print(res["cells"][cols].to_string(index=False))
+    print("labeled sensitivity, superseded lags 3 and 9 (delivery 8's figures; not used for any decision):")
+    print(res["sensitivity"].to_string(index=False))
     print(f"Primary cell (H = {formula_s2.PRIMARY_H}h): slope={res['discovery_estimate']:.6g}  HAC SE={res['dispersion']:.6g}  n={res['n_discovery']}")
     print("\n-- Rank robustness, primary cell (labeled, never recorded) --")
     print(res["rank_variants"][["variant", "slope", "se", "corr", "t_stat", "p_value"]].to_string(index=False))
@@ -256,13 +263,14 @@ def print_report(res: dict) -> None:
     v = res["variants"]["stability_24h"]
     print(f"labeled variant, stability on the 24h target (not recorded): T={v['T']:.4f} p_stab={v['p_stab']:.6g}")
     e, gi = res["economic_gate"], res["gate_info"]
-    print("\n-- Economic gate (stress cost, mode A = the order's literal reading; recorded) --")
+    print("\n-- Economic gate (stress cost, PRIMARY rule: cash only when rank_s is invalid; recorded) --")
     print(f"pooled_net_return={e['pooled_net_return']:.6g}  pass_rate={e['pass_rate']:.2%}  passes_pooled={e['passes_pooled']}  passes_block_rate={e['passes_block_rate']}  passes={e['passes']}")
     gd = res["gate_detail"]
     print(f"trades {gd['strategy']['n_trades']}  hit rate {gd['strategy']['hit_rate']:.3f}  exposure {gd['exposure']:.3f}  late executions {gi['late_executions']}  "
           f"buy-and-hold pooled {gd['buy_and_hold_gate']['pooled_net_return']:.6g} (non-negative blocks {gd['buy_and_hold_gate']['pass_rate']:.1%})")
-    eb = res["variants"]["gate_mode_B"]["gate"]
-    print(f"labeled variant, gate mode B (not recorded): pooled {eb['pooled_net_return']:.6g}  pass_rate {eb['pass_rate']:.2%}  passes={eb['passes']}")
+    print(f"settlements held in cash because rank_s is invalid: {gi['cash_masked_rank_settlements']}; trades executed on a substituted bar: {gi['late_executions']}")
+    eb = res["variants"]["gate_literal"]["gate"]
+    print(f"labeled variant, gate literal reading (not recorded): pooled {eb['pooled_net_return']:.6g}  pass_rate {eb['pass_rate']:.2%}  passes={eb['passes']}")
     print("\nNOT frozen, NOT forward-tested -- results above are for review before proceeding.\n")
 
 
@@ -305,7 +313,7 @@ def _self_test() -> None:
         assert res["discovery_estimate"] < 0, "the injected negative relation must recover a negative slope"
         st = res["stability"]
         assert st["R"] == 200 and st["B"] == res["origins"]["n_full_blocks"] and st["passes"] is True
-        assert res["economic_gate"]["pass_rate"] >= 0 and "gate_mode_B" in res["variants"]
+        assert res["economic_gate"]["pass_rate"] >= 0 and "gate_literal" in res["variants"] and list(res["sensitivity"]["hac_lags"]) == [3, 9] and list(res["cells"]["hac_lags"]) == [12, 36]
         records = registry.load_records(reg)
         assert [r["status"] for r in records if r["family"] == "S2-ETHUSDT"] == ["discovery", "stability", "economic_gate"], "exactly three steps, in order"
         d = records[0]["detail"]
@@ -314,7 +322,7 @@ def _self_test() -> None:
         s_rec = records[1]["detail"]
         assert s_rec["p_value"] == st["p_stab"] and s_rec["B"] == st["B"] and s_rec["horizon_h"] == 72 and s_rec["min_shift"] == 300
         g_rec = records[2]["detail"]
-        assert g_rec["rule_mode"] == "A" and {"pooled_net_return", "pass_rate", "passes_pooled", "passes_block_rate", "passes"} <= set(g_rec)
+        assert g_rec["rule_mode"] == "primary" and "cash_masked_rank_settlements" in g_rec and {"pooled_net_return", "pass_rate", "passes_pooled", "passes_block_rate", "passes"} <= set(g_rec)
         assert not any(r["status"] in ("frozen", "holdout_consumed") for r in records), "never freeze or touch the holdout"
         # the S1-style across-candidate Holm reads the raw primary p from the discovery record
         hs = registry.holm_at_step(records, "ETHUSDT", "discovery")
