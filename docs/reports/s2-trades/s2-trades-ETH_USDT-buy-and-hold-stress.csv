@@ -1,0 +1,2 @@
+pair,entry_time_utc,exit_time_utc,entry_price,exit_price,gross_log_return,net_return_stress,exit_reason
+ETH_USDT,2020-02-25T17:00:00Z,2025-08-31T23:00:00Z,247.09,4391.83,2.877748632970629,16.72092918215023,end-of-sample

@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh` (38 self-tests as of delivery 9). Never skip the self-test to save time --
+  `selftest_all.sh` (39 self-tests as of delivery 10). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -70,6 +70,10 @@ summary but matter for not repeating past mistakes.
 - `formula_s2.py` self-test includes M2's persistent null (AR(1) phi 0.98, 40% ties at the low end, production mid-rank, overlapping iid shocks, 1000 paths): the 72h
   rate must be <= 8% (sandbox: 0.078 at seed 20261023, 0.061 at seed 777; the 24h rate and the superseded lags are printed for information). If the band is missed,
   stop and report to M2 as a file; never change the lags or the statistic.
+- `s2_report.py` (Work Order 1.6 step 3): READ-ONLY twin of `s1_report.py`; it recomputes with `run_s2.build_pair` and the production code and raises `ReportConsistencyError` unless the origin facts, both discovery cells (incl. `mde`, HAC lags),
+  stability T/p_stab/s_b, gate pooled return, pass rate, trade count, late executions and cash counts reproduce the registry; it imports the helpers `_check`, `_f`, `_md_table`, `_find_file` from `s1_report.py`. It writes the markdown report and the
+  trade-list CSVs (`s2-trades-<PAIR>-strategy-stress.csv` and `...-buy-and-hold-stress.csv`; columns pair, entry_time_utc, exit_time_utc, entry_price, exit_price, gross_log_return, net_return_stress, exit_reason = signal | end-of-sample; the
+  end-of-sample exit is priced at the last bar's CLOSE). The report is labeled PRE-TAX. It runs the 1,000-path persistent null once (about a minute; `--skip-null` for tests).
 - Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
   (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
