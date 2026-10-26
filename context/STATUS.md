@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-25, by D2 (developer), Work Order 1.6 step 3 (delivery 10: the S2 report). Refreshed in full
+Last updated: 2026-10-26, by D2 (developer), Work Order 1.7 step 1 (delivery 11: formula_t3.py). Refreshed in full
 (M2's item 10): the stale 2026-09-25 text is gone; what was still true is kept in "Settled facts". Where this file and `docs/`
 disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.6.md`, then `docs/correspondence/answer-s2-rulings.md`
 (M2's rulings of 2026-10-23, which override Work Order 1.6 where they differ), then `context/developer/NOTES.md`.
@@ -8,8 +8,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 ## Current state (D2, 2026-10-23)
 - Agents: M2 (mathematician, separate chat, owns research design), D2 (developer, this role; D1 ended with message-19), the owner (runs
   every command, pushes to GitHub). Agents talk only through files in the repo; the developer cannot touch the owner's machine.
-  Task: `docs/work-orders/1.6.md` (S2 `funding_extreme` for both pairs, through the economic gate; stop after the S2 report is
-  committed). Work Order 1.5 (R1-R4, A1-A6), `answer-04.md` and `answer-to-message-19.md` stay in force. Work Order 1.7 (Task 3,
+  Task: `docs/work-orders/1.7.md` (Task 3 shock_response, both pairs; stop after the Task 3 report is committed; S2, Work Order 1.6, is closed). Work Order 1.5 (R1-R4, A1-A6), `answer-04.md` and `answer-to-message-19.md` stay in force. Work Order 1.7 (Task 3,
   shock_response) is filed but NOT started: it starts only after M2 accepts the S2 report and the owner says so; research-design
   questions about it go to M2 as files in `docs/correspondence/`.
 - S1 is closed without advancing on either pair (`docs/reports/s1-report-step6.md`). Recorded S1 outcomes (live registry lines 15-20,
@@ -32,9 +31,17 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
   p_stab 0.0994503, passes False, 60.9% of 23 blocks; gate pooled net 0.262307, 47.83% (11 of 23, 17 needed), passes False; buy-and-hold pooled 13.5584. The two gate readings differ at 0 settlements for both pairs.
 - M2's rulings of 2026-10-23 (`docs/correspondence/answer-s2-rulings.md`) are applied: HAC lags 12/36; gate cash only when rank_s is invalid (literal reading a labeled variant); stability once per pair on the 72h cell;
   S1 regression before and after the live write; apply scripts refuse to push if `temp/secret_keys.txt` is tracked or in any commit; the S2 report is PRE-TAX and ships trade-list CSVs.
-- Delivery 10 (`deliveries/10/`, Work Order 1.6 step 3, the S2 report) is prepared: `s2_report.py` (read-only, refuses unless every recomputed figure reproduces the registry), `selftest_all.sh` (39 self-tests),
-  the report `docs/reports/s2-report-step3.md` and four trade-list CSVs in `docs/reports/s2-trades/`, `message-22.md` to M2. NOT VERIFIED until the owner's PASS output comes back. It writes no registry record.
-- NEXT: the owner forwards the report to M2; STOP until M2 accepts it. No freeze, no forward test, the holdout stays untouched. Work Order 1.7 (Task 3) starts only after M2's acceptance and the owner's word.
+- Delivery 10 (2026-10-25, commit `2334f30`) VERIFIED by the owner's output: 39 self-tests passed, the live registry stayed byte-identical at 26 lines, `s2_report.py` reproduced every recorded S2 figure and wrote
+  `docs/reports/s2-report-step3.md` (PRE-TAX) and four trade-list CSVs (518 ETH and 510 BTC strategy trades, one buy-and-hold trade each). M2 recomputed every figure from the printed numbers and ACCEPTED the report
+  (`docs/correspondence/answer-s2-accepted.md`, commit `63edecf`): S2 is closed, not advanced, on both pairs; no freeze, no forward test; the holdout is untouched.
+- WORK ORDER 1.7 (Task 3 shock_response, both pairs, 48 cells per pair, through classification and stability) is the current task (`docs/work-orders/1.7.md`, reference `docs/work-orders/1.7-task3_reference.py`). Step 0 done: the owner's
+  diag (2026-10-25T22:39:02Z) shows the folder clean at `63edecf` = `origin/main`, registry 26 lines equal to GitHub, Python 3.12.7, `ETH_USDT-5m` and `BTC_USDT-5m` present, `BTC_USDT-15m` present (derived), no ETH 15m file.
+- Delivery 11 (`deliveries/11/`, Work Order 1.7 step 1) is prepared: `formula_t3.py` (event clock, masking, targets, 48-cell statistics, classification, event stability, dose-response, acceptance machinery; its self-test reproduces the reference
+  exactly, largest relative difference 4.7e-14 in my sandbox, plus gap, cutoff, clock and reduced acceptance tests) wired into `selftest_all.sh` (40 self-tests), the FULL acceptance run (200 null / 100 edge paths, the 7% rule with automatic
+  1000-path confirmation) committed as `docs/reports/t3-acceptance-full-step1.txt`, and `message-23.md` to M2 (three research-design questions with defaults, none blocking). NOT VERIFIED until the owner's PASS output comes back.
+  No registry write; scratch only.
+- NEXT: delivery 12 = `run_t3.py` (read-only origin/event counts of item 8, then the dry run on the real data for both pairs on a scratch registry; one backward-compatible `registry.py` extension so each primary cell is its own entry in the
+  across-candidate Holm), then, after the owner's explicit flag, the live run once per pair, then the Task 3 report (`t3_report.py`, trade lists, PRE-TAX). Stop after the report; if a primary cell classifies PASS, stop and report to M2.
 
 ## Settled facts
 - Pairs: ETH/USDT and BTC/USDT are the two live pairs for research and execution (Work Order 1.4, 2026-09-23); ETH/FDUSD is retired as an execution candidate and its
@@ -53,7 +60,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 - The 15-minute break-even thread (2026-09-24) is closed: at 15m the typical |return| is below the round-trip cost for a symmetric trade-every-bar model; it does not touch S1,
   S2 or Task 3 (`docs/correspondence/message-07.md`).
 
-## Where things are (`user_data/analysis/`, 39 self-tests in `selftest_all.sh`)
+## Where things are (`user_data/analysis/`, 40 self-tests in `selftest_all.sh`)
 - Shared: `cutoff.py`, `databundle.py`, `funding.py`, `blocks.py`, `nonstationarity.py`, `multitest.py`, `costs.py`, `rule_evaluator.py`, `economic_gate.py`, `registry.py`,
   `stability_check.py` (generic stability statistic, S1 bootstrap and S2 time-shift variants), `stability_acceptance.py` (M1's generators and bands through production code).
 - S1: `formula_s1.py`, `run_s1.py`, `s1_report.py` (read-only, cross-checked against the registry). S2: `formula_s2.py`, `run_s2.py`; `s2_report.py` (read-only report generator, trade-list CSVs).

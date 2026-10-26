@@ -1,0 +1,13 @@
+Task 3 acceptance, FULL (Work Order 1.7 section 4), produced by deliveries/11/apply.sh on 2026-10-26T08:32:56Z (repo HEAD before this commit: 63edecf)
+python: Python 3.12.7; numpy: 2.5.3; scipy: 1.18.1
+command: python3 formula_t3.py --full
+
+Task 3 acceptance (FULL): 200 null paths per kind, 100 edge paths per delta
+  PASS  null gauss false-pass down 0.035 up 0.040; p_stab down 0.030 up 0.055; classified dead 1.000
+  PASS  null t4sv  false-pass down 0.015 up 0.045; p_stab down 0.030 up 0.040; classified dead 1.000
+  PASS  null t3sv  false-pass down 0.035 up 0.035; p_stab down 0.050 up 0.030; classified dead 1.000
+  PASS  edge +0.50% (t4sv): significant 1.00 stability 1.00 pass 1.00 dead 0.00 inconclusive 0.00
+  PASS  edge +0.10% (t4sv): significant 1.00 stability 1.00 pass 0.00 dead 1.00 inconclusive 0.00
+  info  edge +0.35% (t4sv): pass 0.11 dead 0.30 inconclusive 0.59 (reference: 0.10 / 0.35 / 0.55)
+total 91s
+ALL TASK 3 ACCEPTANCE TESTS PASSED

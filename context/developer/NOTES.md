@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh` (39 self-tests as of delivery 10). Never skip the self-test to save time --
+  `selftest_all.sh` (40 self-tests as of delivery 11). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -74,6 +74,11 @@ summary but matter for not repeating past mistakes.
   stability T/p_stab/s_b, gate pooled return, pass rate, trade count, late executions and cash counts reproduce the registry; it imports the helpers `_check`, `_f`, `_md_table`, `_find_file` from `s1_report.py`. It writes the markdown report and the
   trade-list CSVs (`s2-trades-<PAIR>-strategy-stress.csv` and `...-buy-and-hold-stress.csv`; columns pair, entry_time_utc, exit_time_utc, entry_price, exit_price, gross_log_return, net_return_stress, exit_reason = signal | end-of-sample; the
   end-of-sample exit is priced at the last bar's CLOSE). The report is labeled PRE-TAX. It runs the 1,000-path persistent null once (about a minute; `--skip-null` for tests).
+- `formula_t3.py` (Work Order 1.7, Task 3): array core on a regular grid `Frame` (label seconds, NaN open/close where a bar is missing; a bar is present only with open, high, low AND close). `prepare()` gives masked returns, z (NaN unless eligible),
+  `tgt_ok` (bars j+1..j+12 present inside the truncated frame) and the origin set plus the non-eligibility reasons; `event_clock()` is the shared clock (it never looks at later bars); `cell_table()` + `family_cells()` give the 48 cells with
+  Holm/Bonferroni over 48 (primary one-sided p and the other cells' two-sided p share one family); `primary_results()` mirrors the reference (its Holm over 2 is the reference's stand-in, used only for exact reproduction; production
+  classification uses the Holm over 48); `block_stability()` tiles 90 calendar days from the first eligible 5m origin's entry time (a block is scored iff t0 + 90(b+1) days <= last origin's entry time + one bar). The self-test imports the reference
+  by path from `docs/work-orders/1.7-task3_reference.py`; `--full` = 200 null / 100 edge paths with the 7% rule (automatic 1000-path confirmation per failing kind), `--confirm` = 1000 null paths per kind. 15m bars are derived from 5m (`derive_15m`).
 - Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
   (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's
