@@ -311,9 +311,20 @@ def holm_at_step(records: list[dict], pair: str, step: str, p_key: str = "p_valu
     for r in live_records(records, pair):
         if r["status"] == step:
             at_step[r["family"]] = r  # last live record at this step wins
-    families = list(at_step)
-    pvals = [at_step[fam].get("detail", {}).get(p_key) for fam in families]
-    pvals = [float(p) if p is not None else float("nan") for p in pvals]
+    # A record whose detail carries an `entries` mapping {entry_id: p} (Work Order 1.7: a family with two primary cells) contributes
+    # ONE candidate per entry, named "<family>:<entry_id>". Records without `entries` (S1, S2) behave exactly as before.
+    families, raw = [], []
+    for fam, rec in at_step.items():
+        detail = rec.get("detail", {}) or {}
+        entries = detail.get("entries")
+        if isinstance(entries, dict) and entries:
+            for entry_id, p in entries.items():
+                families.append(f"{fam}:{entry_id}")
+                raw.append(p)
+        else:
+            families.append(fam)
+            raw.append(detail.get(p_key))
+    pvals = [float(p) if p is not None else float("nan") for p in raw]
     holm = holm_adjust(pvals)
     bonf = bonferroni_adjust(pvals)
     return {

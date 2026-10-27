@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-26, by D2 (developer), Work Order 1.7 step 1 (delivery 11: formula_t3.py). Refreshed in full
+Last updated: 2026-10-26, by D2 (developer), Work Order 1.7 step 2 (delivery 12: run_t3.py, dry run). Refreshed in full
 (M2's item 10): the stale 2026-09-25 text is gone; what was still true is kept in "Settled facts". Where this file and `docs/`
 disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.6.md`, then `docs/correspondence/answer-s2-rulings.md`
 (M2's rulings of 2026-10-23, which override Work Order 1.6 where they differ), then `context/developer/NOTES.md`.
@@ -36,12 +36,17 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
   (`docs/correspondence/answer-s2-accepted.md`, commit `63edecf`): S2 is closed, not advanced, on both pairs; no freeze, no forward test; the holdout is untouched.
 - WORK ORDER 1.7 (Task 3 shock_response, both pairs, 48 cells per pair, through classification and stability) is the current task (`docs/work-orders/1.7.md`, reference `docs/work-orders/1.7-task3_reference.py`). Step 0 done: the owner's
   diag (2026-10-25T22:39:02Z) shows the folder clean at `63edecf` = `origin/main`, registry 26 lines equal to GitHub, Python 3.12.7, `ETH_USDT-5m` and `BTC_USDT-5m` present, `BTC_USDT-15m` present (derived), no ETH 15m file.
-- Delivery 11 (`deliveries/11/`, Work Order 1.7 step 1) is prepared: `formula_t3.py` (event clock, masking, targets, 48-cell statistics, classification, event stability, dose-response, acceptance machinery; its self-test reproduces the reference
-  exactly, largest relative difference 4.7e-14 in my sandbox, plus gap, cutoff, clock and reduced acceptance tests) wired into `selftest_all.sh` (40 self-tests), the FULL acceptance run (200 null / 100 edge paths, the 7% rule with automatic
-  1000-path confirmation) committed as `docs/reports/t3-acceptance-full-step1.txt`, and `message-23.md` to M2 (three research-design questions with defaults, none blocking). NOT VERIFIED until the owner's PASS output comes back.
-  No registry write; scratch only.
-- NEXT: delivery 12 = `run_t3.py` (read-only origin/event counts of item 8, then the dry run on the real data for both pairs on a scratch registry; one backward-compatible `registry.py` extension so each primary cell is its own entry in the
-  across-candidate Holm), then, after the owner's explicit flag, the live run once per pair, then the Task 3 report (`t3_report.py`, trade lists, PRE-TAX). Stop after the report; if a primary cell classifies PASS, stop and report to M2.
+- Delivery 11 (2026-10-26, commit `0d8e318`) VERIFIED by the owner's output: 40 self-tests passed, the registry stayed at 26 lines, `formula_t3.py` reproduces the Work Order 1.7 reference exactly (kept events 5244 / 5506, mu_6 -0.0000018532,
+  largest relative difference 3.4e-14), and the FULL acceptance passed on the owner's machine (200 null / 100 edge paths: null false-pass 1.5-4.5% and stability 3.0-5.5%, all classified dead, edge +0.50% pass 100%, +0.10% dead 100%;
+  `docs/reports/t3-acceptance-full-step1.txt`). `message-23.md` to M2 (three research-design questions with defaults: 15m derivation, zero-trade placeholder bars, the registry's per-primary-cell Holm entries) is filed; no answer yet.
+- Delivery 12 (`deliveries/12/`, Work Order 1.7 step 2) is prepared: `run_t3.py` (read-only `--origin-facts` with the item-8 counts; the run writes exactly two records per pair, `discovery` and `stability`, to a SCRATCH registry unless
+  `--commit-to-registry`), one backward-compatible `registry.py` extension (`holm_at_step` expands a record's `entries` mapping so each primary cell is its own across-candidate Holm candidate; S1 and S2 records behave exactly as before),
+  `check_reports.py` (regression check of the regenerated S1 and S2 reports), `selftest_all.sh` (41 self-tests). Its apply script runs the S1 and S2 report regressions BEFORE anything is recorded, prints and commits the origin facts
+  (`docs/reports/t3-origin-facts-step2.txt`) and a scratch dry run of both pairs (`t3-dry-run-step2.txt`, `t3-dry-run-records-step2.jsonl`). NOT VERIFIED until the owner's PASS output comes back. The live registry is untouched.
+- Delivery 12, first attempt (2026-10-27): the apply script stopped itself at the S1 regression step and rolled everything back (nothing committed, live registry untouched, 41 self-tests had passed). Cause: D2's check assumed no other family's records existed, but the committed S1 report (generated when the registry had 20 lines) predates S2's records, so its across-candidate Holm rows and cumulative counts legitimately differ; the summary table of recorded S1 figures was identical. Fixed: the S1 regression now compares with `--mode after --ref-diff docs/reports/s1-regression-after-s2-step3.txt` (the regenerated report must reproduce delivery 9's recorded post-S2 state to the last digit).
+- RULE for the dry run: after the numbers are seen, code changes are bug fixes only. Before the live run D2 explains any kept count below 500 or above 20,000 per side at 5m and any asymmetry above 1.5 (Work Order 1.7 item 8). The live run (delivery 13)
+  happens only after the owner's explicit flag, once per pair; records must equal the dry-run records (timestamps aside); first 26 registry lines byte-identical. If a primary cell classifies PASS: STOP and report to M2 (no freeze, no forward test).
+- NEXT: delivery 13 = live run (after the owner's flag; S1/S2 regressions before and after), then the Task 3 report (`t3_report.py`, trade lists, PRE-TAX), then stop for M2.
 
 ## Settled facts
 - Pairs: ETH/USDT and BTC/USDT are the two live pairs for research and execution (Work Order 1.4, 2026-09-23); ETH/FDUSD is retired as an execution candidate and its
@@ -60,7 +65,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 - The 15-minute break-even thread (2026-09-24) is closed: at 15m the typical |return| is below the round-trip cost for a symmetric trade-every-bar model; it does not touch S1,
   S2 or Task 3 (`docs/correspondence/message-07.md`).
 
-## Where things are (`user_data/analysis/`, 40 self-tests in `selftest_all.sh`)
+## Where things are (`user_data/analysis/`, 41 self-tests in `selftest_all.sh`)
 - Shared: `cutoff.py`, `databundle.py`, `funding.py`, `blocks.py`, `nonstationarity.py`, `multitest.py`, `costs.py`, `rule_evaluator.py`, `economic_gate.py`, `registry.py`,
   `stability_check.py` (generic stability statistic, S1 bootstrap and S2 time-shift variants), `stability_acceptance.py` (M1's generators and bands through production code).
 - S1: `formula_s1.py`, `run_s1.py`, `s1_report.py` (read-only, cross-checked against the registry). S2: `formula_s2.py`, `run_s2.py`; `s2_report.py` (read-only report generator, trade-list CSVs).

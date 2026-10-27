@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh` (40 self-tests as of delivery 11). Never skip the self-test to save time --
+  `selftest_all.sh` (41 self-tests as of delivery 12). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -79,6 +79,12 @@ summary but matter for not repeating past mistakes.
   Holm/Bonferroni over 48 (primary one-sided p and the other cells' two-sided p share one family); `primary_results()` mirrors the reference (its Holm over 2 is the reference's stand-in, used only for exact reproduction; production
   classification uses the Holm over 48); `block_stability()` tiles 90 calendar days from the first eligible 5m origin's entry time (a block is scored iff t0 + 90(b+1) days <= last origin's entry time + one bar). The self-test imports the reference
   by path from `docs/work-orders/1.7-task3_reference.py`; `--full` = 200 null / 100 edge paths with the 7% rule (automatic 1000-path confirmation per failing kind), `--confirm` = 1000 null paths per kind. 15m bars are derived from 5m (`derive_15m`).
+- `run_t3.py` (Work Order 1.7 step 2): family `Task3-<PAIR>`, exactly two records (`discovery`, `stability`; no economic gate). Each record's `detail.entries` maps the two primary cell ids (`5m_k6_down`, `5m_k6_up`) to their raw p (one-sided p
+  at discovery, p_stab at stability); `registry.holm_at_step` (extended, backward compatible) names them `Task3-<PAIR>:<id>` in the across-candidate Holm. The discovery detail also holds the 48 cells (Holm and Bonferroni over 48), the primary-cell
+  classification, the dose-response verdicts, origin counts and file hashes; labeled variants (robustness columns, trade lists, by-year) are returned for the report and never recorded. By-year `days covered` = calendar days with an eligible origin
+  in that year (not event days); a NaN leave-one-year-out (single year) is never year-driven. `check_reports.py` regenerates-and-compares the S1/S2 reports: `before` = no OTHER family's records have changed since the committed report was generated (identical but for the stamp and the S2 null paragraph), `after` = another
+  family's records exist: the summary table identical except the Holm-across-candidates column, plus only Holm rows, cumulative counts and the null paragraph; `--ref-diff FILE` additionally requires the changed lines to equal an earlier delivery's recorded
+  diff to the last digit. LESSON (delivery 12, first attempt): the committed S1 report (registry of 20 lines) predates S2, so the S1 regression since delivery 9 is `after` with `--ref-diff docs/reports/s1-regression-after-s2-step3.txt`; the S2 report (26 lines) is `before` until Task 3 records exist.
 - Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
   (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's

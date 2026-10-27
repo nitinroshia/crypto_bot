@@ -1,0 +1,39 @@
+Task 3 origin facts (read-only), Work Order 1.7 step 2, produced by deliveries/12/apply.sh on 2026-10-27T01:42:15Z (repo HEAD before this commit: 0d8e318)
+python: Python 3.12.7; numpy: 2.5.3
+command: python3 run_t3.py --pair <PAIR> --origin-facts
+
+=== Task 3 origin facts: ETH_USDT ===
+5m file ETH_USDT-5m.feather sha256 efc4a7afb6bd8e70796e43734c0c0801f3c1b922ce441feaa688cdc9add2ca6f
+5m rows before the cutoff truncation: 955046; in the discovery frame: 844093; grid 845808 bars 2017-08-17 04:00:00+00:00 .. 2025-08-31 23:55:00+00:00; missing bars in the grid: 1715 (rows without full OHLC: 0); zero-volume rows (treated as present): 1795; rows after the cutoff: 0 (must be 0)
+expected for a gap-free frame starting 2017-08-17 04:00: 845,808 5m bars, first eligible origin 2017-08-18 04:05 (15m 04:15), last 22:55 on 2025-08-31 (15m 20:45)
+native 15m file: none (the 15m bars are derived from 5m for both pairs)
+[5m] bars in grid 845808, present 844093, missing 1715; first/last bar 2017-08-17 04:00:00+00:00 / 2025-08-31 23:55:00+00:00; eligible origins 833932 (first 2017-08-18 04:05:00+00:00, last 2025-08-31 22:55:00+00:00; first/last entry 2017-08-18 04:10:00+00:00 / 2025-08-31 23:00:00+00:00)
+      not an origin: z window 11493, target window (gap inside the frame) 371, cutoff (bar j+12 beyond the frame) 12
+      |z| >= 3: event bars before de-clustering down 6773 up 6539; kept after the shared clock down 4173 up 3897; dropped for an incomplete window (gap 1, cutoff 0); used in the statistics down 4172 up 3897
+      |z| >= 4: event bars before de-clustering down 2867 up 2702; kept after the shared clock down 2039 up 1866; dropped for an incomplete window (gap 1, cutoff 0); used in the statistics down 2038 up 1866
+      flags: none (kept counts within 500..20,000 per side at 5m, asymmetry <= 1.5)
+[15m] bars in grid 281936, present 281357, missing 579; first/last bar 2017-08-17 04:00:00+00:00 / 2025-08-31 23:45:00+00:00; eligible origins 277702 (first 2017-08-18 04:15:00+00:00, last 2025-08-31 20:45:00+00:00; first/last entry 2017-08-18 04:30:00+00:00 / 2025-08-31 21:00:00+00:00)
+      not an origin: z window 3859, target window (gap inside the frame) 363, cutoff (bar j+12 beyond the frame) 12
+      |z| >= 3: event bars before de-clustering down 2670 up 2351; kept after the shared clock down 1844 up 1604; dropped for an incomplete window (gap 3, cutoff 0); used in the statistics down 1842 up 1603
+      |z| >= 4: event bars before de-clustering down 1216 up 1036; kept after the shared clock down 960 up 833; dropped for an incomplete window (gap 1, cutoff 0); used in the statistics down 959 up 833
+      flags: none (kept counts within 500..20,000 per side at 5m, asymmetry <= 1.5)
+stability tiling: t0 = 2017-08-18 04:10:00+00:00; full 90-day blocks 32 (expect 32), partial block 55.8 days (expect about 55)
+(no returns, p-values or cell statistics are computed here; nothing is written)
+
+=== Task 3 origin facts: BTC_USDT ===
+5m file BTC_USDT-5m.feather sha256 76649126e52fd303e1a95a6944d37ef018ebfcaf76670bdef0c28b7f334e8af7
+5m rows before the cutoff truncation: 955676; in the discovery frame: 844093; grid 845808 bars 2017-08-17 04:00:00+00:00 .. 2025-08-31 23:55:00+00:00; missing bars in the grid: 1715 (rows without full OHLC: 0); zero-volume rows (treated as present): 910; rows after the cutoff: 0 (must be 0)
+expected for a gap-free frame starting 2017-08-17 04:00: 845,808 5m bars, first eligible origin 2017-08-18 04:05 (15m 04:15), last 22:55 on 2025-08-31 (15m 20:45)
+native 15m file BTC_USDT-15m.feather sha256 c7fd4d622a17f7946a447656f072d078fce8a6c7f3aa17169903e9b60e99496c: 318566 rows 2017-08-17 04:00:00+00:00 .. 2025-08-31 23:45:00+00:00; compared with the derived series on 281357 complete bars: open mismatches 202, close mismatches 0; present in the derived series but missing natively 0; present natively but missing in the derived series 14 (the order expects 0)
+[5m] bars in grid 845808, present 844093, missing 1715; first/last bar 2017-08-17 04:00:00+00:00 / 2025-08-31 23:55:00+00:00; eligible origins 833932 (first 2017-08-18 04:05:00+00:00, last 2025-08-31 22:55:00+00:00; first/last entry 2017-08-18 04:10:00+00:00 / 2025-08-31 23:00:00+00:00)
+      not an origin: z window 11493, target window (gap inside the frame) 371, cutoff (bar j+12 beyond the frame) 12
+      |z| >= 3: event bars before de-clustering down 6718 up 6529; kept after the shared clock down 4084 up 3791; dropped for an incomplete window (gap 2, cutoff 0); used in the statistics down 4082 up 3791
+      |z| >= 4: event bars before de-clustering down 3032 up 2778; kept after the shared clock down 2084 up 1876; dropped for an incomplete window (gap 1, cutoff 0); used in the statistics down 2083 up 1876
+      flags: none (kept counts within 500..20,000 per side at 5m, asymmetry <= 1.5)
+[15m] bars in grid 281936, present 281357, missing 579; first/last bar 2017-08-17 04:00:00+00:00 / 2025-08-31 23:45:00+00:00; eligible origins 277702 (first 2017-08-18 04:15:00+00:00, last 2025-08-31 20:45:00+00:00; first/last entry 2017-08-18 04:30:00+00:00 / 2025-08-31 21:00:00+00:00)
+      not an origin: z window 3859, target window (gap inside the frame) 363, cutoff (bar j+12 beyond the frame) 12
+      |z| >= 3: event bars before de-clustering down 2746 up 2471; kept after the shared clock down 1822 up 1614; dropped for an incomplete window (gap 3, cutoff 1); used in the statistics down 1821 up 1611
+      |z| >= 4: event bars before de-clustering down 1270 up 1129; kept after the shared clock down 977 up 873; dropped for an incomplete window (gap 1, cutoff 0); used in the statistics down 976 up 873
+      flags: none (kept counts within 500..20,000 per side at 5m, asymmetry <= 1.5)
+stability tiling: t0 = 2017-08-18 04:10:00+00:00; full 90-day blocks 32 (expect 32), partial block 55.8 days (expect about 55)
+(no returns, p-values or cell statistics are computed here; nothing is written)
