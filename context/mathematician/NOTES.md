@@ -4,18 +4,23 @@ This file IS `context/mathematician/NOTES.md` in the project repo. The owner att
 no separate context document. Version by the Snapshot line, not by filename. When this changes, the copy in the repo is
 overwritten (same path) and git history carries the diff. Only mathematicians edit this file (PROTOCOL section 3).
 
-Snapshot: 2026-10-25 (revision 4), written by M2 (second mathematician) from M1's handoff (`docs/handoffs/M1-handoff.md`,
-2026-10-19), the documents it lists, M2's own recomputation of the S1 report, Work Order 1.6 and the S2 report, the owner's roadmap of
-2026-10-20 (section 10; it overrides the "Next" lines of the handoff) and D2's message-22. It replaces revision 3 (2026-10-23),
-which never reached main. Supersedes the 2026-09-23 snapshot and every earlier context file.
+Snapshot: 2026-10-27 (revision 5), written by M2 (second mathematician) from M1's handoff (`docs/handoffs/M1-handoff.md`,
+2026-10-19), the documents it lists, M2's own recomputation of the S1 report, Work Order 1.6, the S2 report and D2's Task 3 dry run,
+the owner's roadmap of 2026-10-20 (section 10; it overrides the "Next" lines of the handoff) and D2's messages 22 to 24. It replaces
+revision 4 (2026-10-25, filed by delivery m2-04). Supersedes the 2026-09-23 snapshot and every earlier context file.
 
 STATE IN ONE PARAGRAPH. The research pipeline is built and verified on the owner's machine (cutoff guard, holdout lock, registry
 with voiding, by-year / leave-one-year-out, amended stability statistic, economic gate, S1 and S2 formulas, read-only report
 generators). S1 (daily trend) and S2 (funding extreme) are both CLOSED, not advanced, on both pairs (section 5); nothing is frozen,
-nothing was forward-tested, the holdout is untouched, and the live registry has 26 lines (S1 lines 15-20, S2 lines 21-26). M2 accepted
-the S2 report on 2026-10-25 and D2 starts Task 3 (shock_response, both pairs) under Work Order 1.7 (`docs/work-orders/1.7.md` and its
-reference script). Next: M2 recomputes the Task 3 report; then the owner's roadmap (section 10): expansion to other timeframes and
-markets only after Task 3 is reported, proposed as a short work order.
+nothing was forward-tested, the holdout is untouched, and the live registry has 26 lines (S1 lines 15-20, S2 lines 21-26). D2 is on
+Task 3 (shock_response, both pairs; Work Order 1.7): `formula_t3.py` reproduces the reference exactly and a scratch dry run of both
+pairs is done (delivery 13, commit 8273b98, verified; read-only variant file `docs/reports/t3-variant-zero-volume-step2.txt`). In the
+dry run all four primary cells classify DEAD (the up cells are significant but far below M). M2 ruled on D2's questions on 2026-10-27
+(forward v22, `docs/correspondence/answer-t3-rulings.md`): zero-volume 5m bars are masked in the primary, the 15m series is derived
+for both pairs, each primary cell is an across-candidate entry at both steps, the dose-response discard applies only to positive
+cells. The live Task 3 run waits for the owner's "go live T3". Next: D2's delivery 14 (masked primary, live run, report); M2
+recomputes the report; then the owner's roadmap (section 10): expansion to other timeframes and markets, proposed as a short work
+order.
 
 REPOSITORY: public, https://github.com/nitinroshia/crypto_bot (main). To read a file use
 https://raw.githubusercontent.com/nitinroshia/crypto_bot/refs/heads/main/<path> . GitHub /tree/ directory pages refuse automated
@@ -25,7 +30,7 @@ FILES AND NAMING
 - Work orders (mathematician -> developer): `docs/work-orders/`, continuing at 1.8 (1.7 is the latest; its reference script is
   `docs/work-orders/1.7-task3_reference.py`).
 - Messages: `docs/correspondence/`. First line: `From: <ID> | To: <ID> | Re: <subject> | Date: <yyyy-mm-dd>`. Names are free-form
-  (`answer-<topic>`, `message-NN`) where the numbering is unclear. A message the owner forwards carries a version label (v21, ...).
+  (`answer-<topic>`, `message-NN`) where the numbering is unclear. A message the owner forwards carries a version label (v22, ...).
 - Deliveries: `deliveries/<n>/` with `apply.sh` (PROTOCOL section 4). M2 uses `deliveries/m2-NN/` (m2-01 first) so the numbers
   never collide with the developers'.
 - Handoffs: `docs/handoffs/<ID>-handoff.md`. Reports: `docs/reports/`. History and sandbox records: `docs/history/`.
@@ -71,7 +76,7 @@ FILES AND NAMING
 - Check every developer report: recompute row counts, split counts, missing-data arithmetic, Holm p-values, block counts and
   compounded block returns before trusting any figure (recipes in section 11).
 - Reply format: a short plain-language note to the owner, then "For the developer (forward as is) - v<n>" only if something must go
-  to the developer. Last forward-as-is message: v21 (to D2: S2 accepted, start Work Order 1.7); the next is v22. Orders state: predictor (exact computation,
+  to the developer. Last forward-as-is message: v22 (to D2: Task 3 rulings); the next is v23. Orders state: predictor (exact computation,
   availability time), target, timeframes, lags, gut-check, plausible effect scale, family size, primary cell, direction.
 - Mandatory gut-checks for every formula and rule: (a) can the same raw price data appear on both sides? (b) does a shared latent
   state (volatility clustering, seasonality, stale last-trade prices, market drift) make the comparison trivially significant?
@@ -143,6 +148,12 @@ FILES AND NAMING
     1,536 of them inside the 128 missing hours (12 per hour) and 179 scattered; the missing bars coincide across the pairs. The old
     132-versus-128 discrepancy: 4 leading hours before the series start plus 128 interior gaps.
   - Gaps are masked, never dropped; an S1/S2 origin whose entry or exit bar falls in a gap is excluded and counted, never imputed.
+  - Zero-volume 5m bars (flat placeholders, no trades) in the discovery frame: ETH 1,795 and BTC 910 (0.21% and 0.11% of the 844,093
+    present bars). A zero-volume bar is a placeholder (a stale price), not an observation: it is MASKED like a missing bar in every
+    test (mistakes 8, 10 and 21).
+  - 15m: derived from 5m for both pairs (a 15m bin with a missing or masked 5m bar is missing). The store has no ETH 15m file;
+    `BTC_USDT-15m.feather` was built by the traded rule and differs from the derived series in 202 opens (0 closes) of 281,357
+    complete bars, with 14 bars present only natively: a comparison only.
   - Funding (ETHUSDT and BTCUSDT USD-M perpetuals, REST): a constant 8h settlement interval since each series' first settlement, no
     interval change observed. First settlements: ETH 2019-11-27 08:00 UTC, BTC 2019-09-10 08:00 UTC (confirmed by D2's delivery 8;
     the example timestamps of Work Order 1.6 assumed 00:00). One observation per symbol is masked: the first (its preceding span is
@@ -235,6 +246,7 @@ symmetric fees; the pair's activity fell after the 2026-01-29 fee change.
 Conventions
 - Bars are left-labelled and usable only after they close; the earliest action is the next bar's open. A close-of-day-t predictor
   enters at the open of day t+1, never at t's own close.
+- A bar with zero volume is a placeholder, not an observation: mask it like a missing bar in every test, for every market (mistake 21).
 - Holm is the gate (Bonferroni for reference). Within a family: the 10 S1 cells, the 2 S2 cells, the 48 Task 3 cells (per pair).
   Every result states family size and adjusted p; HAC or clustered SEs; correlation beside beta; MDE from the standard error, never
   post-hoc power. Cells are tagged pre-registered or exploratory.
@@ -410,9 +422,10 @@ S1 trend_slope (1d; family of 10 per pair; CLOSED, not advanced; section 5)
 Task 3 shock_response (`Task3-ETHUSDT`, `Task3-BTCUSDT`; 48 cells per pair = 2 timeframes x 12 horizons x 2 sides; 5m primary, 15m
 secondary)
 Governing document: Work Order 1.7 (M2, 2026-10-23) with `docs/work-orders/1.7-task3_reference.py`; M2 accepted the S2 report on
-2026-10-25 and D2 starts it now. Stop point: after the report; no freeze, no forward test. Summary:
-- Bars: both timeframes come from the 5m file (15m derived by the validated rule, for both pairs); gaps are masked; a return needs two
-  consecutive present bars.
+2026-10-25 and D2 started it at once; rulings of 2026-10-27 (forward v22): `docs/correspondence/answer-t3-rulings.md`, which override
+the order where they differ. Stop point: after the report; no freeze, no forward test. Summary:
+- Bars: both timeframes come from the 5m file (15m derived by the validated rule, for both pairs; the native BTC file is only
+  compared); gaps are masked and so are zero-volume 5m bars (ruling v22); a return needs two consecutive present, traded bars.
 - Event: a closed bar with |z| >= 3, z = r_j / sd of the previous 288 (5m) or 96 (15m) returns (ddof 1, the bar excluded, all
   unmasked). The decision is at the close, the entry at the next open.
 - De-clustering: one shared clock per timeframe and pair: keep the first event, ignore event bars until 13 bars later, both sides share
@@ -426,20 +439,29 @@ Governing document: Work Order 1.7 (M2, 2026-10-23) with `docs/work-orders/1.7-t
   the 48 per pair.
 - Classification of the primary cells (M = 0.35% on the excess): pass = Holm-adjusted p < 0.05 and excess >= M; dead = one-sided 95%
   upper bound < M and MDE <= M; otherwise inconclusive.
-- Dose-response (a discard rule): a fresh clock at |z| >= 4; discard the |z| >= 3 result if the |z| >= 4 estimate is smaller and
-  rests on at least 30 events; fewer than 30: "not evaluable", flag for M2.
+- Dose-response (a discard rule): a fresh clock at |z| >= 4; discard the |z| >= 3 result if the |z| >= 4 estimate is smaller (signed)
+  and rests on at least 30 events; fewer than 30: "not evaluable", flag for M2. It applies only to a cell whose |z| >= 3 mean excess is
+  positive; any other cell prints "n/a: no positive effect" (ruling v22).
 - Stability: 90-day blocks, T = sum t_b / sqrt(B'), p_stab = 1 - Phi(T) per primary cell (section 6, step 2); by-year and
   leave-one-year-out; robustness columns (one clock per side, baseline from the |z| < 3 origins, entry one bar late, naive SE, the
   |z| >= 4 numbers, costs as information, kept events by UTC hour); trade lists saved for the later after-tax layer; everything in the
   report is pre-tax and labelled so.
 - Registry: records at discovery (48 cells; primary ids `5m_k6_down`, `5m_k6_up`) and at stability; no economic-gate record (M is the
-  economic criterion); each primary cell is its own entry in the across-candidate families.
+  economic criterion); each primary cell is its own entry in the across-candidate families at BOTH steps (the discovery-step Holm is
+  informational; the pass criterion is the Holm over 48 within the family).
 - Gut-checks: the sd excludes the event bar; the target starts after the event bar closes; a first-bar reversal may be bid-ask bounce
   or a stale price (mistake 10), hence the late-entry column.
 - Expectation (M2 sandbox: ETH-like synthetic 5m returns, about 845,000 bars): about 1,300 (Gaussian) to 6,000 (fat tails) kept events
   per side, MDE about 0.03-0.05% against M = 0.35%, so the answer will be decisive. The likely outcome is "dead": a small or zero
   excess, perhaps statistically significant but far below M. A significant excess below M is descriptive, not a lead. Plausible: an
   excess within -0.2% and +0.2% at k = 6; above 1% at 60 minutes is a bug.
+- Dry run (D2, scratch, 2026-10-27; M2 saw it before ruling on zero-volume bars): 845,808 grid bars, 1,715 missing, 833,932 eligible 5m
+  origins; kept events at |z| >= 3 on 5m: ETH 4,172 down / 3,897 up, BTC 4,082 / 3,791 (15m: ETH 1,842 / 1,603, BTC 1,821 / 1,611); no
+  cell has an MDE above M. Primary cells (5m, k = 6; mean excess, t): ETH down -0.0449% (t -2.66), ETH up +0.0985% (5.74), BTC down
+  -0.0109% (-0.72), BTC up +0.0647% (4.75); all four DEAD; stability T: ETH down -1.94, ETH up 5.57, BTC down 0.13, BTC up 4.59. With
+  zero-volume bars masked: ETH up +0.1047% (6.11), BTC up +0.0635% (4.64), same classes. Reading: continuation after +3 sigma up-moves is
+  real but small (about 0.06-0.10% over 30 minutes, 0.085-0.17% at |z| >= 4) against a 0.30% stress round trip; no bounce after
+  down-moves (ETH keeps falling slightly). Descriptive, not a lead.
 
 Task 4 vol_forecast (deferred; needed for sizing and gating, not a candidate)
 - ETH/USDT and BTC/USDT, each its own family, same cutoff and holdout, walk-forward fit 365 / validate 90. Target: log realised
@@ -496,6 +518,10 @@ orientation for Task 3's two primary cells; the old per-block HAC/Stouffer stabi
 20. (M2 review of the Task 3 plan) Naming a procedure without its statistic ("standard rolling walk-forward" for Task 3's stability
     check): the developer cannot build it and nobody can calibrate it. Every gate in an order states its exact statistic, null and
     acceptance bands; Task 3's stability check was therefore redefined, and calibrated in the sandbox, before the order was issued.
+21. (D2's question, M2 ruling) Counting zero-volume placeholder bars as observations: a flat stale price enters the z windows, lowers
+    their sd, and the first live bar after a stretch of placeholders carries the whole gap move in one return, so it can pass |z| >= 3 by
+    construction. A bar with no trades is not an observation (the traded-bars rule of mistake 8, stale prices of mistake 10): mask it
+    like a missing bar, in every market. The orders said "present if it has open, high, low and close" and did not say this: say it.
 
 ## 9. Status, rulings in force, outstanding
 
@@ -522,6 +548,9 @@ Rulings in force (all in the repo)
 - Work Order 1.7 (`docs/work-orders/1.7.md`, M2, issued 2026-10-23) with `docs/work-orders/1.7-task3_reference.py` (D2 reports both
   filed): D2 starts it after M2's acceptance of the S2 report, i.e. from 2026-10-25.
 - `docs/correspondence/answer-s2-accepted.md` (M2, forward v21, 2026-10-25): S2 accepted and closed; D2 starts Work Order 1.7.
+- `docs/correspondence/answer-t3-rulings.md` (M2, forward v22, 2026-10-27): zero-volume 5m bars masked (primary); 15m derived for both
+  pairs; registry entries at both steps; dose-response only for positive cells; the sequence of delivery 14 (masked primary, check
+  against the variant file, live run only with the owner's "go live T3" and only if every check passed, report).
 
 Audit trail (what was seen when). M2's two corrections to Work Order 1.6 (HAC lags, gate-rule validity) were written on 2026-10-20 and
 2026-10-21 and the owner forwarded none of M2's files before D2's delivery 8, so D2 built and dry-ran S2 under the original order.
@@ -530,6 +559,10 @@ p_stab 0.384, gate pooled net +0.43 with 63.6% non-negative blocks (not passed);
 p_stab 0.0995, gate +0.26 with 47.8% (not passed); BTC 24h cell p 0.027 (Holm within 2: 0.053). Nothing in the rulings was chosen from
 these figures; none of the quantities that decide S2 (stability, gate) depends on the HAC lags. The live run used the ruled lags; D2's
 equality check showed that only the HAC-dependent quantities (SE, t, p, Holm, MDE) differ from the dry run.
+
+Audit trail, Task 3. D2's dry run and its read-only zero-volume variant (all four primary cells DEAD under both readings) reached M2 in
+message-24 before M2 ruled on the zero-volume question. The ruling (mask) was made on the principle of mistake 21 and would have been
+the same for any numbers; the "present" reading stays in the report as a labelled sensitivity column.
 
 M2's own verification, 2026-10-20 (sandbox only; nothing was re-run on the owner's machine)
 - S1 report and answer-to-message-19: every figure reproduces (Holm within 10 for both pairs; T = sum s_b / sqrt(30); p_stab =
@@ -551,17 +584,15 @@ M2's own verification, 2026-10-20 (sandbox only; nothing was re-run on the owner
   injected +0.50% excess is classified "pass" in 100% of paths and +0.10% "dead" in 100%.
 
 Outstanding
-1. Task 3 (D2, Work Order 1.7): step 0 first; M2 recomputes the report (section 11). Both primary cells are one-sided positive; the answer
-   will probably be "dead".
-2. D2's STATUS.md marks delivery 10 (the S2 report) "not verified" until the owner shows D2 its PASS output; the report is on GitHub and
-   M2 has accepted its figures.
+1. Task 3 (D2, Work Order 1.7): delivery 14 = masked primary, check against the variant file, live run (with the owner's "go live T3"),
+   report; M2 recomputes the report (section 11). Both primary cells are one-sided positive; the answer is almost surely "dead".
+2. D2's STATUS.md marked delivery 10 (the S2 report) "not verified" until the owner showed D2 its PASS output; check once.
 3. D1's messages 13-18 were never shown to M1 or M2: skim once for anything not covered by the S1 report's section 8 (all accepted).
 4. `research_cli.evaluate_fixed_lag`: confirm it is removed or superseded.
 5. Tax rules (section 10): the owner states which taxes apply and has them confirmed by a tax professional; until a confirmed rules file
    exists every result is pre-tax and labelled so. The tax layer itself is built in the expansion work order.
-6. M2's own files: NOTES.md revision 3 (2026-10-23) did not reach main (a fetch on 2026-10-25 still showed the 2026-09-23 snapshot, while
-   the PROTOCOL.md roster was verified in place by fetch and D2 reports the rulings and Work Order 1.7 filed). This revision 4 replaces it; after the owner applies delivery
-   m2-04, fetch `context/mathematician/NOTES.md` and check the Snapshot line.
+6. This file: revision 4 was filed by delivery m2-04 (owner's PASS 63edecf, 2026-10-25); revision 5 replaces it. My fetch tool returned
+   a cached copy of the old file after that PASS: trust the owner's PASS output, and fetch fresh at the start of the next chat.
 
 ## 10. Strategic assessment and the owner's roadmap
 
@@ -626,8 +657,8 @@ Strategic assessment (judgment, not a forecast)
 
 ## 11. First actions in the next chat
 
-1. Fetch `context/mathematician/NOTES.md` from GitHub and check that its Snapshot line is 2026-10-25 (revision 4); the 2026-10-23
-   revision never reached main. If it does not, tell the owner (delivery m2-04).
+1. Fetch `context/mathematician/NOTES.md` from GitHub and check that its Snapshot line is 2026-10-27 (revision 5) or later; the
+   fetch tool can return a cached copy, so a stale-looking file is not proof: ask the owner for the PASS output of the last delivery.
 2. If a developer report is waiting, read it first. Recompute before trusting (sandbox only, say so). Recipes:
    - Holm: sort the p-values, multiply the i-th smallest by (n - i + 1), take the running maximum, cap at 1; also across candidates
      per pair with every live candidate that has a record at that step (S1 included; for Task 3 each primary cell is an entry).
@@ -647,7 +678,8 @@ Strategic assessment (judgment, not a forecast)
    table; the 48-cell tables with the primary cells one-sided and Holm over 48; the classification; the dose-response result;
    stability (T, p_stab, B', per-block table, across-candidate Holm with S1 and S2); by-year and leave-one-year-out; the robustness
    columns (above all the late-entry column); the trade-list files and their SHA-256; the acceptance rates and the exact-reproduction
-   differences; the S1/S2 regression result. A significant excess below M is "dead", not a lead. Then accept, tell the owner in a short
+   differences; the S1/S2 regression result; the masked primary equals the masked rows of the variant file and the present rows
+   reproduce as the sensitivity column (reference dry-run numbers in section 7). A significant excess below M is "dead", not a lead. Then accept, tell the owner in a short
    plain note, and do not recommend a freeze unless a primary cell classifies "pass" and every other check agrees.
 4. Then, with the owner, propose the expansion as a short work order (section 10): which market first, the free data source, the cost
    model, the tax-rules file to be confirmed by a tax professional, the cutoff 2025-08-31 and the one-shot holdout.
