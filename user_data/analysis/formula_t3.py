@@ -77,7 +77,7 @@ class Frame:
         return pd.Timestamp(int(self.sec[j]), unit="s", tz="UTC")
 
 
-def frame_from_df(df: pd.DataFrame, width_s: int) -> tuple[Frame, dict]:
+def frame_from_df(df: pd.DataFrame, width_s: int, mask_zero_volume: bool = False) -> tuple[Frame, dict]:
     """Regular grid from the first to the last label; a bar is present only if open, high, low and close are all finite.
     Returns (Frame, facts): rows, grid length, missing bars, rows without full OHLC, zero-volume bars."""
     if df.index.has_duplicates or not df.index.is_monotonic_increasing:
@@ -89,12 +89,17 @@ def frame_from_df(df: pd.DataFrame, width_s: int) -> tuple[Frame, dict]:
     n = int((sec[-1] - sec[0]) // width_s) + 1
     pos = ((sec - sec[0]) // width_s).astype(np.int64)
     ohlc_ok = df[["open", "high", "low", "close"]].notna().all(axis=1).to_numpy()
+    masked_zero = 0
+    if mask_zero_volume and "volume" in df.columns:  # labeled VARIANT (Work Order 1.7 question 2): zero-trade placeholder bars treated as missing
+        zv = (df["volume"].to_numpy() == 0) & ohlc_ok
+        masked_zero = int(zv.sum())
+        ohlc_ok = ohlc_ok & ~zv
     O = np.full(n, np.nan)
     C = np.full(n, np.nan)
     O[pos[ohlc_ok]] = df["open"].to_numpy(float)[ohlc_ok]
     C[pos[ohlc_ok]] = df["close"].to_numpy(float)[ohlc_ok]
     zero_vol = int((df["volume"] == 0).sum()) if "volume" in df.columns else None
-    facts = {"rows": int(len(df)), "grid": n, "missing": int(n - ohlc_ok.sum()), "rows_without_full_ohlc": int((~ohlc_ok).sum()), "zero_volume_rows": zero_vol,
+    facts = {"rows": int(len(df)), "grid": n, "missing": int(n - ohlc_ok.sum()), "rows_without_full_ohlc": int(len(df) - df[["open", "high", "low", "close"]].notna().all(axis=1).sum()), "masked_zero_volume": masked_zero, "zero_volume_rows": zero_vol,
              "first": pd.Timestamp(int(sec[0]), unit="s", tz="UTC"), "last": pd.Timestamp(int(sec[-1]), unit="s", tz="UTC")}
     return Frame(sec[0] + width_s * np.arange(n), O, C, width_s), facts
 

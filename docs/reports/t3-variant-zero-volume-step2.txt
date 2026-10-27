@@ -1,0 +1,18 @@
+Task 3 labeled variant, zero-volume 5m bars masked (read-only, never recorded), Work Order 1.7 question 2, produced by deliveries/13/apply.sh on 2026-10-27T01:55:36Z (repo HEAD before this commit: 8273b98)
+command: python3 run_t3.py --pair <PAIR> --variant-zero-volume
+
+=== Task 3 labeled variant, zero-volume 5m bars masked (never recorded): ETH_USDT ===
+[present (primary)] 5m bars present 844093 (zero-volume bars masked: 0); eligible 5m origins 833932; cells with MDE above M: 0
+    5m k=6 down: n=4172 mean excess=-0.000448761 SE=0.000168894 t=-2.6570 one-sided p=0.996059 Holm(48)=1 MDE=0.000419872 -> DEAD
+    5m k=6 up  : n=3897 mean excess=0.000984773 SE=0.000171525 t=5.7413 one-sided p=4.69799e-09 Holm(48)=2.25504e-07 MDE=0.000426411 -> DEAD
+[masked (variant)] 5m bars present 842298 (zero-volume bars masked: 1795); eligible 5m origins 814602; cells with MDE above M: 0
+    5m k=6 down: n=4076 mean excess=-0.000461135 SE=0.000168977 t=-2.7290 one-sided p=0.996823 Holm(48)=1 MDE=0.000420077 -> DEAD
+    5m k=6 up  : n=3801 mean excess=0.00104674 SE=0.000171234 t=6.1129 one-sided p=4.89129e-10 Holm(48)=2.34782e-08 MDE=0.000425688 -> DEAD
+
+=== Task 3 labeled variant, zero-volume 5m bars masked (never recorded): BTC_USDT ===
+[present (primary)] 5m bars present 844093 (zero-volume bars masked: 0); eligible 5m origins 833932; cells with MDE above M: 0
+    5m k=6 down: n=4082 mean excess=-0.000108936 SE=0.000151451 t=-0.7193 one-sided p=0.764016 Holm(48)=1 MDE=0.000376507 -> DEAD
+    5m k=6 up  : n=3791 mean excess=0.00064748 SE=0.000136387 t=4.7474 one-sided p=1.03038e-06 Holm(48)=4.9458e-05 MDE=0.000339058 -> DEAD
+[masked (variant)] 5m bars present 843183 (zero-volume bars masked: 910); eligible 5m origins 816261; cells with MDE above M: 0
+    5m k=6 down: n=3991 mean excess=-0.000163071 SE=0.000150193 t=-1.0857 one-sided p=0.861204 Holm(48)=1 MDE=0.00037338 -> DEAD
+    5m k=6 up  : n=3718 mean excess=0.000635005 SE=0.000136839 t=4.6405 one-sided p=1.73759e-06 Holm(48)=8.34045e-05 MDE=0.000340182 -> DEAD

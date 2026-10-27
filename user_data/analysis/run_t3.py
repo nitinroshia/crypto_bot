@@ -54,13 +54,13 @@ def _find(pair: str, tf: str, data_dir: Path, raw_dir: Path | None) -> Path | No
 
 
 # ----------------------------------------------------------------------------- loading
-def load_pair(pair: str, data_dir: Path, raw_dir: Path | None = None, df5: pd.DataFrame | None = None, native15: pd.DataFrame | None = None) -> dict:
+def load_pair(pair: str, data_dir: Path, raw_dir: Path | None = None, df5: pd.DataFrame | None = None, native15: pd.DataFrame | None = None, mask_zero_volume: bool = False) -> dict:
     """5m file -> truncated at the cutoff -> grid frame; 15m derived from 5m; the native 15m file (if any) compared on every complete bar."""
     if df5 is None:
         df5 = load_bundle(data_dir, pair, ["5m"], raw_dir=raw_dir)["5m"]
     n_before = len(df5)
     df5 = truncate_at_cutoff(df5, CUTOFF)
-    fr5, facts5 = f3.frame_from_df(df5, 300)
+    fr5, facts5 = f3.frame_from_df(df5, 300, mask_zero_volume=mask_zero_volume)
     fr15 = f3.derive_15m(fr5)
     post = int((df5.index > CUTOFF).sum())
     p15 = None
@@ -142,7 +142,7 @@ def print_origin_facts_report(f: dict) -> None:
     if c is None:
         print("native 15m file: none (the 15m bars are derived from 5m for both pairs)")
     else:
-        print(f"native 15m file {f['files']['15m'][0]} sha256 {f['files']['15m'][1]}: {c['native_rows']} rows {c['native_first']} .. {c['native_last']}; compared with the derived series on {c['compared_bars']} complete bars: "
+        print(f"native 15m file {f['files']['15m'][0]} sha256 {f['files']['15m'][1]}: {c['native_rows']} rows in the whole file (before the cutoff truncation), discovery frame {c['native_first']} .. {c['native_last']}; compared with the derived series on {c['compared_bars']} complete bars: "
               f"open mismatches {c['open_mismatches']}, close mismatches {c['close_mismatches']}; present in the derived series but missing natively {c['present_derived_missing_native']}; "
               f"present natively but missing in the derived series {c['present_native_missing_derived']} (the order expects 0)")
     for tf in ("5m", "15m"):
@@ -159,6 +159,33 @@ def print_origin_facts_report(f: dict) -> None:
     sb = f["stability_blocks"]
     print(f"stability tiling: t0 = {sb['t0']}; full 90-day blocks {sb['full_90d_blocks']} (expect 32), partial block {sb['partial_days']:.1f} days (expect about 55)")
     print("(no returns, p-values or cell statistics are computed here; nothing is written)")
+
+
+# ----------------------------------------------------------------------------- labeled variant: zero-volume bars masked
+def variant_zero_volume(pair: str, data_dir: Path, raw_dir: Path | None = None, base: dict | None = None, masked_loaded: dict | None = None, base_loaded: dict | None = None) -> dict:
+    """READ-ONLY, never recorded (Work Order 1.7 question 2): the primary cells and the 48-cell Holm with zero-volume 5m bars treated as MISSING, next to the primary
+    (literal) reading in which they count as present."""
+    out = {}
+    for name, loaded in (("present (primary)", base_loaded), ("masked (variant)", masked_loaded)):
+        L = loaded if loaded is not None else load_pair(pair, data_dir, raw_dir, mask_zero_volume=(name.startswith("masked")))
+        P = prepare_pair(L)
+        cells = f3.family_cells([f3.cell_table(L["fr5"], P["5m"], "5m"), f3.cell_table(L["fr15"], P["15m"], "15m")])
+        rows = {}
+        for nm in ("down", "up"):
+            r = cells[(cells["timeframe"] == "5m") & (cells["k"] == f3.PRIMARY_K) & (cells["side"] == nm)].iloc[0]
+            cls = f3.classify({"mean": r["mean_excess"], "upper95": r["upper95"], "mde": r["mde"]}, float(r["p_holm"]))
+            rows[nm] = {"n": int(r["n"]), "mean_excess": float(r["mean_excess"]), "se": float(r["se"]), "t": float(r["t"]), "p_one": float(r["p_one"]), "p_holm": float(r["p_holm"]), "mde": float(r["mde"]), "classification": cls}
+        out[name] = {"bars_present": int(L["fr5"].present.sum()), "masked_zero_volume": L["facts5"].get("masked_zero_volume", 0), "eligible_origins": P["5m"]["reasons"]["eligible_origins"], "cells": rows,
+                     "mde_above_M": int((cells["mde"] > f3.M).sum())}
+    return out
+
+
+def print_variant_zero_volume(pair: str, v: dict) -> None:
+    print(f"\n=== Task 3 labeled variant, zero-volume 5m bars masked (never recorded): {pair} ===")
+    for name, d in v.items():
+        print(f"[{name}] 5m bars present {d['bars_present']} (zero-volume bars masked: {d['masked_zero_volume']}); eligible 5m origins {d['eligible_origins']}; cells with MDE above M: {d['mde_above_M']}")
+        for nm, r in d["cells"].items():
+            print(f"    5m k=6 {nm:<4}: n={r['n']} mean excess={r['mean_excess']:.6g} SE={r['se']:.6g} t={r['t']:.4f} one-sided p={r['p_one']:.6g} Holm(48)={r['p_holm']:.6g} MDE={r['mde']:.6g} -> {r['classification'].upper()}")
 
 
 # ----------------------------------------------------------------------------- by-year
@@ -323,6 +350,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--raw-dir", type=Path, default=None)
     p.add_argument("--registry-path", type=Path, default=None)
     p.add_argument("--origin-facts", action="store_true")
+    p.add_argument("--variant-zero-volume", action="store_true", help="read-only labeled variant: zero-volume 5m bars masked")
     p.add_argument("--commit-to-registry", action="store_true")
     p.add_argument("--self-test", action="store_true")
     return p
@@ -406,6 +434,10 @@ def _self_test() -> None:
         nat2 = nat.copy()
         nat2.iloc[100, nat2.columns.get_loc("close")] *= 1.01
         assert load_pair("ETH_USDT", data_dir, native15=nat2)["cmp15"]["close_mismatches"] == 1
+        vz = variant_zero_volume("ETH_USDT", data_dir)
+        assert vz["masked (variant)"]["masked_zero_volume"] == 2 and vz["masked (variant)"]["bars_present"] == vz["present (primary)"]["bars_present"] - 2 and vz["present (primary)"]["masked_zero_volume"] == 0
+        assert set(vz["masked (variant)"]["cells"]) == {"down", "up"}
+        print_variant_zero_volume("ETH_USDT", vz)
         print_report(res)
     # by-year equals the nonstationarity module on dense data (consistency with the project's rule)
     import nonstationarity
@@ -446,6 +478,9 @@ def main() -> None:
         raise SystemExit(2)
     if a.origin_facts:
         print_origin_facts_report(origin_facts_for(a.pair, a.data_dir, a.raw_dir))
+        return
+    if a.variant_zero_volume:
+        print_variant_zero_volume(a.pair, variant_zero_volume(a.pair, a.data_dir, a.raw_dir))
         return
     path = a.registry_path if a.registry_path is not None else (registry.LIVE_REGISTRY_PATH if a.commit_to_registry else registry.SCRATCH_REGISTRY_PATH)
     live = registry.is_live_registry(path)
