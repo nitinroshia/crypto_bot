@@ -54,8 +54,9 @@ def _find(pair: str, tf: str, data_dir: Path, raw_dir: Path | None) -> Path | No
 
 
 # ----------------------------------------------------------------------------- loading
-def load_pair(pair: str, data_dir: Path, raw_dir: Path | None = None, df5: pd.DataFrame | None = None, native15: pd.DataFrame | None = None, mask_zero_volume: bool = False) -> dict:
-    """5m file -> truncated at the cutoff -> grid frame; 15m derived from 5m; the native 15m file (if any) compared on every complete bar."""
+def load_pair(pair: str, data_dir: Path, raw_dir: Path | None = None, df5: pd.DataFrame | None = None, native15: pd.DataFrame | None = None, mask_zero_volume: bool = True) -> dict:
+    """5m file -> truncated at the cutoff -> grid frame; 15m derived from 5m; the native 15m file (if any) compared on every complete bar.
+    PRIMARY (M2's ruling 2, 2026-10-27): zero-volume 5m bars are MASKED like missing bars; mask_zero_volume=False is the labeled literal-reading sensitivity."""
     if df5 is None:
         df5 = load_bundle(data_dir, pair, ["5m"], raw_dir=raw_dir)["5m"]
     n_before = len(df5)
@@ -136,7 +137,7 @@ def print_origin_facts_report(f: dict) -> None:
     print(f"\n=== Task 3 origin facts: {f['pair']} ===")
     print(f"5m file {f['files']['5m'][0]} sha256 {f['files']['5m'][1]}")
     print(f"5m rows before the cutoff truncation: {f['rows_before_cutoff_truncation']}; in the discovery frame: {f5['rows']}; grid {f5['grid']} bars {f5['first']} .. {f5['last']}; "
-          f"missing bars in the grid: {f5['missing']} (rows without full OHLC: {f5['rows_without_full_ohlc']}); zero-volume rows (treated as present): {f5['zero_volume_rows']}; rows after the cutoff: {f['post_cutoff_rows']} (must be 0)")
+          f"missing bars in the grid: {f5['missing']} (rows without full OHLC: {f5['rows_without_full_ohlc']}); zero-volume rows: {f5['zero_volume_rows']} (masked as missing bars in the primary: {f5['masked_zero_volume']}); rows after the cutoff: {f['post_cutoff_rows']} (must be 0)")
     print("expected for a gap-free frame starting 2017-08-17 04:00: 845,808 5m bars, first eligible origin 2017-08-18 04:05 (15m 04:15), last 22:55 on 2025-08-31 (15m 20:45)")
     c = f["cmp15"]
     if c is None:
@@ -163,10 +164,10 @@ def print_origin_facts_report(f: dict) -> None:
 
 # ----------------------------------------------------------------------------- labeled variant: zero-volume bars masked
 def variant_zero_volume(pair: str, data_dir: Path, raw_dir: Path | None = None, base: dict | None = None, masked_loaded: dict | None = None, base_loaded: dict | None = None) -> dict:
-    """READ-ONLY, never recorded (Work Order 1.7 question 2): the primary cells and the 48-cell Holm with zero-volume 5m bars treated as MISSING, next to the primary
-    (literal) reading in which they count as present."""
+    """READ-ONLY, never recorded: the primary cells and the 48-cell Holm with zero-volume 5m bars MASKED (the primary since M2's ruling of 2026-10-27), next to the
+    literal reading in which they count as present (the labeled sensitivity)."""
     out = {}
-    for name, loaded in (("present (primary)", base_loaded), ("masked (variant)", masked_loaded)):
+    for name, loaded in (("masked (primary)", masked_loaded), ("present (literal reading, sensitivity)", base_loaded)):
         L = loaded if loaded is not None else load_pair(pair, data_dir, raw_dir, mask_zero_volume=(name.startswith("masked")))
         P = prepare_pair(L)
         cells = f3.family_cells([f3.cell_table(L["fr5"], P["5m"], "5m"), f3.cell_table(L["fr15"], P["15m"], "15m")])
@@ -181,7 +182,7 @@ def variant_zero_volume(pair: str, data_dir: Path, raw_dir: Path | None = None, 
 
 
 def print_variant_zero_volume(pair: str, v: dict) -> None:
-    print(f"\n=== Task 3 labeled variant, zero-volume 5m bars masked (never recorded): {pair} ===")
+    print(f"\n=== Task 3 zero-volume bars: masked primary and the literal-reading sensitivity (neither is a registry value for the sensitivity): {pair} ===")
     for name, d in v.items():
         print(f"[{name}] 5m bars present {d['bars_present']} (zero-volume bars masked: {d['masked_zero_volume']}); eligible 5m origins {d['eligible_origins']}; cells with MDE above M: {d['mde_above_M']}")
         for nm, r in d["cells"].items():
@@ -301,7 +302,8 @@ def run_t3(pair: str, data_dir: Path, raw_dir: Path | None = None, registry_path
          "detail": {"entries": entries_d, "primary_cells": primary, "all_cells": cells_json, "family_size": 48, "mu_6_5m": float(prim["mu"]),
                     "dose_response": _clean(dose), "origins": _clean({tf: {"reasons": facts["tf"][tf]["reasons"], "first_origin": facts["tf"][tf]["first_origin"], "last_origin": facts["tf"][tf]["last_origin"],
                                                                       "z3": facts["tf"][tf]["z3"], "z4": facts["tf"][tf]["z4"]} for tf in ("5m", "15m")}),
-                    "post_cutoff_rows": L["post_cutoff_rows"], "files": {k: list(v) for k, v in L["files"].items()}, "cmp15": _clean(L["cmp15"]), "zero_volume_rows": L["facts5"]["zero_volume_rows"]}},
+                    "post_cutoff_rows": L["post_cutoff_rows"], "files": {k: list(v) for k, v in L["files"].items()}, "cmp15": _clean(L["cmp15"]), "zero_volume_rows": L["facts5"]["zero_volume_rows"],
+                    "zero_volume_masking": "primary: zero-volume 5m bars masked as missing (M2 ruling 2, 2026-10-27)", "masked_zero_volume": L["facts5"]["masked_zero_volume"]}},
         registry_path, commit_to_registry=commit_to_registry)
     registry.append_record(
         {"family": family, "pair": reg_pair, "status": "stability", "timestamp_utc": registry.new_timestamp(),
@@ -386,7 +388,7 @@ def _self_test() -> None:
         assert [(r["family"], r["status"]) for r in recs] == [("Task3-ETHUSDT", "discovery"), ("Task3-ETHUSDT", "stability")], "exactly two records, no economic gate"
         d, s = recs[0]["detail"], recs[1]["detail"]
         assert len(d["all_cells"]) == 48 and d["family_size"] == 48 and set(d["entries"]) == {"5m_k6_down", "5m_k6_up"} and set(s["entries"]) == {"5m_k6_down", "5m_k6_up"}
-        assert d["post_cutoff_rows"] == 0 and res["facts"]["post_cutoff_rows"] == 0 and d["zero_volume_rows"] == 2
+        assert d["post_cutoff_rows"] == 0 and res["facts"]["post_cutoff_rows"] == 0 and d["zero_volume_rows"] == 2 and d["masked_zero_volume"] == 2
         assert {p["classification"] for p in d["primary_cells"].values()} <= {"pass", "dead", "inconclusive"}
         for cid in ("5m_k6_down", "5m_k6_up"):
             assert abs(d["entries"][cid] - d["primary_cells"][cid]["p_one"]) < 1e-15 and s["cells"][cid]["B_full"] == 2 and len(s["cells"][cid]["blocks"]) == 2
@@ -403,8 +405,8 @@ def _self_test() -> None:
         before = sorted(p.name for p in tmp.rglob("*"))
         facts = origin_facts_for("ETH_USDT", data_dir)
         assert sorted(p.name for p in tmp.rglob("*")) == before, "origin facts write nothing"
-        assert facts["facts5"]["last"] == pd.Timestamp("2025-08-31 23:55", tz="UTC") and facts["facts5"]["zero_volume_rows"] == 2 and facts["facts5"]["missing"] == 3
-        assert facts["tf"]["5m"]["reasons"]["not_origin_cutoff"] == 12 and facts["tf"]["5m"]["reasons"]["bars_missing"] == 3
+        assert facts["facts5"]["last"] == pd.Timestamp("2025-08-31 23:55", tz="UTC") and facts["facts5"]["zero_volume_rows"] == 2 and facts["facts5"]["missing"] == 5
+        assert facts["tf"]["5m"]["reasons"]["not_origin_cutoff"] == 12 and facts["tf"]["5m"]["reasons"]["bars_missing"] == 5, "3 absent bars + 2 masked zero-volume bars"
         print_origin_facts_report(facts)
         # live registry hygiene
         fake = tmp / "fake_live" / "registry.jsonl"
@@ -435,9 +437,11 @@ def _self_test() -> None:
         nat2.iloc[100, nat2.columns.get_loc("close")] *= 1.01
         assert load_pair("ETH_USDT", data_dir, native15=nat2)["cmp15"]["close_mismatches"] == 1
         vz = variant_zero_volume("ETH_USDT", data_dir)
-        assert vz["masked (variant)"]["masked_zero_volume"] == 2 and vz["masked (variant)"]["bars_present"] == vz["present (primary)"]["bars_present"] - 2 and vz["present (primary)"]["masked_zero_volume"] == 0
-        assert set(vz["masked (variant)"]["cells"]) == {"down", "up"}
+        lit = vz["present (literal reading, sensitivity)"]
+        assert vz["masked (primary)"]["masked_zero_volume"] == 2 and vz["masked (primary)"]["bars_present"] == lit["bars_present"] - 2 and lit["masked_zero_volume"] == 0
+        assert set(vz["masked (primary)"]["cells"]) == {"down", "up"}
         print_variant_zero_volume("ETH_USDT", vz)
+        assert res["dose"]["down"]["verdict"].startswith(("n/a", "keep", "discard", "not evaluable")) and all(d["z3_mean"] > 0 or d["verdict"] == "n/a: no positive effect" for d in res["dose"].values())
         print_report(res)
     # by-year equals the nonstationarity module on dense data (consistency with the project's rule)
     import nonstationarity

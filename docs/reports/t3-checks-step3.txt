@@ -1,0 +1,11 @@
+== check 1: masked-primary variant output against docs/reports/t3-variant-zero-volume-step2.txt
+variant check: 12 lines compared (4 sections x 3 lines per pair) -> all equal to the printed digits
+CHECK PASSED
+
+== check 2: dry-run primary cells against the masked variant rows
+dry-run records against the masked variant rows: 4 primary cells compared -> all equal to the printed digits
+CHECK PASSED
+
+== check 3: live records against the dry-run records
+live records against the dry-run records (4 records, every field except timestamp_utc) -> equal
+CHECK PASSED

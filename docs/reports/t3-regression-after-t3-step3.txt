@@ -1,0 +1,55 @@
+S1 and S2 reports regenerated after the Task 3 live records (registry 30 lines) against the committed reports: differing lines. Allowed by design (R1): the across-candidate Holm rows, the cumulative counts, the generation stamp; summary tables identical (S2: but for the Holm-across-candidates column).
+s1 report regression (after): 18 differing lines, summary table identical
+  < Generated 2026-10-19 04:28:56Z by `s1_report.py` (read-only) at repo commit 4487f1e. Registry records are from the step-5 live run, commit 4487f1e; the pre-fix S1 records were voided by commit ac63f
+  > Generated 2026-10-28 04:45:18Z by `s1_report.py` (read-only) at repo commit 090d55b. Registry records are from the step-5 live run, commit 4487f1e; the pre-fix S1 records were voided by commit ac63f
+  < `cumulative_count` for ETHUSDT: **1**; `cumulative_cells`: **10**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Hol
+  > `cumulative_count` for ETHUSDT: **3**; `cumulative_cells`: **60**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Hol
+  < | discovery | 1 | 0.128192 | 0.128192 |
+  < | stability | 1 | 0.230385 | 0.230385 |
+  < | economic_gate | 1 | NaN | NaN |
+  > | discovery | 4 | 0.128192 | 0.384576 |
+  > | stability | 4 | 0.230385 | 0.691154 |
+  > | economic_gate | 2 | NaN | NaN |
+  < `cumulative_count` for BTCUSDT: **1**; `cumulative_cells`: **10**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Hol
+  > `cumulative_count` for BTCUSDT: **3**; `cumulative_cells`: **60**. `holm_at_step` (across candidates; a family of one is unadjusted; the economic gate is a pass/fail rule with no p-value, so its Hol
+  < | discovery | 1 | 0.0145107 | 0.0145107 |
+  < | stability | 1 | 0.0554723 | 0.0554723 |
+  < | economic_gate | 1 | NaN | NaN |
+  > | discovery | 4 | 0.0145107 | 0.043532 |
+  > | stability | 4 | 0.0554723 | 0.166417 |
+  > | economic_gate | 2 | NaN | NaN |
+REGRESSION CHECK PASSED
+s2 report regression (after): 32 differing lines, summary table differs only in the Holm-across-candidates column
+  < Generated 2026-10-25 07:14:17Z by `s2_report.py` (read-only) at repo commit 294afb8. Registry records are from the S2 live run, commit 294afb8, written once per pair. Every figure below was recomput
+  > Generated 2026-10-28 04:45:21Z by `s2_report.py` (read-only) at repo commit 090d55b. Registry records are from the S2 live run, commit 294afb8, written once per pair. Every figure below was recomput
+  < | ETH_USDT | 6031 | 22 | -0.000661852 | 0.4637 | 0.6101 | 0.305 | 0.3843 | 0.4608 | False | 0.4319 | 14 of 22 (needs 16) | False | 16.72 | 13 of 22 | True |
+  < | BTC_USDT | 6265 | 23 | -0.00540211 | 0.158 | 0.158 | 0.03162 | 0.09945 | 0.1109 | False | 0.2623 | 11 of 23 (needs 17) | False | 13.56 | 16 of 23 | False |
+  > | ETH_USDT | 6031 | 22 | -0.000661852 | 0.4637 | 0.6101 | 0.305 | 0.3843 | 0.7686 | False | 0.4319 | 14 of 22 (needs 16) | False | 16.72 | 13 of 22 | True |
+  > | BTC_USDT | 6265 | 23 | -0.00540211 | 0.158 | 0.158 | 0.03162 | 0.09945 | 0.1989 | False | 0.2623 | 11 of 23 (needs 17) | False | 13.56 | 16 of 23 | False |
+  < 1000 paths; one-sided p < 0.05 in **0.078** of paths for the primary 72h cell with 36 lags (band <= 0.08; binomial se 0.008) and **0.067** for the 24h cell with 12 lags (no band); with the supersede
+  > The persistent null was not run in this build of the report (self-test run).
+  < - **Across-candidate Holm (R1, S1 and S2 are both candidates for this pair):** raw p_stab 0.384308, Holm-adjusted **0.46077**; S2's raw p_stab must be below 0.025 to survive the two-candidate Holm: 
+  > - **Across-candidate Holm (R1, S1 and S2 are both candidates for this pair):** raw p_stab 0.384308, Holm-adjusted **0.768616**; S2's raw p_stab must be below 0.025 to survive the two-candidate Holm:
+  < `cumulative_count` for ETHUSDT: **2**; `cumulative_cells`: **12**. `holm_at_step` (across candidates; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined). This pair's S2
+  > `cumulative_count` for ETHUSDT: **3**; `cumulative_cells`: **60**. `holm_at_step` (across candidates; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined). This pair's S2
+  < | discovery | 2 | S1-ETHUSDT, S2-ETHUSDT | 0.463651 | 0.463651 |
+  < | stability | 2 | S1-ETHUSDT, S2-ETHUSDT | 0.384308 | 0.46077 |
+  > | discovery | 4 | S1-ETHUSDT, S2-ETHUSDT, Task3-ETHUSDT:5m_k6_down, Task3-ETHUSDT:5m_k6_up | 0.463651 | 0.927303 |
+  > | stability | 4 | S1-ETHUSDT, S2-ETHUSDT, Task3-ETHUSDT:5m_k6_down, Task3-ETHUSDT:5m_k6_up | 0.384308 | 0.768616 |
+  < | discovery | 0.128192 | 0.256384 |
+  < | stability | 0.230385 | 0.46077 |
+  > | discovery | 0.128192 | 0.384576 |
+  > | stability | 0.230385 | 0.691154 |
+  < - **Across-candidate Holm (R1, S1 and S2 are both candidates for this pair):** raw p_stab 0.0994503, Holm-adjusted **0.110945**; S2's raw p_stab must be below 0.025 to survive the two-candidate Holm
+  > - **Across-candidate Holm (R1, S1 and S2 are both candidates for this pair):** raw p_stab 0.0994503, Holm-adjusted **0.198901**; S2's raw p_stab must be below 0.025 to survive the two-candidate Holm
+  < `cumulative_count` for BTCUSDT: **2**; `cumulative_cells`: **12**. `holm_at_step` (across candidates; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined). This pair's S2
+  > `cumulative_count` for BTCUSDT: **3**; `cumulative_cells`: **60**. `holm_at_step` (across candidates; the economic gate is a pass/fail rule with no p-value, so its Holm is undefined). This pair's S2
+  < | discovery | 2 | S1-BTCUSDT, S2-BTCUSDT | 0.158049 | 0.158049 |
+  < | stability | 2 | S1-BTCUSDT, S2-BTCUSDT | 0.0994503 | 0.110945 |
+  > | discovery | 4 | S1-BTCUSDT, S2-BTCUSDT, Task3-BTCUSDT:5m_k6_down, Task3-BTCUSDT:5m_k6_up | 0.158049 | 0.316099 |
+  > | stability | 4 | S1-BTCUSDT, S2-BTCUSDT, Task3-BTCUSDT:5m_k6_down, Task3-BTCUSDT:5m_k6_up | 0.0994503 | 0.198901 |
+  < | discovery | 0.0145107 | 0.0290213 |
+  < | stability | 0.0554723 | 0.110945 |
+  > | discovery | 0.0145107 | 0.043532 |
+  > | stability | 0.0554723 | 0.166417 |
+REGRESSION CHECK PASSED

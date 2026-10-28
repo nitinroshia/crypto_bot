@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-27, by D2 (developer), Work Order 1.7 step 2 (delivery 13: zero-volume variant, message-24). Refreshed in full
+Last updated: 2026-10-28, by D2 (developer), Work Order 1.7 (delivery 14: masked primary, checks, live run behind --go-live-t3). Refreshed in full
 (M2's item 10): the stale 2026-09-25 text is gone; what was still true is kept in "Settled facts". Where this file and `docs/`
 disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.6.md`, then `docs/correspondence/answer-s2-rulings.md`
 (M2's rulings of 2026-10-23, which override Work Order 1.6 where they differ), then `context/developer/NOTES.md`.
@@ -45,10 +45,15 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
   (5m) ETH 4,172 down / 3,897 up, BTC 4,082 / 3,791 (no flag: all within 500..20,000, asymmetry <= 1.07); zero-volume 5m rows ETH 1,795, BTC 910 (counted as present); BTC native 15m vs derived: 202 open mismatches, 0 close, 14 bars present only natively.
 - DRY-RUN FIGURES (scratch, NOT in the registry; the report will carry the full tables): primary 5m k=6 cells all classify DEAD. ETH down mean excess -0.000449 (t -2.66, one-sided p 0.996), ETH up +0.000985 (t 5.74, Holm over 48 2.3e-7); BTC down -0.000109 (t -0.72, p 0.764),
   BTC up +0.000647 (t 4.75, Holm 4.9e-5). Stability T: ETH down -1.94, up 5.57; BTC down 0.13, up 4.59 (32 of 32 blocks used). Dose-response (literal signed rule): BTC down "discard", the other three "keep". M = 0.0035; no cell of 48 has MDE above M.
-- Delivery 13 (`deliveries/13/`) is prepared: a read-only labeled variant (`run_t3.py --variant-zero-volume`: zero-volume 5m bars masked) run for both pairs and committed as `docs/reports/t3-variant-zero-volume-step2.txt`, and `message-24.md` to M2 (the facts above, the evidence on
-  questions 1-2 of message-23 and a flag on the dose-response rule). `formula_t3.py` gains the optional `mask_zero_volume` argument (default off; the reference reproduction and acceptance are unchanged). NOT VERIFIED until the owner's PASS output comes back. No registry write.
-- WAITING FOR: M2's rulings on message-23 (15m derivation, zero-volume bars, registry entries) and on message-24, then the owner's explicit flag for the live run. If M2 rules that zero-volume bars are masked, the primary changes and the dry run is repeated first. If a primary cell ever classifies PASS: STOP and report to M2.
-- NEXT: the live run delivery (S1 and S2 regressions before and after; records equal the dry run; first 26 registry lines byte-identical), then `t3_report.py` (trade lists, PRE-TAX), then stop for M2.
+- Delivery 13 (2026-10-27, commit `2544e1f`) VERIFIED by the owner's output: 41 self-tests passed, the registry stayed at 26 lines, the labeled variant (zero-volume 5m bars masked) is committed (`docs/reports/t3-variant-zero-volume-step2.txt`; all four primary cells DEAD under both readings;
+  ETH up +0.0985% -> +0.1047%, BTC up +0.0647% -> +0.0635%), `message-24.md` filed. M2 ruled (`docs/correspondence/answer-t3-rulings.md`, commit `090d55b`, v22): (1) 15m bars derived from 5m by the order's rule; the native BTC file is only a comparison (the expectation of 0 mismatches is withdrawn);
+  (2) zero-volume 5m bars are MASKED, as missing bars, everywhere: this is the PRIMARY from the live run on, the literal "present" reading is the labeled sensitivity; (3) registry entries approved (each primary cell its own Holm entry at both steps; the discovery-step Holm is informational);
+  (4) dose-response: the discard rule applies only to a cell whose |z| >= 3 mean excess is positive, else "n/a: no positive effect"; (5) message-23's other readings approved. Sequence: delivery 14 = masked primary + self-tests, scratch dry run, automatic check against the masked rows of the variant file,
+  the live run ONLY if the owner's message also says "go live T3", S1/S2 regressions before and after; the report (trade lists of the masked primary, PRE-TAX, placeholder counts, what masking removes, the 15m comparison) in delivery 15. No "found" language; if a primary cell classifies PASS: STOP and report to M2.
+- Step 0 for the ruled sequence: the owner's diag (2026-10-27T23:24:18Z) shows the folder clean at `090d55b` = `origin/main`, registry 26 lines equal to GitHub; the owner's message that carried M2's v22 text did NOT contain "go live T3".
+- Delivery 14 (`deliveries/14/`) is prepared: `formula_t3.py` (ruling 4 and the zero-volume equivalence self-test: a zero-volume bar behaves exactly like a missing bar), `run_t3.py` (masked primary; the literal reading is the labeled sensitivity), `check_t3.py` (variant, dry-vs-variant and live-vs-dry checks).
+  The script stops after the checks (everything put back, nothing committed) unless started with `--go-live-t3`. NOT VERIFIED until the owner's PASS output comes back. The live registry has 26 lines before and 30 after the live run (Task3-ETHUSDT and Task3-BTCUSDT, discovery + stability).
+- NEXT: delivery 15 = the Task 3 report (`t3_report.py`, read-only, refuses unless every recomputed figure reproduces the registry; PRE-TAX; trade lists of the masked primary), then stop for M2.
 
 ## Settled facts
 - Pairs: ETH/USDT and BTC/USDT are the two live pairs for research and execution (Work Order 1.4, 2026-09-23); ETH/FDUSD is retired as an execution candidate and its

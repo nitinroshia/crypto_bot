@@ -23,15 +23,17 @@ SPEC (Work Order 1.7 section 1 and 2), in one place
                 descriptive. Holm and Bonferroni over the 48 (primary one-sided and other two-sided p in the same Holm).
   classify      M = 0.0035 on the excess: PASS = Holm one-sided p < 0.05 and mean excess >= M; DEAD = mean + 1.645 SE < M and
                 MDE <= M; otherwise INCONCLUSIVE.
-  dose          the same with |z| >= 4 and its own fresh shared clock; |z| >= 3 is discarded if the |z| >= 4 mean excess is smaller
-                and the |z| >= 4 sample has at least 30 events; fewer than 30: "not evaluable", flagged for M2.
+  dose          the same with |z| >= 4 and its own fresh shared clock; for a cell whose |z| >= 3 mean excess is POSITIVE (M2's ruling of 2026-10-27),
+                |z| >= 3 is discarded if the |z| >= 4 mean excess is smaller and the |z| >= 4 sample has at least 30 events; fewer than 30:
+                "not evaluable", flagged for M2; a cell with a non-positive |z| >= 3 mean prints "n/a: no positive effect".
   stability     per primary cell: 90-calendar-day blocks tiled from t0 = entry time of the first eligible 5m origin; a block is scored
                 only if its whole window lies inside [t0, entry time of the last eligible 5m origin + 5 minutes]; blocks with < 30
                 events are listed and excluded; t_b = mean(e) / (sd(e) / sqrt(n_b)); T = sum t_b / sqrt(B'); p_stab = 1 - Phi(T).
 
 INTERPRETATION CHOICES (all listed in the report)
-  1. The "bar present" test is the order's literal one: a zero-trade placeholder bar that has open, high, low and close counts as
-     present; the facts report how many zero-volume bars exist.
+  1. A bar is present iff open, high, low and close exist AND, in the PRIMARY (M2's ruling of 2026-10-27), its volume is not zero: a zero-volume
+     placeholder bar is treated exactly like a missing bar everywhere (no return for it or the next bar, every z window containing it invalid, a target window
+     containing it incomplete, a 15m bin containing it missing, excluded from mu_k). The literal reading (placeholders present) is the labeled sensitivity.
   2. Day clusters use the UTC calendar day of the entry bar's label (bar j+1).
   3. Normal p-values use the survival function (accurate in the tail) instead of 1 - cdf; the difference is below 1e-15.
 """
@@ -290,7 +292,9 @@ def dose_response(fr: Frame, prep: dict | None = None, k: int = PRIMARY_K) -> di
     out = {}
     for nm in ("down", "up"):
         s3, s4 = r3[nm]["stats"], r4[nm]["stats"]
-        if s4["n"] < NMIN_BLOCK:
+        if s3["mean"] <= 0:  # M2's ruling 4 (2026-10-27): the discard rule applies only to a cell with a POSITIVE |z| >= 3 mean excess
+            verdict = "n/a: no positive effect"
+        elif s4["n"] < NMIN_BLOCK:
             verdict = "not evaluable (fewer than 30 events at |z| >= 4): flag for M2"
         elif s4["mean"] < s3["mean"]:
             verdict = "discard the |z| >= 3 result"
@@ -470,6 +474,32 @@ def _self_test(reduced: bool = True) -> None:
     assert abs(f15c.O[5] - frb.O[15]) == 0 and abs(f15c.C[5] - frb.C[17]) == 0 and f15c.sec[0] % 900 == 0, "15m open is the first 5m open, close the last 5m close"
     print("  gaps: the return after a missing bar is masked; z windows with a masked return are not eligible (288 bars after the gap); origins whose j+1..j+12 contains the gap are excluded; "
           "a kept event with an incomplete window stays on the clock and is counted as dropped; a 15m bin with a missing 5m bar is missing")
+
+    # ---- 2b. M2's ruling 2: a zero-volume bar behaves EXACTLY like a missing bar (masked primary)
+    ndz = 1500
+    rz = ref.make_returns(ndz, np.random.default_rng(9), "t4sv")
+    Cz, Oz = ref.closes_opens(rz)
+    idxz = pd.date_range("2025-03-01", periods=ndz, freq="5min", tz="UTC")
+    dfz = pd.DataFrame({"open": Oz * 100, "high": np.maximum(Oz, Cz) * 100.01, "low": np.minimum(Oz, Cz) * 99.99, "close": Cz * 100, "volume": 1.0}, index=idxz)
+    zbar = 700
+    dfz_zero = dfz.copy()
+    dfz_zero.iloc[zbar, dfz_zero.columns.get_loc("volume")] = 0.0
+    fa, fact_a = frame_from_df(dfz_zero, 300, mask_zero_volume=True)
+    fb, _ = frame_from_df(dfz.drop(index=idxz[zbar]), 300)
+    fc, fact_c = frame_from_df(dfz_zero, 300)
+    assert np.array_equal(fa.present, fb.present) and np.array_equal(np.nan_to_num(fa.O, nan=-1), np.nan_to_num(fb.O, nan=-1)) and np.array_equal(np.nan_to_num(fa.C, nan=-1), np.nan_to_num(fb.C, nan=-1))
+    pa, pb = prepare(fa, W5), prepare(fb, W5)
+    for key in ("r", "z"):
+        assert np.array_equal(pa[key], pb[key], equal_nan=True), key
+    for key in ("eligible", "tgt_ok", "origin"):
+        assert np.array_equal(pa[key], pb[key]), key
+    assert np.isnan(pa["r"][zbar]) and np.isnan(pa["r"][zbar + 1]) and np.isfinite(pa["r"][zbar + 2]), "its own return and the next bar's return are masked"
+    assert not pa["eligible"][zbar:zbar + 2 + W5].any() and pa["eligible"][zbar + 2 + W5], "every z window containing it is invalid (the 288 following bars)"
+    assert not pa["tgt_ok"][zbar - 12:zbar].any() and not pa["origin"][zbar - 12:zbar].any(), "a target window containing it makes the origin or event incomplete"
+    a15, b15 = derive_15m(fa), derive_15m(fb)
+    assert np.array_equal(a15.present, b15.present) and not a15.present[(fa.sec[zbar] - a15.sec[0]) // 900], "a 15m bin containing it is missing"
+    assert fc.present[zbar] and fact_a["masked_zero_volume"] == 1 and fact_c["masked_zero_volume"] == 0, "the literal reading (control) keeps it present"
+    print("  zero-volume bar (primary, masked): identical to a missing bar in the grid, returns, z windows (288 bars), target windows and the 15m bin; the literal reading keeps it present")
 
     # ---- 3. cutoff: truncated frame, sanity bars and last origins
     n_total = 2937 * 288 + 4 * 288
