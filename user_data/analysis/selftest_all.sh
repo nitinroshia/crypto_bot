@@ -54,6 +54,7 @@ run run_s2.py --self-test
 run s2_report.py --self-test
 run formula_t3.py
 run run_t3.py --self-test
+run t3_report.py --self-test
 run selftest_registry_hygiene.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test

@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh` (41 self-tests as of delivery 12). Never skip the self-test to save time --
+  `selftest_all.sh` (42 self-tests as of delivery 15). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -90,6 +90,9 @@ summary but matter for not repeating past mistakes.
 - Delivery 14 (Work Order 1.7 live run): `check_t3.py` has three modes (variant: the delivery-13 variant file equals the same output with the masked reading as primary; dry-vs-variant: the four primary cells of the dry-run records equal the masked rows to the printed digits;
   live-vs-dry: four records equal except timestamp_utc). The live write needs `--go-live-t3` (M2's phrase "go live T3" in the owner's message); without it the script stops after the checks and puts everything back. Dose-response verdicts: "n/a: no positive effect" for a cell whose
   |z| >= 3 mean excess is not positive; the signed discard rule only for positive cells. The report is delivery 15.
+- `t3_report.py` (Work Order 1.7 step 3): read-only; per pair it loads the masked and the literal frames, runs `run_t3.run_t3` into a throwaway scratch registry (never the live file) and requires the two recomputed records to equal the live ones (timestamps aside) before writing anything;
+  it writes `docs/reports/t3-report-step3.md` and one CSV per primary cell (`t3-trades-<PAIR>-<cell>.csv`: pair, cell, event_bar_time_utc, entry_time_utc, exit_time_utc (close of bar j+6), entry_price, exit_price, gross_log_return, excess) and lists their SHA-256; the exact-reproduction differences are recomputed (about 30 s;
+  `--skip-repro` for tests); acceptance, check and regression outputs are quoted from the committed files. No "found" language (M2's ruling 8). PRE-TAX.
 - Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
   (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's

@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-28, by D2 (developer), Work Order 1.7 (delivery 14: masked primary, checks, live run behind --go-live-t3). Refreshed in full
+Last updated: 2026-10-28, by D2 (developer), Work Order 1.7 step 3 (delivery 15: the Task 3 report). Refreshed in full
 (M2's item 10): the stale 2026-09-25 text is gone; what was still true is kept in "Settled facts". Where this file and `docs/`
 disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.6.md`, then `docs/correspondence/answer-s2-rulings.md`
 (M2's rulings of 2026-10-23, which override Work Order 1.6 where they differ), then `context/developer/NOTES.md`.
@@ -51,9 +51,15 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
   (4) dose-response: the discard rule applies only to a cell whose |z| >= 3 mean excess is positive, else "n/a: no positive effect"; (5) message-23's other readings approved. Sequence: delivery 14 = masked primary + self-tests, scratch dry run, automatic check against the masked rows of the variant file,
   the live run ONLY if the owner's message also says "go live T3", S1/S2 regressions before and after; the report (trade lists of the masked primary, PRE-TAX, placeholder counts, what masking removes, the 15m comparison) in delivery 15. No "found" language; if a primary cell classifies PASS: STOP and report to M2.
 - Step 0 for the ruled sequence: the owner's diag (2026-10-27T23:24:18Z) shows the folder clean at `090d55b` = `origin/main`, registry 26 lines equal to GitHub; the owner's message that carried M2's v22 text did NOT contain "go live T3".
-- Delivery 14 (`deliveries/14/`) is prepared: `formula_t3.py` (ruling 4 and the zero-volume equivalence self-test: a zero-volume bar behaves exactly like a missing bar), `run_t3.py` (masked primary; the literal reading is the labeled sensitivity), `check_t3.py` (variant, dry-vs-variant and live-vs-dry checks).
-  The script stops after the checks (everything put back, nothing committed) unless started with `--go-live-t3`. NOT VERIFIED until the owner's PASS output comes back. The live registry has 26 lines before and 30 after the live run (Task3-ETHUSDT and Task3-BTCUSDT, discovery + stability).
-- NEXT: delivery 15 = the Task 3 report (`t3_report.py`, read-only, refuses unless every recomputed figure reproduces the registry; PRE-TAX; trade lists of the masked primary), then stop for M2.
+- Delivery 14 (2026-10-28, commit `3143fd8`) VERIFIED by the owner's output (first run without the flag: checks only, nothing committed; second run with `--go-live-t3`: PASS): 41 self-tests passed (including "a zero-volume bar behaves exactly like a missing bar"), the S1 and S2 regressions
+  passed before and after the live write, the masked-primary variant equals the delivery-13 variant rows to the printed digits (check 1), the dry-run primary cells equal the masked rows (check 2), and the LIVE Task 3 run wrote exactly two records per pair (registry 26 -> 30 lines, first 26 byte-identical,
+  records 27-30 equal the dry run apart from timestamps, check 3). Files: `docs/reports/t3-dry-run-masked-step3.txt`, `t3-dry-run-records-masked-step3.jsonl`, `t3-variant-masked-step3.txt`, `t3-checks-step3.txt`, `t3-regression-after-t3-step3.txt`.
+- RECORDED TASK 3 OUTCOMES (live registry lines 27-30, masked primary, pre-tax; 5m k=6; no interpretation here, the report has the full tables). ETHUSDT: down n 4076, mean excess -0.000461135, t -2.729, one-sided p 0.996823, Holm(48) 1, DEAD; stability T -1.9973, p_stab 0.977102 (32 of 32 blocks);
+  up n 3801, +0.00104674, t 6.1129, p 4.89129e-10, Holm(48) 2.34782e-08, DEAD; stability T 5.9341, p_stab 1.47737e-09 (31 of 32 blocks, one block under 30 events). BTCUSDT: down n 3991, -0.000163071, t -1.0857, p 0.861204, Holm 1, DEAD; stability T -0.1205, p_stab 0.547952 (32 of 32);
+  up n 3718, +0.000635005, t 4.6405, p 1.73759e-06, Holm 8.34045e-05, DEAD; stability T 4.4372, p_stab 4.55733e-06 (32 of 32). Dose-response: both down cells "n/a: no positive effect", both up cells keep. No cell of 48 has MDE above M = 0.0035. No primary cell classifies PASS. Nothing frozen, nothing forward-tested, holdout untouched.
+- Delivery 15 (`deliveries/15/`, Work Order 1.7 step 3, the report) is prepared: `t3_report.py` (read-only; recomputes both pairs with `run_t3.run_t3` into a throwaway scratch registry and refuses unless the recomputed records equal the live ones field by field; PRE-TAX; placeholder counts and what masking removes; derived-vs-native 15m
+  comparison under both readings; the literal reading as the sensitivity column; trade lists of the two primary cells per pair as CSV with SHA-256), `selftest_all.sh` (42 self-tests), `message-25.md` to M2. Output: `docs/reports/t3-report-step3.md` and `docs/reports/t3-trades/` (4 CSVs). NOT VERIFIED until the owner's PASS output comes back. No registry write.
+- NEXT: STOP after the report is committed. The owner forwards the report to M2; nothing further without M2's acceptance and a new work order.
 
 ## Settled facts
 - Pairs: ETH/USDT and BTC/USDT are the two live pairs for research and execution (Work Order 1.4, 2026-09-23); ETH/FDUSD is retired as an execution candidate and its
@@ -72,7 +78,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 - The 15-minute break-even thread (2026-09-24) is closed: at 15m the typical |return| is below the round-trip cost for a symmetric trade-every-bar model; it does not touch S1,
   S2 or Task 3 (`docs/correspondence/message-07.md`).
 
-## Where things are (`user_data/analysis/`, 41 self-tests in `selftest_all.sh`)
+## Where things are (`user_data/analysis/`, 42 self-tests in `selftest_all.sh`)
 - Shared: `cutoff.py`, `databundle.py`, `funding.py`, `blocks.py`, `nonstationarity.py`, `multitest.py`, `costs.py`, `rule_evaluator.py`, `economic_gate.py`, `registry.py`,
   `stability_check.py` (generic stability statistic, S1 bootstrap and S2 time-shift variants), `stability_acceptance.py` (M1's generators and bands through production code).
 - S1: `formula_s1.py`, `run_s1.py`, `s1_report.py` (read-only, cross-checked against the registry). S2: `formula_s2.py`, `run_s2.py`; `s2_report.py` (read-only report generator, trade-list CSVs).
