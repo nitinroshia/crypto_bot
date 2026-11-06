@@ -4,33 +4,35 @@ This file IS `context/mathematician/NOTES.md` in the project repo. The owner att
 no separate context document. Version by the Snapshot line, not by filename. When this changes, the copy in the repo is
 overwritten (same path) and git history carries the diff. Only mathematicians edit this file (PROTOCOL section 3).
 
-Snapshot: 2026-10-27 (revision 5), written by M2 (second mathematician) from M1's handoff (`docs/handoffs/M1-handoff.md`,
-2026-10-19), the documents it lists, M2's own recomputation of the S1 report, Work Order 1.6, the S2 report and D2's Task 3 dry run,
-the owner's roadmap of 2026-10-20 (section 10; it overrides the "Next" lines of the handoff) and D2's messages 22 to 24. It replaces
-revision 4 (2026-10-25, filed by delivery m2-04). Supersedes the 2026-09-23 snapshot and every earlier context file.
+Snapshot: 2026-11-04 (revision 7), written by M2 (second mathematician) from M1's handoff (`docs/handoffs/M1-handoff.md`,
+2026-10-19), the documents it lists, M2's own recomputation of the S1, S2 and Task 3 reports, the owner's roadmap of 2026-10-20 and
+decisions of 2026-10-29 and 2026-11-04 (section 10; they override the "Next" lines of the handoff) and D2's messages 22 to 25. It
+replaces revision 6 (2026-10-29). Supersedes the 2026-09-23 snapshot and every earlier context file.
 
 STATE IN ONE PARAGRAPH. The research pipeline is built and verified on the owner's machine (cutoff guard, holdout lock, registry
-with voiding, by-year / leave-one-year-out, amended stability statistic, economic gate, S1 and S2 formulas, read-only report
-generators). S1 (daily trend) and S2 (funding extreme) are both CLOSED, not advanced, on both pairs (section 5); nothing is frozen,
-nothing was forward-tested, the holdout is untouched, and the live registry has 26 lines (S1 lines 15-20, S2 lines 21-26). D2 is on
-Task 3 (shock_response, both pairs; Work Order 1.7): `formula_t3.py` reproduces the reference exactly and a scratch dry run of both
-pairs is done (delivery 13, commit 8273b98, verified; read-only variant file `docs/reports/t3-variant-zero-volume-step2.txt`). In the
-dry run all four primary cells classify DEAD (the up cells are significant but far below M). M2 ruled on D2's questions on 2026-10-27
-(forward v22, `docs/correspondence/answer-t3-rulings.md`): zero-volume 5m bars are masked in the primary, the 15m series is derived
-for both pairs, each primary cell is an across-candidate entry at both steps, the dose-response discard applies only to positive
-cells. The live Task 3 run waits for the owner's "go live T3". Next: D2's delivery 14 (masked primary, live run, report); M2
-recomputes the report; then the owner's roadmap (section 10): expansion to other timeframes and markets, proposed as a short work
-order.
+with voiding, by-year / leave-one-year-out, amended stability statistic, economic gate, S1, S2 and Task 3 formulas, read-only report
+generators). S1 (daily trend), S2 (funding extreme) and Task 3 (shock response) are all CLOSED, not advanced, on both crypto pairs
+(section 5); with lead-lag dead, the crypto candidates are finished: no tradable edge was found in ETH/USDT and BTC/USDT with public
+price and funding data at these horizons. Nothing is frozen, nothing was forward-tested, the holdout is untouched, and the live
+registry has 30 lines (S1 15-20, S2 21-26, Task 3 27-30). M2 accepted the Task 3 report on 2026-10-29. The expansion has started
+(owner's decisions of 2026-10-29, section 10): NSE mid-caps, 30 names drawn at random from the AMFI mid-cap list in force at the
+cutoff, daily data first from the owner's Upstox API, costs and taxes from broker pages. Clarifications of 2026-11-04: the store is a
+new PostgreSQL schema `nse` in the owner's database (M2's reference DDL is `docs/work-orders/1.8-schema-reference.sql`); Upstox data
+comes through the official V3 historical-candle API with the one-year read-only Analytics Token kept in the owner's `.env` (never
+hardcoded); the owner uploaded the AMFI Excel to `docs/amfi/`. M2's reader cannot open Excel files, so D2 converts it to CSV, writes a
+summary and runs the seeded draw by code (forward v24); M2 verifies. D2 is on Work Order 1.8 (phase E1: data, universe, cost and tax
+rules, no tests); M2 owes the verification of the AMFI CSV and of the draw, and Work Order 1.9 (the pre-registered candidate
+families, to be written before any equity return is examined).
 
 REPOSITORY: public, https://github.com/nitinroshia/crypto_bot (main). To read a file use
 https://raw.githubusercontent.com/nitinroshia/crypto_bot/refs/heads/main/<path> . GitHub /tree/ directory pages refuse automated
 fetching: fetch a known file path, or ask for the path.
 
 FILES AND NAMING
-- Work orders (mathematician -> developer): `docs/work-orders/`, continuing at 1.8 (1.7 is the latest; its reference script is
+- Work orders (mathematician -> developer): `docs/work-orders/`, continuing at 1.9 (1.8 is the latest; 1.7's reference script is
   `docs/work-orders/1.7-task3_reference.py`).
 - Messages: `docs/correspondence/`. First line: `From: <ID> | To: <ID> | Re: <subject> | Date: <yyyy-mm-dd>`. Names are free-form
-  (`answer-<topic>`, `message-NN`) where the numbering is unclear. A message the owner forwards carries a version label (v22, ...).
+  (`answer-<topic>`, `message-NN`) where the numbering is unclear. A message the owner forwards carries a version label (v24, ...).
 - Deliveries: `deliveries/<n>/` with `apply.sh` (PROTOCOL section 4). M2 uses `deliveries/m2-NN/` (m2-01 first) so the numbers
   never collide with the developers'.
 - Handoffs: `docs/handoffs/<ID>-handoff.md`. Reports: `docs/reports/`. History and sandbox records: `docs/history/`.
@@ -76,7 +78,7 @@ FILES AND NAMING
 - Check every developer report: recompute row counts, split counts, missing-data arithmetic, Holm p-values, block counts and
   compounded block returns before trusting any figure (recipes in section 11).
 - Reply format: a short plain-language note to the owner, then "For the developer (forward as is) - v<n>" only if something must go
-  to the developer. Last forward-as-is message: v22 (to D2: Task 3 rulings); the next is v23. Orders state: predictor (exact computation,
+  to the developer. Last forward-as-is message: v24 (to D2: Work Order 1.8 addendum); the next is v25. Orders state: predictor (exact computation,
   availability time), target, timeframes, lags, gut-check, plausible effect scale, family size, primary cell, direction.
 - Mandatory gut-checks for every formula and rule: (a) can the same raw price data appear on both sides? (b) does a shared latent
   state (volatility clustering, seasonality, stale last-trade prices, market drift) make the comparison trivially significant?
@@ -92,7 +94,9 @@ FILES AND NAMING
   system architecture such as which pairs, risk or capital exposure, a change of direction) need the owner's sign-off; on a genuine
   disagreement the owner has the final say. The owner is asked only for decisions that are the owner's.
 - Scratch lives under `<repo>/temp/` (gitignored); nothing is written outside the project root. `temp/secret_keys.txt` exists in the
-  owner's folder: it is never opened, copied or backed up by anyone, and runner scripts git-add exact paths only.
+  owner's folder: it is never opened, copied or backed up by anyone, and runner scripts git-add exact paths only. The same holds for
+  the owner's `.env` (Upstox Analytics Token, database credentials): never read, printed, hardcoded or committed; it must be git-ignored
+  and every runner script refuses to push if it is tracked or was ever committed.
 - I am not a tax advisor and say so whenever tax rules come up; the owner confirms every tax rule with a tax professional
   (section 10).
 - The owner: not a coder; runs commands on a Mac; time is the scarce resource; was highly dissatisfied with past efficiency (8 to
@@ -154,6 +158,18 @@ FILES AND NAMING
   - 15m: derived from 5m for both pairs (a 15m bin with a missing or masked 5m bar is missing). The store has no ETH 15m file;
     `BTC_USDT-15m.feather` was built by the traded rule and differs from the derived series in 202 opens (0 closes) of 281,357
     complete bars, with 14 bars present only natively: a comparison only.
+- NSE (expansion, Work Order 1.8; facts read on 2026-10-29): the owner has Upstox API access (already owned: allowed by hard limit 1) and
+  a Postgres store. Upstox V3 historical candles: day, week and month from January 2000; minute and hour from January 2022 (so intraday
+  has about 3.7 years before the cutoff: a later, short-sample phase). Prices are adjusted for splits and bonuses by Upstox but not always
+  correctly (unadjusted demergers have been reported) and are re-adjusted over time; dividends are not in the prices. So every pull is
+  stored once, dated and hashed, never overwritten. NSE publishes free end-of-day bhavcopy files (format changed in mid-2024) as a
+  cross-check. API facts (official V3 page, read 2026-11-04): `GET https://api.upstox.com/v3/historical-candle/{instrument_key}/days/1/
+  {to_date}/{from_date}`, `instrument_key` = `NSE_EQ|<ISIN>`, at most ONE DECADE of daily candles per request (chunk it), rows [timestamp
+  +05:30, open, high, low, close, volume, open interest], header `Authorization: Bearer <token>`. Authentication is required: the
+  Analytics Token (read-only, valid one year, generated once on the owner's Upstox Developer Apps page; market-data APIs work with it
+  without a static IP) goes in `.env` as `UPSTOX_ANALYTICS_TOKEN`; the ordinary access token expires at 3:30 every morning. Universe: the AMFI mid-cap list (six months ended 2025-06-30, published July 2025, in force on the cutoff; ranks
+  101-250), seeded random order (seed 20250831), the first 30 that pass the data rule; survivor bias accepted and read against
+  buy-and-hold of the same names.
   - Funding (ETHUSDT and BTCUSDT USD-M perpetuals, REST): a constant 8h settlement interval since each series' first settlement, no
     interval change observed. First settlements: ETH 2019-11-27 08:00 UTC, BTC 2019-09-10 08:00 UTC (confirmed by D2's delivery 8;
     the example timestamps of Work Order 1.6 assumed 00:00). One observation per symbol is masked: the first (its preceding span is
@@ -234,6 +250,32 @@ Calibration (D2, production code, 1,000 paths, persistent null): the 72h cell wi
 lags 6.7%; with the superseded lags 8.5% and 10.5% (information only). M2's own 4,000-path sandbox run puts the 36-lag test near 6%: the
 ruled lags help but HAC with a persistent predictor stays mildly lenient; nothing in S2 depends on it. The superseded-lag p-values stay in
 the report as a labelled sensitivity column (ETH 0.461, BTC 0.137, BTC 24h 0.0267). No freeze, no forward test.
+
+Task 3 shock_response (both pairs): CLOSED, NOT ADVANCED. Report `docs/reports/t3-report-step3.md` (D2's message-25; read-only
+`t3_report.py`; pre-tax); live registry lines 27-30 from D2's delivery 14 (commit 3143fd8); trade lists in `docs/reports/t3-trades/`.
+M2 recomputed every figure on 2026-10-29 (sandbox arithmetic): all reproduce (p from t and Holm over 48 for all 96 cells, 0
+mismatches), and accepted it as the record.
+
+                                     ETH_USDT                      BTC_USDT
+  eligible 5m origins (masked)       814,602                       816,261   (zero-volume 5m bars masked: 1,795 and 910)
+  kept events 5m, down / up          4,076 / 3,801                 3,991 / 3,718
+  primary 5m k=6 down: excess (t)    -0.0461% (-2.73)              -0.0163% (-1.09)
+  primary 5m k=6 up: excess (t)      +0.1047% (+6.11)              +0.0635% (+4.64)
+  up cell: 95% upper bound vs M      0.133% vs 0.35%               0.086% vs 0.35%
+  up cell: Holm over 48              2.3e-08                       8.3e-05
+  stability T / p_stab, up           5.93 / 1.5e-09                4.44 / 4.6e-06
+  stability T, down                  -2.00                         -0.12
+  dose-response (up)                 keep (larger at |z| >= 4)     keep (larger at |z| >= 4); down cells n/a
+  late entry (one bar), up           +0.0749% (t 4.88)             +0.0518%
+  year-driven                        no                            BTC down only (2018)
+  verdict                            DEAD, all four primary cells  DEAD, all four primary cells
+
+How to read it, without retuning anything: after a +3 sigma 5-minute up-move both coins keep rising a little over the next 30
+minutes, statistically unmistakable (t 4.6-6.1) and robust to a one-bar entry delay, but 3 to 5 times smaller than a 0.24-0.30% round
+trip and far below M = 0.35%. After down-moves there is no bounce (ETH keeps falling by about 0.05%). By year the up-move continuation
+fades: ETH +0.33% (2017), +0.26% (2018), 0.04-0.15% in 2019-2024, about 0 in 2025 (t -0.1); BTC +0.26%, +0.22%, about +0.05% in 2020-2024,
+slightly negative in 2022 and 2025 (descriptive; the holdout is untouched). The acceptance rows of the production code equal M2's
+reference (null false-pass 1.5-4.5%, p_stab 3.0-5.5%, +0.50% injected edge passes, +0.10% classifies dead). No freeze, no forward test.
 
 ETH/FDUSD (historical reference only; no new formula work): the open-price mismatch was fully explained by flat minutes (the
 traded-minutes rule gives zero mismatch); event-anchored lead-lag (post-break, family of 66) is DEAD (best raw p 0.0019, Holm 0.068
@@ -369,7 +411,7 @@ costs; an injected drift must be recovered; a position spanning a block boundary
 
 ## 7. Pre-registered tasks
 
-Order: S1 and S2 are closed; Task 3 is next; Task 4 and anything new only if a candidate exists or the owner's roadmap (section 10) calls for it.
+Order: S1, S2 and Task 3 are closed; the NSE expansion (Work Orders 1.8, 1.9) is next; Task 4 only if a candidate exists.
 
 S2 funding_extreme (`S2-ETHUSDT` on ETH/USDT spot, `S2-BTCUSDT` on BTC/USDT spot; same code, own gate and freeze; 2 cells per pair)
 STATUS: CLOSED, not advanced (2026-10-25; section 5). What follows remains the record of what was tested.
@@ -421,6 +463,7 @@ S1 trend_slope (1d; family of 10 per pair; CLOSED, not advanced; section 5)
 
 Task 3 shock_response (`Task3-ETHUSDT`, `Task3-BTCUSDT`; 48 cells per pair = 2 timeframes x 12 horizons x 2 sides; 5m primary, 15m
 secondary)
+STATUS: CLOSED, not advanced (2026-10-29; section 5). What follows remains the record of what was tested.
 Governing document: Work Order 1.7 (M2, 2026-10-23) with `docs/work-orders/1.7-task3_reference.py`; M2 accepted the S2 report on
 2026-10-25 and D2 started it at once; rulings of 2026-10-27 (forward v22): `docs/correspondence/answer-t3-rulings.md`, which override
 the order where they differ. Stop point: after the report; no freeze, no forward test. Summary:
@@ -551,6 +594,15 @@ Rulings in force (all in the repo)
 - `docs/correspondence/answer-t3-rulings.md` (M2, forward v22, 2026-10-27): zero-volume 5m bars masked (primary); 15m derived for both
   pairs; registry entries at both steps; dose-response only for positive cells; the sequence of delivery 14 (masked primary, check
   against the variant file, live run only with the owner's "go live T3" and only if every check passed, report).
+- `docs/correspondence/answer-t3-accepted.md` (M2, forward v23, 2026-10-29): Task 3 accepted and closed; D2 starts Work Order 1.8.
+- Work Order 1.8 (`docs/work-orders/1.8.md`, M2, 2026-10-29): NSE mid-cap panel, phase E1: universe (seeded draw, D2's data rule),
+  daily data store and validation report (jump flags ruled by M2; unresolved flags exclude the symbol; genuine crashes never masked),
+  cost and tax rules files; no return relationship computed before Work Order 1.9.
+- `docs/correspondence/answer-wo18-addendum.md` (M2, forward v24, 2026-11-04) with `docs/work-orders/1.8-schema-reference.sql`: the
+  store is PostgreSQL schema `nse` (reference DDL, untested by M2, D2 adapts and tests in a throwaway schema); credentials only from
+  `.env`; Upstox V3 client per the official page with the Analytics Token; D2 converts the AMFI xlsx to CSV plus a summary and runs the
+  draw: pool = AMFI rank 101-250 with NSE symbol and ISIN, minus owner exclusions; order = ascending SHA-256 of '20250831|<ISIN>';
+  first 30 passing the data rule; M2 recomputes the order.
 
 Audit trail (what was seen when). M2's two corrections to Work Order 1.6 (HAC lags, gate-rule validity) were written on 2026-10-20 and
 2026-10-21 and the owner forwarded none of M2's files before D2's delivery 8, so D2 built and dry-ran S2 under the original order.
@@ -562,7 +614,9 @@ equality check showed that only the HAC-dependent quantities (SE, t, p, Holm, MD
 
 Audit trail, Task 3. D2's dry run and its read-only zero-volume variant (all four primary cells DEAD under both readings) reached M2 in
 message-24 before M2 ruled on the zero-volume question. The ruling (mask) was made on the principle of mistake 21 and would have been
-the same for any numbers; the "present" reading stays in the report as a labelled sensitivity column.
+the same for any numbers; the "present" reading stays in the report as a labelled sensitivity column. The live records equal the masked
+dry run; M2 accepted the report on 2026-10-29. Note: Work Order 1.7 said no year is shorter than 120 days; with masking 2017 has only
+77 (ETH) and 86 (BTC) days with an eligible origin (D2's "days covered"), so 2017 is shown, not judged: accepted.
 
 M2's own verification, 2026-10-20 (sandbox only; nothing was re-run on the owner's machine)
 - S1 report and answer-to-message-19: every figure reproduces (Holm within 10 for both pairs; T = sum s_b / sqrt(30); p_stab =
@@ -584,15 +638,24 @@ M2's own verification, 2026-10-20 (sandbox only; nothing was re-run on the owner
   injected +0.50% excess is classified "pass" in 100% of paths and +0.10% "dead" in 100%.
 
 Outstanding
-1. Task 3 (D2, Work Order 1.7): delivery 14 = masked primary, check against the variant file, live run (with the owner's "go live T3"),
-   report; M2 recomputes the report (section 11). Both primary cells are one-sided positive; the answer is almost surely "dead".
-2. D2's STATUS.md marked delivery 10 (the S2 report) "not verified" until the owner showed D2 its PASS output; check once.
-3. D1's messages 13-18 were never shown to M1 or M2: skim once for anything not covered by the S1 report's section 8 (all accepted).
-4. `research_cli.evaluate_fixed_lag`: confirm it is removed or superseded.
-5. Tax rules (section 10): the owner states which taxes apply and has them confirmed by a tax professional; until a confirmed rules file
-   exists every result is pre-tax and labelled so. The tax layer itself is built in the expansion work order.
-6. This file: revision 4 was filed by delivery m2-04 (owner's PASS 63edecf, 2026-10-25); revision 5 replaces it. My fetch tool returned
-   a cached copy of the old file after that PASS: trust the owner's PASS output, and fetch fresh at the start of the next chat.
+1. Work Order 1.8 plus the v24 addendum (D2): step 0; step 1 (schema and self-tests in a throwaway schema, Upstox client with canned
+   responses, AMFI converter and draw, rules files and validators, loader with the cutoff and holdout lock; no token, no real pull);
+   then the first live call for ONE symbol; then the pulls in draw order and the validation report.
+2. Owner: (a) generate the Upstox Analytics Token (Developer Apps page) and save it in `.env` as `UPSTOX_ANALYTICS_TOKEN`; put the
+   database credentials in `.env` too (`DATABASE_URL` or the PG variables); `.env` must be git-ignored (D2 and M2's scripts check);
+   (b) optional: names to exclude before the draw (`universe/owner-exclusions.txt`), a typical position size per stock (default INR 1
+   lakh), one sample trade from Upstox's brokerage calculator to verify the cost function. The AMFI file is in the repo: nothing more.
+3. M2: verify D2's AMFI CSV and summary (150 mid-cap rows, unit, missing symbols or ISINs, duplicates, SHA-256 of the xlsx) and recompute
+   the draw order independently from the CSV (ascending SHA-256 of '20250831|<ISIN>'); then write Work Order 1.9 (at most 2-3
+   pre-registered families for the NSE panel, with the after-tax layer; before any equity return is examined). Design principles
+   already fixed: panel-level tests (one primary question per family, not stock by stock); benchmark = buy-and-hold of the same names
+   (a long/flat rule on a rising universe passes "pooled > 0" without skill); daily or weekly signals with longer holds (20% short-term
+   tax within 12 months, 0.24-0.29% delivery round trip); same cutoff 2025-08-31, one-shot holdout.
+4. D2's STATUS.md: deliveries awaiting the owner's PASS output show as "not verified" until the owner shows D2 the output; check once.
+5. D1's messages 13-18 were never shown to M1 or M2: skim once for anything not covered by the S1 report's section 8 (all accepted).
+6. `research_cli.evaluate_fixed_lag`: confirm it is removed or superseded.
+7. Tax rules (section 10): confirmed_by_owner stays false until the owner and a tax professional confirm them; until then every result
+   is pre-tax and labelled so.
 
 ## 10. Strategic assessment and the owner's roadmap
 
@@ -609,6 +672,34 @@ Owner's roadmap (decided 2026-10-20; it overrides the "Next" lines of M1's hando
    design below). Zero-cost data only (hard limit 1); if the only source of a market's data is paid, write
    `BLOCKED: <what is missing>` and stop.
 5. The expansion does not start before S2 and Task 3 are reported. When the time comes, M2 proposes it as a SHORT work order.
+   (Done: S2 and Task 3 are reported and accepted; Work Order 1.8 is the short work order.)
+
+Owner's clarifications (2026-11-04)
+- Database: "create your own tables in PostgreSQL for this project; design the schema from the data and analysis requirements": done as
+  schema `nse` in the owner's database (M2's reference DDL; D2 implements and tests; the owner's existing tables are never touched).
+- Upstox: use the official API documentation (V3 historical candles); when authentication is required tell the owner, who generates the
+  token and saves it in `.env`; never hardcode credentials. Answer: authentication is required; the Analytics Token (one year,
+  read-only, no static IP for market data) is the right token; the ordinary access token expires every morning.
+- AMFI Excel: uploaded to `docs/amfi/AverageMarketCapitalization30Jun2025.xlsx`; M2 to verify its contents and use it for the random
+  selection of 30 stocks. M2's reader returned only binary for the xlsx, so D2 converts it to CSV with a summary and runs the draw by
+  code; M2 verifies from those files and recomputes the order.
+- The owner asked M2 to propose the message to the developer: forward v24.
+
+Owner's decisions on the expansion (2026-10-29, in answer to M2's questions)
+- Stocks: the owner wants fundamentally strong companies, mostly NSE mid-caps, and lets M2 choose 10, 20 or 30 names by any method.
+  M2's choice: 30, by a seeded random draw from the AMFI mid-cap list in force at the cutoff. Reasons (told to the owner): a list of
+  "strong companies" picked today uses 2025-26 outcomes and spoils the one-shot holdout, and it tests stock picking, not timing rules.
+  A quality screen is a possible later, separate family, with an objective rule based only on results published before September 2025.
+- Data: the owner's Upstox API for finer timeframes and the owner's Postgres (exports to CSV easily; one CSV per stock). NSE's free
+  bhavcopy is only a cross-check. The owner is unsure of the format: D2 writes the export after the owner pastes the table description.
+- Costs and taxes: M2 looks them up online (broker and tax pages); the owner wants it simple.
+- Researched 2026-10-29 (broker pages of Upstox and Zerodha, tax guides for FY 2026-27; to be re-read when implemented; the files carry
+  the sources): delivery equity: brokerage up to INR 20 per order (Upstox), STT 0.1% on buy and sell, stamp duty 0.015% on buy,
+  exchange charge about 0.003% per side, SEBI fee INR 10 per crore, GST 18% on those fees, DP charge about INR 20 plus GST per scrip
+  sold: about 0.22% in percentage charges plus about INR 71 fixed, i.e. 0.24-0.29% per round trip before slippage (0.24% at INR 5 lakh,
+  0.29% at INR 1 lakh). Capital gains on listed equity bought and sold on delivery: 20% if sold within 12 months; 12.5% on gains above
+  INR 125,000 per financial year if held longer; cess 4%; Budget 2026 changed neither rate; intraday trades are taxed differently (not
+  modelled). M2 is not a tax advisor: `confirmed_by_owner` stays false until a tax professional confirms.
 
 Tax layer (design frozen 2026-10-23, before any new result; built in the expansion work order)
 - M2 is not a tax advisor. This is structure, not advice: every number comes from a rules file that the owner confirms with a tax
@@ -636,18 +727,18 @@ Tax layer (design frozen 2026-10-23, before any new result; built in the expansi
   relevant, and a free data source: one line each in the short work order.
 
 Strategic assessment (judgment, not a forecast)
-- There is nothing to compound yet: no tradable edge has been found. Lead-lag is dead, the passive baseline is moot, S1 and S2 are
-  closed (not advanced).
-- S2 died where M1 and M2 expected: no discovery signal, failed stability and gate on both pairs; the rank rule churns and loses to
-  buy-and-hold. Task 3 is the best remaining shot on the crypto pairs and will be decisive (MDE about 0.03-0.05% against M = 0.35%);
-  the likely result is a small or zero excess, "dead". A clean "no edge found with public price and funding data at these horizons" is a
-  legitimate end state and saves capital: say so plainly to the owner, never promise.
+- There is nothing to compound yet: no tradable edge has been found in ETH/USDT and BTC/USDT. Lead-lag is dead, the passive baseline is
+  moot, S1, S2 and Task 3 are closed (not advanced). That is a legitimate end state of the crypto work, and it saves capital: say so
+  plainly to the owner, never promise.
+- S2 died where M1 and M2 expected (no discovery signal, failed stability and gate; the rank rule churns and loses to buy-and-hold).
+  Task 3 found a real but small continuation after up-moves (about +0.10% ETH, +0.06% BTC over 30 minutes), 3 to 5 times below the
+  round-trip cost, and fading by year: statistically unmistakable and economically dead.
 - Slow signals have limited power: 8-9 years of daily data can only prove effects near an annual Sharpe of 0.6 or better, so expect
   "inconclusive" for weaker ones. That is a data-length limit, not a failure of the design.
 - A validated slow or medium-horizon strategy, if one exists, plausibly delivers something like 20-60% a year with double-digit
   drawdowns (judgment). The owner's 1%/week sits at the top of that range. M1's estimate on 2026-09-23 of the odds that a candidate
   survives the holdout was roughly even; after the closure of S1 and S2 M2 judges it lower (not quantified). The odds that a survivor
-  also compounds fast are well under one in four. With S1 and S2 closed and Task 3 likely dead, broader markets and timeframes (the
+  also compounds fast are well under one in four. With S1, S2 and Task 3 closed, broader markets and timeframes (the
   roadmap) are the main way to add independent shots; each new market starts with its own cost model, calendar, free data source and
   the tax-rules file.
 - Two pairs roughly doubled the number of semi-independent shots; they did not improve any single candidate's odds.
@@ -657,7 +748,7 @@ Strategic assessment (judgment, not a forecast)
 
 ## 11. First actions in the next chat
 
-1. Fetch `context/mathematician/NOTES.md` from GitHub and check that its Snapshot line is 2026-10-27 (revision 5) or later; the
+1. Fetch `context/mathematician/NOTES.md` from GitHub and check that its Snapshot line is 2026-11-04 (revision 7) or later; the
    fetch tool can return a cached copy, so a stale-looking file is not proof: ask the owner for the PASS output of the last delivery.
 2. If a developer report is waiting, read it first. Recompute before trusting (sandbox only, say so). Recipes:
    - Holm: sort the p-values, multiply the i-th smallest by (n - i + 1), take the running maximum, cap at 1; also across candidates
@@ -674,13 +765,16 @@ Strategic assessment (judgment, not a forecast)
      against 21 of 30 (S1), 16 of 22 (S2 ETH), 17 of 23 (S2 BTC); cost drag (1 + net) / (1 + gross) is about (1 - 0.003)^(round trips)
      at stress cost.
    - Break-even hit rate p* = (1 + c / E|r|) / 2.
-3. Task 3 report: check it against Work Order 1.7 section 5: counts and exclusion reasons (5m and 15m, |z| >= 3 and 4); the mu_k
-   table; the 48-cell tables with the primary cells one-sided and Holm over 48; the classification; the dose-response result;
-   stability (T, p_stab, B', per-block table, across-candidate Holm with S1 and S2); by-year and leave-one-year-out; the robustness
-   columns (above all the late-entry column); the trade-list files and their SHA-256; the acceptance rates and the exact-reproduction
-   differences; the S1/S2 regression result; the masked primary equals the masked rows of the variant file and the present rows
-   reproduce as the sensitivity column (reference dry-run numbers in section 7). A significant excess below M is "dead", not a lead. Then accept, tell the owner in a short
-   plain note, and do not recommend a freeze unless a primary cell classifies "pass" and every other check agrees.
-4. Then, with the owner, propose the expansion as a short work order (section 10): which market first, the free data source, the cost
-   model, the tax-rules file to be confirmed by a tax professional, the cutoff 2025-08-31 and the one-shot holdout.
+3. NSE phase E1: check `docs/amfi/` (the CSV equals the xlsx content; the summary's counts; ranks 101-250 hold 150 companies with NSE
+   symbol and ISIN or the missing ones are listed); recompute the draw order from the CSV (ascending SHA-256 hex of '20250831|<ISIN>')
+   and compare it with `universe/nse-midcap-draw-v1.csv`; check the schema against the reference and the deviations' reasons; check that
+   no token or credential appears in any file, log or error message; then check the universe file against the draw (order, skip log: no
+   hand picking, no name skipped without a logged reason); the validation report (rows, missing days, zero-volume days, OHLC checks, jump flags with M2's ruling per flag);
+   the manifest hashes; the cost function by hand (about 0.22% plus about INR 71 fixed per round trip); the rules files carry sources,
+   the retrieval date and `confirmed_by_owner: false`; the loader truncates at 2025-08-31 and the holdout lock holds. No statistic
+   relating a predictor to a return may exist before Work Order 1.9 is issued.
+4. Then write Work Order 1.9 (candidate families for the NSE panel) if not yet written, and the after-tax layer with it; a new market
+   or timeframe afterwards is again a short work order (section 10). Task 3 report check (done 2026-10-29) is kept in section 5 as the
+   template: recompute p from t and Holm over 48 for every cell, counts and exclusions, block tiling, T and p_stab, across-candidate
+   Holm, by-year and leave-one-year-out, costs arithmetic.
 5. Keep this file current: overwrite `context/mathematician/NOTES.md` through a delivery and say so in the one-sentence delivery line.
