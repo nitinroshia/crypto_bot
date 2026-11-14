@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-10-28, by D2 (developer), Work Order 1.7 step 3 (delivery 15: the Task 3 report). Refreshed in full
+Last updated: 2026-11-06, by D2 (developer), Work Order 1.8 step 1a (delivery 16: AMFI, draw, Upstox client, rules, loader). Refreshed in full
 (M2's item 10): the stale 2026-09-25 text is gone; what was still true is kept in "Settled facts". Where this file and `docs/`
 disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.6.md`, then `docs/correspondence/answer-s2-rulings.md`
 (M2's rulings of 2026-10-23, which override Work Order 1.6 where they differ), then `context/developer/NOTES.md`.
@@ -8,7 +8,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 ## Current state (D2, 2026-10-23)
 - Agents: M2 (mathematician, separate chat, owns research design), D2 (developer, this role; D1 ended with message-19), the owner (runs
   every command, pushes to GitHub). Agents talk only through files in the repo; the developer cannot touch the owner's machine.
-  Task: `docs/work-orders/1.7.md` (Task 3 shock_response, both pairs; stop after the Task 3 report is committed; S2, Work Order 1.6, is closed). Work Order 1.5 (R1-R4, A1-A6), `answer-04.md` and `answer-to-message-19.md` stay in force. Work Order 1.7 (Task 3,
+  Task: `docs/work-orders/1.8.md` with the v24/v25 addenda (NSE mid-cap panel, phase E1; Work Orders 1.6 and 1.7 are complete: S2 closed, Task 3 report committed). Work Order 1.5 (R1-R4, A1-A6), `answer-04.md` and `answer-to-message-19.md` stay in force. Work Order 1.7 (Task 3,
   shock_response) is filed but NOT started: it starts only after M2 accepts the S2 report and the owner says so; research-design
   questions about it go to M2 as files in `docs/correspondence/`.
 - S1 is closed without advancing on either pair (`docs/reports/s1-report-step6.md`). Recorded S1 outcomes (live registry lines 15-20,
@@ -57,9 +57,15 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 - RECORDED TASK 3 OUTCOMES (live registry lines 27-30, masked primary, pre-tax; 5m k=6; no interpretation here, the report has the full tables). ETHUSDT: down n 4076, mean excess -0.000461135, t -2.729, one-sided p 0.996823, Holm(48) 1, DEAD; stability T -1.9973, p_stab 0.977102 (32 of 32 blocks);
   up n 3801, +0.00104674, t 6.1129, p 4.89129e-10, Holm(48) 2.34782e-08, DEAD; stability T 5.9341, p_stab 1.47737e-09 (31 of 32 blocks, one block under 30 events). BTCUSDT: down n 3991, -0.000163071, t -1.0857, p 0.861204, Holm 1, DEAD; stability T -0.1205, p_stab 0.547952 (32 of 32);
   up n 3718, +0.000635005, t 4.6405, p 1.73759e-06, Holm 8.34045e-05, DEAD; stability T 4.4372, p_stab 4.55733e-06 (32 of 32). Dose-response: both down cells "n/a: no positive effect", both up cells keep. No cell of 48 has MDE above M = 0.0035. No primary cell classifies PASS. Nothing frozen, nothing forward-tested, holdout untouched.
-- Delivery 15 (`deliveries/15/`, Work Order 1.7 step 3, the report) is prepared: `t3_report.py` (read-only; recomputes both pairs with `run_t3.run_t3` into a throwaway scratch registry and refuses unless the recomputed records equal the live ones field by field; PRE-TAX; placeholder counts and what masking removes; derived-vs-native 15m
-  comparison under both readings; the literal reading as the sensitivity column; trade lists of the two primary cells per pair as CSV with SHA-256), `selftest_all.sh` (42 self-tests), `message-25.md` to M2. Output: `docs/reports/t3-report-step3.md` and `docs/reports/t3-trades/` (4 CSVs). NOT VERIFIED until the owner's PASS output comes back. No registry write.
-- NEXT: STOP after the report is committed. The owner forwards the report to M2; nothing further without M2's acceptance and a new work order.
+- Delivery 15 (2026-10-29, commit `3d13211`) VERIFIED from GitHub (the owner's pasted output ended after the push without its PASS line; the commit, its 16 files, the unchanged 30-line registry and the report were confirmed on GitHub): 42 self-tests passed, `t3_report.py` recomputed both pairs and the records equalled the live registry, exact reproduction of the reference
+  (largest relative difference 3.4e-14), `docs/reports/t3-report-step3.md` (PRE-TAX) and the four trade lists are committed. All four primary Task 3 cells are DEAD (masked reading). Work Order 1.7 is complete; M2's answer to the report is not in the repo yet.
+- WORK ORDER 1.8 (NSE mid-cap panel, phase E1; `docs/work-orders/1.8.md`, amended by `docs/correspondence/answer-wo18-addendum.md` and `answer-wo18-proceed.md`, `docs/work-orders/1.8-schema-reference.sql`) is the current task. The first M2 delivery that carried it (m2-06) was never applied; M2 re-filed it as m2-08 (commit `8714b48`) after D2 flagged the gap. Step 0: the owner's diag
+  (2026-11-06) shows the folder clean at `8714b48` = `origin/main`, registry 30 lines. Step 1 is split in two deliveries: 16 = everything that needs no database and no token; 17 = the PostgreSQL schema (adapted from M2's reference, tested in a throwaway schema `nse_test_<random>`) after the owner has `.env` with DATABASE_URL (or the PG* variables) and a PostgreSQL 11+ the machine can reach.
+- Delivery 16 (`deliveries/16/`) is prepared: `nse_common.py` (cutoff 2025-08-31, `.env` reader that never prints, redaction, canonical CSV + SHA-256 manifests, one folder per pull never overwritten), `nse_amfi.py` (converter, summary, draw; reads ONLY the 30 June 2025 workbook), `nse_upstox.py` (V3 daily client: decade chunks, pacing 2 s, backoff on 429/5xx, resume, token redaction; canned-response self-tests),
+  `nse_rules.py` with `rules/IN-equity-costs-v1.json` and `rules/IN-tax-v1.json` (validators and the round-trip cost function; M2's numbers, retrieved 2026-10-29, owner confirmation pending), `nse_loader.py` (loader truncating at the cutoff, one-shot holdout token tied to a frozen manifest hash, zero-volume masking, validation flags including jumps over 25%, trading calendar, data rule), `.env.example`, `openpyxl` in `requirements.txt`, `selftest_all.sh` (47 self-tests).
+  Its apply script writes `docs/amfi/AverageMarketCapitalization30Jun2025.csv`, `docs/amfi/summary-30Jun2025.txt` and `universe/nse-midcap-draw-v1.csv` from the xlsx with the committed code and re-checks the draw order with the ten-line independent function. NOT VERIFIED until the owner's PASS output comes back. No registry write; no network call; no token needed.
+- AMFI FACTS (D2's reading of the 30 June 2025 workbook in the sandbox; the owner's machine regenerates them): one sheet `Sheet1`, a title row then the header row (row 2), 11 columns, 5,158 companies, ranks 1 to 5158 with 5,154 distinct values (ties), unit Rs. Cr.; average market cap at rank 100 / 101 / 250 / 251 = 91,571.98 / 90,907.49 / 30,756.47 / 30,403.46; ranks 101-250: 150 rows, all categorized Mid Cap, 2 without an NSE symbol (rank 145 Abbott India, rank 249 Multi Commodity Exchange of India), 0 without ISIN, 0 duplicate ISINs; pool 148 names; no owner exclusions file exists.
+- NEXT: delivery 17 = the PostgreSQL schema and its self-tests (needs the owner's `.env`), then the rest of Work Order 1.8 as M2 orders (first live call: ONE symbol, after the owner has saved the Upstox analytics token in `.env`).
 
 ## Settled facts
 - Pairs: ETH/USDT and BTC/USDT are the two live pairs for research and execution (Work Order 1.4, 2026-09-23); ETH/FDUSD is retired as an execution candidate and its
@@ -78,7 +84,7 @@ disagree, `docs/` wins. Read `docs/PROTOCOL.md` first, then `docs/work-orders/1.
 - The 15-minute break-even thread (2026-09-24) is closed: at 15m the typical |return| is below the round-trip cost for a symmetric trade-every-bar model; it does not touch S1,
   S2 or Task 3 (`docs/correspondence/message-07.md`).
 
-## Where things are (`user_data/analysis/`, 42 self-tests in `selftest_all.sh`)
+## Where things are (`user_data/analysis/`, 47 self-tests in `selftest_all.sh`)
 - Shared: `cutoff.py`, `databundle.py`, `funding.py`, `blocks.py`, `nonstationarity.py`, `multitest.py`, `costs.py`, `rule_evaluator.py`, `economic_gate.py`, `registry.py`,
   `stability_check.py` (generic stability statistic, S1 bootstrap and S2 time-shift variants), `stability_acceptance.py` (M1's generators and bands through production code).
 - S1: `formula_s1.py`, `run_s1.py`, `s1_report.py` (read-only, cross-checked against the registry). S2: `formula_s2.py`, `run_s2.py`; `s2_report.py` (read-only report generator, trade-list CSVs).

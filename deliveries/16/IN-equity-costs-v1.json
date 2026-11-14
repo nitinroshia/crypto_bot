@@ -1,0 +1,28 @@
+{
+  "version": "v1",
+  "market": "IN",
+  "instrument": "listed equity, delivery trades",
+  "retrieved": "2026-10-29",
+  "sources": [
+    {"name": "Upstox charges pages (brokerage, DP charge)", "note": "brokerage up to INR 20 per executed order; DP charge pages show 18.5 to 20, 20 is used", "confirmed": true},
+    {"name": "Zerodha charges page (statutory charges)", "note": "STT 0.1% on buy and on sell for delivery; stamp duty 0.015% on buy; NSE exchange transaction charge 0.00307%; SEBI INR 10 per crore; GST 18% on brokerage, exchange and SEBI charges and on the DP charge", "confirmed": true},
+    {"name": "Upstox exchange transaction charge", "note": "Upstox's own rate was not found by M2; the Zerodha-listed NSE rate is used; the owner confirms", "confirmed": false}
+  ],
+  "params": {
+    "brokerage_per_order_inr": 20.0,
+    "stt_buy_pct": 0.1,
+    "stt_sell_pct": 0.1,
+    "stamp_buy_pct": 0.015,
+    "exchange_per_side_pct": 0.00307,
+    "sebi_inr_per_crore": 10.0,
+    "gst_pct": 18.0,
+    "dp_charge_inr_per_sell": 20.0,
+    "slippage_per_side_pct": {"base": 0.05, "stress": 0.10},
+    "default_position_value_inr": 100000.0
+  },
+  "assumptions": [
+    "slippage per side, base 0.05% and stress 0.10%, are ASSUMPTIONS for liquid mid caps, to be replaced by a measurement",
+    "position value per trade defaults to INR 100,000; the owner states the real figure"
+  ],
+  "confirmed_by_owner": false
+}

@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "market": "IN",
+  "instrument": "listed equity bought and sold on delivery (STT paid)",
+  "retrieved": "2026-10-29",
+  "confirmed_by_owner": false,
+  "disclaimer": "Not tax advice. M2 and D2 are not tax advisors: the owner confirms every rule with a tax professional before any figure is used for a decision.",
+  "rules": {
+    "short_term_rate": 0.20,
+    "short_term_max_holding_months": 12,
+    "long_term_rate": 0.125,
+    "long_term_exemption_inr_per_financial_year": 125000.0,
+    "cess_rate": 0.04,
+    "surcharge_modelled": false,
+    "financial_year_start": "04-01"
+  },
+  "to_be_confirmed": [
+    "surcharge (depends on income; not modelled)",
+    "loss set-off and carry-forward rules",
+    "treatment of intraday trades",
+    "whether the long-term exemption and the rates apply unchanged to the owner's situation"
+  ],
+  "sources": [{"name": "as stated in Work Order 1.8 section 4 (M2, 2026-10-29)", "note": "to be verified by the owner with a tax professional", "confirmed": false}]
+}

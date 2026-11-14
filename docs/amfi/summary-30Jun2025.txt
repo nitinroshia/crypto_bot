@@ -1,0 +1,19 @@
+AMFI file: AverageMarketCapitalization30Jun2025.xlsx
+SHA-256 of the xlsx: 91eb0254c360c4d02df2c22e0f1732aa589d2e7626a593330f4bc15fa7496dac
+Sheets: ['Sheet1']
+
+Sheet 'Sheet1': 5160 rows in the sheet, 11 columns.
+Title row(s) above the header: ['Average Market Capitalization of listed companies during the six months ended 30 June 2025']
+Header row: row 2 of the sheet: ['Sr. No.', 'Company name', 'ISIN', 'BSE Symbol', 'BSE 6 month Avg Total Market Cap in (Rs. Crs.)', 'NSE Symbol', 'NSE 6 month Avg Total Market Cap (Rs. Crs.)', 'MSEI Symbol', 'MSEI 6 month Avg Total Market Cap in (Rs Crs.)', 'Average of All Exchanges (Rs. Cr.)', 'Categorization as per SEBI Circular dated Oct 6, 2017']
+Columns used: rank = 'Sr. No.', company = 'Company name', ISIN = 'ISIN', NSE symbol = 'NSE Symbol', average market cap = 'Average of All Exchanges (Rs. Cr.)', categorization = 'Categorization as per SEBI Circular dated Oct 6, 2017'
+Number of companies (rows with a numeric rank): 5158
+Rank range: 1 to 5158; distinct ranks 5154; rank column is NOT a gap-free 1..N sequence
+Unit of the average market cap column: Rs. Cr. (as stated in its header)
+Average market cap at rank 100: 91571.9815143055  (Jindal Steel & Power Ltd, NSE symbol 'JINDALSTEL', ISIN INE749A01030, Large Cap)
+Average market cap at rank 101: 90907.4925297035  (HDFC Asset Management Company Limited, NSE symbol 'HDFCAMC', ISIN INE127D01025, Mid Cap)
+Average market cap at rank 250: 30756.473250586998  (Gujarat Gas Limited, NSE symbol 'GUJGASLTD', ISIN INE844O01030, Mid Cap)
+Average market cap at rank 251: 30403.4566130565  (Cohance Lifesciences Limited, NSE symbol 'COHANCE', ISIN INE03QK01018, Small Cap)
+Ranks 101 to 250: 150 rows; missing NSE symbol 2; missing ISIN 0; missing either 2; eligible for the pool (NSE symbol and ISIN present) 148
+Duplicate ISINs: 0 in the whole sheet []; 0 within ranks 101-250 []
+Categorization column, ranks 1 to 100: {'Large Cap': 100}; ranks 101 to 250: {'Mid Cap': 150}; ranks above 250: {'Small Cap': 4908} (a cross-check only; the pool is defined by rank)
+Rows of the band without NSE symbol or ISIN: rank 145 Abbott India Ltd.; rank 249 Multi Commodity Exchange of India Ltd
