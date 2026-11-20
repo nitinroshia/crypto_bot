@@ -1,0 +1,26 @@
+Database self-test of the adapted schema (Work Order 1.8 step 1b), produced by deliveries/17/apply.sh on 2026-11-20T14:03:25Z (repo HEAD before this commit: 96b8060)
+command: python3 nse_db.py --self-test-db (throwaway schema, dropped at the end; no credentials in this file)
+
+database: PostgreSQL 14.15 (Homebrew) on aarch64-apple-darwin24.1.0; user: apple; database name: crypto_bot; throwaway schema: nse_test_e1f6bde3
+  ok: instrument_key must equal NSE_EQ|isin
+  ok: ISIN is unique
+  ok: a skip needs a reason
+  ok: draw_order is unique per version
+  ok: status values are checked
+  ok: one candle per pull, instrument and date
+  ok: a re-pull is a new pull and may repeat a date
+  ok: an adjusted price with more than four decimals is stored exactly
+  ok: UPDATE of a candle is refused
+  ok: DELETE of a candle is refused
+  ok: TRUNCATE of the candle table is refused
+  ok: 2025-08-31 is discovery, 2025-09-01 is holdout, neither view leaks the other
+  ok: the holdout reader refuses a call without a token
+  ok: flag values are checked
+  ok: a ruling needs ruled_by and ruled_at
+  ok: one flag per candle and kind
+  ok: changing the export hash is refused
+  ok: changing the params of a hashed pull is refused
+  ok: deleting a hashed pull is refused
+  ok: a second export hash for the same pull is refused
+  ok: a pull without an export hash can be annotated or deleted
+Database self-test passed: schema nse_test_e1f6bde3 built twice (idempotent), 21 behaviours checked, throwaway schema dropped, production schema 'nse' untouched (does not exist yet).

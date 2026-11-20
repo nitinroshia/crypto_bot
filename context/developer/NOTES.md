@@ -7,7 +7,7 @@ summary but matter for not repeating past mistakes.
 
 ## Engineering conventions (apply to every new tool)
 - Argparse CLI + a `--self-test` flag, synthetic data with known ground truth, wired into
-  `selftest_all.sh` (47 self-tests as of delivery 16). Never skip the self-test to save time --
+  `selftest_all.sh` (48 self-tests as of delivery 17). Never skip the self-test to save time --
   it's caught real bugs every single time it's been taken seriously (see gotchas below).
 - Self-test scratch lives INSIDE the project: `selftest_all.sh` exports `TMPDIR=<repo>/temp/tmp-selftest`
   (so `tempfile.TemporaryDirectory()` needs no `dir=` override) and `GIT_CEILING_DIRECTORIES=<repo>/temp`
@@ -96,6 +96,9 @@ summary but matter for not repeating past mistakes.
 - NSE (Work Order 1.8): modules `nse_common.py` (CUTOFF_DATE, `read_env`, `redact`, canonical CSV, `write_pull`/`verify_pull`), `nse_amfi.py` (`run_all`, `independent_order`), `nse_upstox.py` (`UpstoxClient`, `chunks_for`; test double = an injected `opener`, `sleep` and `clock`), `nse_rules.py` (`validate_costs`, `validate_tax`, `round_trip_cost_fraction`), `nse_loader.py` (`load_symbol`, `mask_zero_volume`, `validate_symbol`,
   `trading_calendar`, `data_rule`, `issue_holdout_token`, `read_holdout`). Secrets: `.env` is read at run time only, never printed, never committed (every apply.sh refuses to push if `.env` is tracked or was ever committed); `.gitignore` already ignores `.env` and `.env.*` (not `.env.example`). The draw uses ONLY the 30 June 2025 workbook; the later AMFI files in `docs/amfi/` are never opened.
   A duplicate ISIN inside the draw pool stops the draw (ask M2). Reading in `data_rule`: a jump counts as resolved only when M2's ruling is 'genuine'; 'unadjusted_event' and 'unresolved' exclude the symbol (an unadjusted split makes the delivered price series unusable) -- to be confirmed by M2. The Upstox rate limits (50/s, 500/min, 2000 per 30 min) are far above the client's pacing (2 s between requests, 1000 per 30 min cap).
+- `nse_db.py` (Work Order 1.8 step 1b): the DDL is a template (`{schema}`, `{cutoff}`), rendered by `render_ddl(schema)`; deviations D1-D7 from M2's reference are listed in its docstring and in message-27. `create_schema` raises `SchemaPermissionError` (plain note for the owner, exit code 3) if the user cannot create a schema; `drop_test_schema` refuses any schema not named `nse_test_*` (the production schema `nse` is never dropped by code).
+  Research code reads only `read_discovery(conn, schema, pull_id)` (the discovery view, a pull_id is mandatory); `read_holdout_db` needs the one-shot token of `nse_loader.issue_holdout_token`; static self-tests show that no other module mentions `daily_candle` or `candle_holdout` or calls `read_holdout_db`. Prices are stored as `numeric` from the repr of the delivered float (no rounding); the pull manifest is the SHA-256 of the canonical export (ISIN, date order; `canonical_export_text`) stored once in `data_pull.export_sha256` (a trigger forbids any later change).
+  Sandbox testing used PostgreSQL 16 (apt) with a local trust-auth server; a background server dies between sandbox commands, so start it and run the test in ONE command.
 - Every `apply.sh` (delivery 9 on, M2's item 7): refuse to run `git push` if `temp/secret_keys.txt` is tracked (`git ls-files --error-unmatch`) or appears in any commit
   (`git log --all --oneline -- temp/secret_keys.txt`); print a WARNING if it is not git-ignored (then add `temp/` to `.gitignore` in the next delivery); `git add` exact paths only.
 - `stability_acceptance.py` false-pass rule (answer-to-message-19 section 3a): a false-pass row passes at <= 7% at the run's

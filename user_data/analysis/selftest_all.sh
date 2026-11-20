@@ -60,6 +60,7 @@ run nse_amfi.py --self-test
 run nse_rules.py
 run nse_loader.py
 run nse_upstox.py
+run nse_db.py
 run selftest_registry_hygiene.py
 run selftest_research_cli.py
 run fetch_klines.py --self-test
